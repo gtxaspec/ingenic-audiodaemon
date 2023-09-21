@@ -21,9 +21,9 @@ unsigned char audio_buffer[AO_MAX_FRAME_SIZE];
 ssize_t audio_buffer_size = 0;
 int active_client_sock = -1;
 
-void handle_audio_error(const char *msg) {
-    fprintf(stderr, "[ERROR] %s\n", msg);
-}
+//void handle_audio_error(const char *msg) {
+//    fprintf(stderr, "[ERROR] %s\n", msg);
+//}
 
 void reinitialize_audio_device(int devID) {
     IMP_AO_DisableChn(devID, 0);
