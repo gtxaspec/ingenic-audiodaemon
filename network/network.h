@@ -5,9 +5,11 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#define SERVER_SOCKET_PATH "ingenic_audio"
+#define AUDIO_INPUT_SOCKET_PATH "ingenic_audio_input"
+#define AUDIO_OUTPUT_SOCKET_PATH "ingenic_audio_output"
 
 // Functions
-void *audio_server_thread(void *arg);
+void *audio_input_server_thread(void *arg);
+void *audio_output_server_thread(void *arg);
 
 #endif // NETWORK_H

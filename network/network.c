@@ -1,9 +1,10 @@
 #include "network.h"
 #include "../audio/output.h"
 #include "../utils/utils.h"
+#include "../audio/input.h"
 
-void *audio_server_thread(void *arg) {
-    printf("[INFO] Entering audio_server_thread\n");
+void *audio_input_server_thread(void *arg) {
+    printf("[INFO] Entering audio_input_server_thread\n");
 
     int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -14,10 +15,10 @@ void *audio_server_thread(void *arg) {
     struct sockaddr_un addr;
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    strncpy(&addr.sun_path[1], SERVER_SOCKET_PATH, sizeof(addr.sun_path) - 2);
+    strncpy(&addr.sun_path[1], AUDIO_INPUT_SOCKET_PATH, sizeof(addr.sun_path) - 2);
 
     printf("[INFO] Attempting to bind socket\n");
-    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(sa_family_t) + strlen(SERVER_SOCKET_PATH) + 1) == -1) {
+    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(sa_family_t) + strlen(AUDIO_INPUT_SOCKET_PATH) + 1) == -1) {
         perror("bind failed");
         close(sockfd);
         return NULL;
@@ -34,7 +35,62 @@ void *audio_server_thread(void *arg) {
     }
 
     while (1) {
-        printf("[INFO] Waiting for client connection\n");
+        printf("[INFO] Waiting for input client connection\n");
+        int client_sock = accept(sockfd, NULL, NULL);
+        if (client_sock == -1) {
+            perror("accept");
+            continue;
+        }
+
+        // Handle the input client...
+        AiThreadArg thread_arg;
+        thread_arg.sockfd = client_sock;
+        thread_arg.output_file_path = "/tmp/audio_record.pcm"; // This can be adjusted
+        
+        pthread_t ai_thread;
+        pthread_create(&ai_thread, NULL, ai_record_thread, &thread_arg);
+        pthread_detach(ai_thread);
+
+        printf("[INFO] Input Client Disconnected\n");
+    }
+
+    close(sockfd);
+    return NULL;
+}
+
+void *audio_output_server_thread(void *arg) {
+    printf("[INFO] Entering audio_output_server_thread\n");
+
+    int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("socket");
+        return NULL;
+    }
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    strncpy(&addr.sun_path[1], AUDIO_OUTPUT_SOCKET_PATH, sizeof(addr.sun_path) - 2);
+
+    printf("[INFO] Attempting to bind socket\n");
+    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(sa_family_t) + strlen(AUDIO_OUTPUT_SOCKET_PATH) + 1) == -1) {
+        perror("bind failed");
+        close(sockfd);
+        return NULL;
+    } else {
+        printf("[INFO] Successfully bound socket\n");
+        printf("[DEBUG] Binding to socket path: %s\n", &addr.sun_path[1]);
+    }
+
+    printf("[INFO] Attempting to listen on socket\n");
+    if (listen(sockfd, 5) == -1) {
+        perror("listen");
+        close(sockfd);
+        return NULL;
+    }
+
+    while (1) {
+        printf("[INFO] Waiting for output client connection\n");
         int client_sock = accept(sockfd, NULL, NULL);
         if (client_sock == -1) {
             perror("accept");

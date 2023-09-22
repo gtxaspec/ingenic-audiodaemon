@@ -44,12 +44,12 @@ SAMPLES = audioplay_t31 \
           audio_daemon \
           audio_client \
 
-AUDIO_DAEMON_OBJS = main.o audio/output.o network/network.o utils/utils.o utils/logging.o $(SHIM)
-AUDIO_CLIENT_OBJS = audio_client.o client/cmdline.o client/client_network.o client/playback.o $(SHIM)
+AUDIO_DAEMON_OBJS = main.o audio/output.o audio/input.o network/network.o utils/utils.o utils/logging.o $(SHIM)
+AUDIO_CLIENT_OBJS = audio_client.o client/cmdline.o client/client_network.o client/playback.o client/record.o $(SHIM)
 
 all: $(SAMPLES)
 
-audio/audio.o: audio/output.c audio/output.h
+audio/%.o: audio/%.c audio/%.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
 network/network.o: network/network.c network/network.h
