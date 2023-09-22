@@ -5,8 +5,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define AI_BASIC_TEST_RECORD_NUM 500
-
 int initialize_audio_input_device(int devID) {
     int ret;
     IMPAudioIOAttr attr;
@@ -80,8 +78,7 @@ void *ai_record_thread(void *arg) {
         return NULL;
     }
 
-    int i = 0;
-    while (i < AI_BASIC_TEST_RECORD_NUM) {
+    while (1) {  // Infinite loop
         // Polling for frame
         ret = IMP_AI_PollingFrame(0, 0, 1000);
         if (ret != 0) {
@@ -117,9 +114,9 @@ void *ai_record_thread(void *arg) {
         }
 
         IMP_AI_ReleaseFrame(0, 0, &frm);
-        i++;
     }
 
+    // This part might never be reached unless there's a mechanism to break the loop.
     close(fd);
     return NULL;
 }
