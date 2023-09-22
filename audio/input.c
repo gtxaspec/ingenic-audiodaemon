@@ -51,16 +51,14 @@ int initialize_audio_input_device(int devID) {
     }
 
     // Set audio channel volume
-    int chnVol = 60;
-    ret = IMP_AI_SetVol(devID, chnID, chnVol);
+    ret = IMP_AI_SetVol(devID, chnID, AI_CHN_VOL);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetVol failed");
         return -1;
     }
 
     // Set audio channel gain
-    int aigain = 28;
-    ret = IMP_AI_SetGain(devID, chnID, aigain);
+    ret = IMP_AI_SetGain(devID, chnID, AI_GAIN);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetGain failed");
         return -1;

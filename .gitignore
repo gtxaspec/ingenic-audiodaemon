@@ -1,4 +1,6 @@
+# Ignore object files and binaries
 *.o
 audio_daemon
-audio_test
+audio_client
+audioplay_t31
 echo_core_files.sh
