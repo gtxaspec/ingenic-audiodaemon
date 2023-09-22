@@ -4,6 +4,9 @@
 #include "../utils/utils.h"
 #include "../utils/logging.h"
 
+/* function seems to be error-tolerant. If there's an error in setting audio attributes, the function prints an error and continues.
+consider whether we want to continue executing the function or return early when an error is encountered. */
+
 void reinitialize_audio_device(int devID) {
     IMP_AO_DisableChn(devID, 0);
     IMP_AO_Disable(devID);
