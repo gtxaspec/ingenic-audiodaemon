@@ -34,24 +34,27 @@ void *audio_input_server_thread(void *arg) {
         return NULL;
     }
 
-while (1) {
-    printf("[INFO] Waiting for input client connection\n");
-    int client_sock = accept(sockfd, NULL, NULL);
-    if (client_sock == -1) {
-        perror("accept");
-        continue;
-    }
-    
-    printf("[INFO] Input client connected\n");
+    while (1) {
+        printf("[INFO] Waiting for input client connection\n");
+        int client_sock = accept(sockfd, NULL, NULL);
+        if (client_sock == -1) {
+            perror("accept");
+            continue;
+        }
 
-    // Handle the input client...
-    AiThreadArg thread_arg;
-    thread_arg.sockfd = client_sock;
+        printf("[INFO] Input client connected\n");
 
-    pthread_t ai_thread;
-    pthread_create(&ai_thread, NULL, ai_record_thread, &thread_arg);
-    pthread_detach(ai_thread);
+        // Handle the input client...
+        AiThreadArg thread_arg;
+        thread_arg.sockfd = client_sock;
 
+        pthread_t ai_thread;
+        if (pthread_create(&ai_thread, NULL, ai_record_thread, &thread_arg) != 0) {
+            perror("pthread_create");
+            close(client_sock);
+            continue;
+        }
+        pthread_detach(ai_thread);
     }
 
     close(sockfd);
