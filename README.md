@@ -14,6 +14,16 @@ To run the audio daemon:
 ./audio_daemon
 ```
 
+### Usage:
+
+```
+./audio_daemon [-d <AI|AO>]
+```
+
+#### Options:
+
+- `-d`: Disable Audio Input or Output by `<AI|AO>`.
+
 ## Using the Audio Client
 
 The audio client provides various functionalities, from playing audio to recording it.
