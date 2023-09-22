@@ -17,7 +17,12 @@ void record_from_server(int sockfd, char *output_file_path) {
     ssize_t bytes_received;
 
     while ((bytes_received = read(sockfd, buffer, RECORD_BUFFER_SIZE)) > 0) {
-        fwrite(buffer, 1, bytes_received, output_file);
+        size_t bytes_written = fwrite(buffer, 1, bytes_received, output_file);
+        if (bytes_written != bytes_received) {
+            perror("fwrite");
+            fclose(output_file);
+            return;
+        }
     }
 
     fclose(output_file);
