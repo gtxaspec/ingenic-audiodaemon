@@ -107,17 +107,24 @@ void *audio_output_server_thread(void *arg) {
             pthread_cond_wait(&audio_data_cond, &audio_buffer_lock);
         }
 
+        // Pause audio output
+        pause_audio_output(0, 0);
+
         active_client_sock = client_sock;  // Set the current client as active
         printf("[INFO] Client connected\n");
 
-        // Clear the audio buffer before receiving data from a new client
+        // Clear the audio buffer and the audio output buffer before receiving data from a new client
         memset(audio_buffer, 0, sizeof(audio_buffer));
         audio_buffer_size = 0;
+        clear_audio_output_buffer(0, 0);
 
         pthread_mutex_unlock(&audio_buffer_lock);
 
         unsigned char buf[AO_MAX_FRAME_SIZE];
         ssize_t read_size;
+
+        // Resume audio output, before receiving audio data
+        resume_audio_output(0, 0);
 
         printf("[INFO] Receiving audio data from client\n");
         while ((read_size = read(client_sock, buf, sizeof(buf))) > 0) {
@@ -132,6 +139,7 @@ void *audio_output_server_thread(void *arg) {
         active_client_sock = -1;  // Reset the active client
         pthread_cond_broadcast(&audio_data_cond);
         pthread_mutex_unlock(&audio_buffer_lock);
+
 
         close(client_sock);
         printf("[INFO] Client Disconnected\n");

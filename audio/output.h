@@ -17,5 +17,9 @@
 // Functions
 void reinitialize_audio_device(int devID);
 void *ao_test_play_thread(void *arg);
+void pause_audio_output(int devID, int chnID);
+void clear_audio_output_buffer(int devID, int chnID);
+void resume_audio_output(int devID, int chnID);
+void flush_audio_output_buffer(int devID, int chnID);
 
 #endif // AUDIO_H

@@ -69,7 +69,7 @@ audio_client: $(AUDIO_CLIENT_OBJS)
 	$(CC) $(LDFLAG) -o $@ $^ -lpthread -lm -lrt -ldl
 	$(STRIP) $@
 
-audioplay_t31: $(SDK_LIB_DIR)/libimp.a $(SDK_LIB_DIR)/libalog.a audioplay_t31.o $(SHIM)
+audioplay_t31: $(SDK_LIB_DIR)/libimp.a $(SDK_LIB_DIR)/libalog.a old/audioplay_t31.o $(SHIM)
 	$(CPLUSPLUS) $(LDFLAG) -o $@ $^ $(LIBS) -lpthread -lm -lrt -ldl
 	$(STRIP) $@
 

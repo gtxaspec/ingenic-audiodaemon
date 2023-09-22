@@ -64,7 +64,7 @@ Note: Set the sample rate on the ffmpeg command line to match your settings.
 
 #### todo:
 
-json config file for all variables, including AI and AO device IDs, samplerate, etc, all AI and AO options should be configurable  
-on the fly config changes via webui  
-audioclient should be able to output AI to stdout  
+json config file for all variables, including AI and AO device IDs, samplerate, etc, all AI and AO options should be configurable
+on the fly config changes via webui
 output AI and AO parameters to logcat, switch some logging to logcat
+add option to disable AO or AI on run

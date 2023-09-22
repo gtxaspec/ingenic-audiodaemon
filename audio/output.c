@@ -31,6 +31,34 @@ void reinitialize_audio_device(int devID) {
     }
 }
 
+void pause_audio_output(int devID, int chnID) {
+    if (IMP_AO_PauseChn(devID, chnID)) {
+        handle_audio_error("Failed to pause audio output");
+        reinitialize_audio_device(devID);
+    }
+}
+
+void clear_audio_output_buffer(int devID, int chnID) {
+    if (IMP_AO_ClearChnBuf(devID, chnID)) {
+        handle_audio_error("Failed to clear audio output buffer");
+        reinitialize_audio_device(devID);
+    }
+}
+
+void resume_audio_output(int devID, int chnID) {
+    if (IMP_AO_ResumeChn(devID, chnID)) {
+        handle_audio_error("Failed to resume audio output");
+        reinitialize_audio_device(devID);
+    }
+}
+
+void flush_audio_output_buffer(int devID, int chnID) {
+    if (IMP_AO_FlushChnBuf(devID, chnID)) {
+        handle_audio_error("Failed to flush audio output buffer");
+        reinitialize_audio_device(devID);
+    }
+}
+
 void *ao_test_play_thread(void *arg) {
     // Increase the thread's priority
     struct sched_param param;
