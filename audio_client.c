@@ -18,6 +18,9 @@ int main(int argc, char *argv[]) {
 
     const char *socket_path = record_audio ? AUDIO_INPUT_SOCKET_PATH : AUDIO_OUTPUT_SOCKET_PATH;
     int sockfd = setup_client_connection(record_audio ? AUDIO_INPUT_REQUEST : AUDIO_OUTPUT_REQUEST);
+
+    printf("[INFO] Connected to daemon\n");
+
     if (sockfd < 0) {
         exit(1);
     }

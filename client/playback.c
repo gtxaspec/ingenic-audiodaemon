@@ -10,6 +10,8 @@ long long current_time_in_milliseconds() {
 }
 
 void playback_audio(int sockfd, FILE *audio_file) {
+    printf("[INFO] Playing back audio to daemon\n");
+
     unsigned char buf[AO_MAX_FRAME_SIZE];
     ssize_t read_size;
 

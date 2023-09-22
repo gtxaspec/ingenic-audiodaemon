@@ -37,6 +37,7 @@ void *audio_input_server_thread(void *arg) {
     while (1) {
         printf("[INFO] Waiting for input client connection\n");
         int client_sock = accept(sockfd, NULL, NULL);
+	printf("[INFO] Input client connected\n");
         if (client_sock == -1) {
             perror("accept");
             continue;

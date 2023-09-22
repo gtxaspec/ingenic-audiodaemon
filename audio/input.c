@@ -78,6 +78,8 @@ void *ai_record_thread(void *arg) {
         return NULL;
     }
 
+    printf("[INFO] Sending audio data to input client\n");  // Moved out of the loop
+
     while (1) {  // Infinite loop
         // Polling for frame
         ret = IMP_AI_PollingFrame(0, 0, 1000);
@@ -97,7 +99,7 @@ void *ai_record_thread(void *arg) {
 
         ssize_t wr_fd = write(fd, frm.virAddr, frm.len);       // Write the recorded audio data to the file
         ssize_t wr_sock = write(sockfd, frm.virAddr, frm.len);  // Send the recorded audio data to the client over the socket
-        
+
         // Check for SIGPIPE or other errors
         if (wr_sock < 0) {
             perror("write to sockfd");
