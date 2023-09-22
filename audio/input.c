@@ -100,10 +100,25 @@ void *ai_record_thread(void *arg) {
             return NULL;
         }
 
-        write(fd, frm.virAddr, frm.len);       // Write the recorded audio data to the file
-        write(sockfd, frm.virAddr, frm.len);  // Send the recorded audio data to the client over the socket
-        IMP_AI_ReleaseFrame(0, 0, &frm);
+        ssize_t wr_fd = write(fd, frm.virAddr, frm.len);       // Write the recorded audio data to the file
+        ssize_t wr_sock = write(sockfd, frm.virAddr, frm.len);  // Send the recorded audio data to the client over the socket
+        
+        // Check for SIGPIPE or other errors
+        if (wr_sock < 0) {
+            perror("write to sockfd");
+            IMP_AI_ReleaseFrame(0, 0, &frm);
+            close(fd);
+            return NULL;
+        }
 
+        if (wr_fd < 0) {
+            perror("write to fd");
+            IMP_AI_ReleaseFrame(0, 0, &frm);
+            close(fd);
+            return NULL;
+        }
+
+        IMP_AI_ReleaseFrame(0, 0, &frm);
         i++;
     }
 

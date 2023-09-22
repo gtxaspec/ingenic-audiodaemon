@@ -2,8 +2,12 @@
 #include "audio/input.h"   // Include the header for input.h
 #include "network/network.h"
 #include "utils/utils.h"
+#include <signal.h>        // Include for signal handling
 
 int main(void) {
+    // Ignore SIGPIPE to prevent the daemon from exiting when writing to a closed socket
+    signal(SIGPIPE, SIG_IGN);
+
     printf("[INFO] Starting audio daemon\n");
 
     pthread_t play_thread_id;

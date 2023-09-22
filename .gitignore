@@ -1,0 +1,4 @@
+*.o
+audio_daemon
+audio_test
+echo_core_files.sh
