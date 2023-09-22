@@ -109,6 +109,11 @@ void *audio_output_server_thread(void *arg) {
 
         active_client_sock = client_sock;  // Set the current client as active
         printf("[INFO] Client connected\n");
+
+        // Clear the audio buffer before receiving data from a new client
+        memset(audio_buffer, 0, sizeof(audio_buffer));
+        audio_buffer_size = 0;
+
         pthread_mutex_unlock(&audio_buffer_lock);
 
         unsigned char buf[AO_MAX_FRAME_SIZE];
