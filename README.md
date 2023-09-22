@@ -4,7 +4,7 @@ The **Ingenic Audio Daemon** serves as an intermediary between the audio kernel 
 
 ## Prerequisites
 
-Before running the audio daemon, ensure that the audio kernel modules are loaded. The daemon sets up the `IMP_AI` and `IMP_AO` devices, so it's essential for these modules to be initialized first.
+T20/31/T40: Audio Input & Playback tested on T20/T31.  Before running the audio daemon, ensure that the audio kernel modules are loaded. The daemon sets up the `IMP_AI` and `IMP_AO` devices, so it's essential for these modules to be initialized first.
 
 ## Running the Daemon
 
