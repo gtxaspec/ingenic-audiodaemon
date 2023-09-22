@@ -13,4 +13,6 @@ extern unsigned char audio_buffer[AO_MAX_FRAME_SIZE];
 extern ssize_t audio_buffer_size;
 extern int active_client_sock;
 
+int create_thread(pthread_t *thread_id, void *(*start_routine) (void *), void *arg);
+
 #endif // UTILS_H
