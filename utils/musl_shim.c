@@ -11,11 +11,18 @@
 #include <unistd.h>     // for sysconf
 #include <fcntl.h>      // for fcntl
 #include <stdio.h>      // for perror
+
 /**
-
  * shim to create missing function call in ingenic library
-
  */
+
+#define DEBUG 0  // Set this to 1 to enable debug output or 0 to disable
+
+#if DEBUG
+#define DEBUG_PRINT(...) printf(__VA_ARGS__)
+#else
+#define DEBUG_PRINT(...) (void)0
+#endif
 
 void __pthread_register_cancel(void *buf) {
     fprintf(stderr, "[WARNING] Called __pthread_register_cancel. This is a shim and does nothing.\n");
@@ -34,7 +41,6 @@ int __fgetc_unlocked(FILE *__stream) {
     return fgetc(__stream);
 }
 
-
 extern void *mmap64(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
 
 #ifndef MMAP_SHIM_DEFINED
@@ -43,13 +49,13 @@ extern void *mmap64(void *addr, size_t length, int prot, int flags, int fd, off_
 void *mmap(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t __offset) {
     void *result;
 
-    printf("mmap called with arguments:\n");
-    printf("__addr: %p\n", __addr);
-    printf("__len: %zu\n", __len);
-    printf("__prot: %d\n", __prot);
-    printf("__flags: %d\n", __flags);
-    printf("__fd: %d\n", __fd);
-    printf("__offset: %lld\n", (long long)__offset);
+    DEBUG_PRINT("mmap called with arguments:\n");
+    DEBUG_PRINT("__addr: %p\n", __addr);
+    DEBUG_PRINT("__len: %zu\n", __len);
+    DEBUG_PRINT("__prot: %d\n", __prot);
+    DEBUG_PRINT("__flags: %d\n", __flags);
+    DEBUG_PRINT("__fd: %d\n", __fd);
+    DEBUG_PRINT("__offset: %lld\n", (long long)__offset);
 
     // Identify what the file descriptor points to
     char path[256], target[256];
@@ -57,16 +63,15 @@ void *mmap(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t 
     ssize_t len = readlink(path, target, sizeof(target)-1);
     if (len != -1) {
         target[len] = '\0';
-        printf("File descriptor %d points to: %s\n", __fd, target);
+        DEBUG_PRINT("File descriptor %d points to: %s\n", __fd, target);
     } else {
         perror("readlink");
     }
 
-
     // Ensure the offset is page-aligned.
     off_t aligned_offset = __offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
     if (aligned_offset != __offset) {
-        printf("Adjusted offset from %lld to %lld for page alignment.\n", (long long)__offset, (long long)aligned_offset);
+        DEBUG_PRINT("Adjusted offset from %lld to %lld for page alignment.\n", (long long)__offset, (long long)aligned_offset);
         __offset = aligned_offset;
     }
 
@@ -77,7 +82,7 @@ void *mmap(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t 
         return MAP_FAILED;
     }
     if ((__prot & PROT_WRITE) && !(fd_flags & O_RDWR) && !(fd_flags & O_WRONLY)) {
-        fprintf(stderr, "fd is not opened for writing but PROT_WRITE is requested.\n");
+        DEBUG_PRINT(stderr, "fd is not opened for writing but PROT_WRITE is requested.\n");
         return MAP_FAILED;
     }
 
@@ -89,7 +94,7 @@ void *mmap(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t 
     }
 
     if (__offset + __len > st.st_size) {
-        fprintf(stderr, "Trying to map beyond the end of the file. File size: %lld\n", (long long)st.st_size);
+        DEBUG_PRINT(stderr, "Trying to map beyond the end of the file. File size: %lld\n", (long long)st.st_size);
         return MAP_FAILED;
     }
 
@@ -123,10 +128,9 @@ void *mmap(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t 
     }
 
     // Print the return value
-    printf("mmap64 returned: %p\n", result);
+    DEBUG_PRINT("mmap64 returned: %p\n", result);
 
     return result;
 }
-
 
 #endif

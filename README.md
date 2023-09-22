@@ -35,3 +35,10 @@ For example, if you want to play a specific audio file, you can use:
 ```
 ./audio_client -f path_to_your_audio_file.wav
 ```
+
+todo:
+
+json config file for all variables, including AI and AO device IDs
+on the fly config changes via webui
+auto compute audio frames depending on sample rate selected by user
+
