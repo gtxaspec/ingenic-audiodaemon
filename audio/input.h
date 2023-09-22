@@ -17,7 +17,6 @@ void *ai_record_thread(void *output_file_path);
 
 typedef struct {
     int sockfd;
-    char *output_file_path;
 } AiThreadArg;
 
 #endif // INPUT_H

@@ -3,7 +3,6 @@
 #include <imp/imp_audio.h>
 #include <imp/imp_log.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 int initialize_audio_input_device(int devID) {
     int ret;
@@ -68,15 +67,8 @@ int initialize_audio_input_device(int devID) {
 void *ai_record_thread(void *arg) {
     AiThreadArg *thread_arg = (AiThreadArg *) arg;
     int sockfd = thread_arg->sockfd;
-    char *output_file_path = thread_arg->output_file_path;
 
     int ret;
-
-    int fd = open(output_file_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-    if (fd < 0) {
-        IMP_LOG_ERR(TAG, "Failed to open output file %s", output_file_path);
-        return NULL;
-    }
 
     printf("[INFO] Sending audio data to input client\n");  // Moved out of the loop
 
@@ -85,7 +77,6 @@ void *ai_record_thread(void *arg) {
         ret = IMP_AI_PollingFrame(0, 0, 1000);
         if (ret != 0) {
             IMP_LOG_ERR(TAG, "IMP_AI_PollingFrame failed");
-            close(fd);
             return NULL;
         }
 
@@ -93,25 +84,15 @@ void *ai_record_thread(void *arg) {
         ret = IMP_AI_GetFrame(0, 0, &frm, 1000);
         if (ret != 0) {
             IMP_LOG_ERR(TAG, "IMP_AI_GetFrame failed");
-            close(fd);
             return NULL;
         }
 
-        ssize_t wr_fd = write(fd, frm.virAddr, frm.len);       // Write the recorded audio data to the file
         ssize_t wr_sock = write(sockfd, frm.virAddr, frm.len);  // Send the recorded audio data to the client over the socket
 
         // Check for SIGPIPE or other errors
         if (wr_sock < 0) {
             perror("write to sockfd");
             IMP_AI_ReleaseFrame(0, 0, &frm);
-            close(fd);
-            return NULL;
-        }
-
-        if (wr_fd < 0) {
-            perror("write to fd");
-            IMP_AI_ReleaseFrame(0, 0, &frm);
-            close(fd);
             return NULL;
         }
 
@@ -120,6 +101,5 @@ void *ai_record_thread(void *arg) {
 
     // This part might never be reached unless there's a mechanism to break the loop.
     printf("[INFO] Input Client Disconnected\n");
-    close(fd);
     return NULL;
 }

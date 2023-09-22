@@ -47,7 +47,6 @@ while (1) {
     // Handle the input client...
     AiThreadArg thread_arg;
     thread_arg.sockfd = client_sock;
-    thread_arg.output_file_path = "/tmp/audio_record.pcm"; // This can be adjusted
 
     pthread_t ai_thread;
     pthread_create(&ai_thread, NULL, ai_record_thread, &thread_arg);
