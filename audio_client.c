@@ -5,14 +5,15 @@
 #include "client/cmdline.h"
 #include "client/client_network.h"
 #include "client/playback.h"
-#include "client/record.h"  // Assuming we'll have a record module
+#include "client/record.h"
 
 int main(int argc, char *argv[]) {
     int use_stdin = 0;
     char *audio_file_path = NULL;
-    int record_audio = 0;  // New flag for audio recording
+    int record_audio = 0;
+    int output_to_stdout = 0;
 
-    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio) != 0) {
+    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio, &output_to_stdout) != 0) {
         exit(1);
     }
 
@@ -30,8 +31,11 @@ int main(int argc, char *argv[]) {
         int request_type = AUDIO_INPUT_REQUEST;
         write(sockfd, &request_type, sizeof(int));
 
-        // Start recording audio from the server
-        record_from_server(sockfd, audio_file_path);  // Assuming we'll have a record_from_server function
+        if (output_to_stdout) {
+            record_from_server(sockfd, NULL);  // When output_file_path is NULL, the function will write to stdout
+        } else {
+            record_from_server(sockfd, audio_file_path);
+        }
     } else {
         FILE *audio_file = use_stdin ? stdin : fopen(audio_file_path, "rb");
         if (!audio_file) {

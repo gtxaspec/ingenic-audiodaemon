@@ -2,12 +2,12 @@
 #include <unistd.h>
 #include "record.h"
 
-#define RECORD_BUFFER_SIZE 4096  // You can adjust this size as needed
+#define RECORD_BUFFER_SIZE 4096
 
 void record_from_server(int sockfd, char *output_file_path) {
     printf("[INFO] Receiving audio from daemon\n");
 
-    FILE *output_file = fopen(output_file_path, "wb");
+    FILE *output_file = output_file_path ? fopen(output_file_path, "wb") : stdout;
     if (!output_file) {
         perror("fopen");
         return;
@@ -25,5 +25,7 @@ void record_from_server(int sockfd, char *output_file_path) {
         }
     }
 
-    fclose(output_file);
+    if (output_file_path) {  // Only close if it's an actual file
+        fclose(output_file);
+    }
 }
