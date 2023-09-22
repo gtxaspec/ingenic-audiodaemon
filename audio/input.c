@@ -119,6 +119,7 @@ void *ai_record_thread(void *arg) {
     }
 
     // This part might never be reached unless there's a mechanism to break the loop.
+    printf("[INFO] Input Client Disconnected\n");
     close(fd);
     return NULL;
 }

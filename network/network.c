@@ -34,25 +34,25 @@ void *audio_input_server_thread(void *arg) {
         return NULL;
     }
 
-    while (1) {
-        printf("[INFO] Waiting for input client connection\n");
-        int client_sock = accept(sockfd, NULL, NULL);
-	printf("[INFO] Input client connected\n");
-        if (client_sock == -1) {
-            perror("accept");
-            continue;
-        }
+while (1) {
+    printf("[INFO] Waiting for input client connection\n");
+    int client_sock = accept(sockfd, NULL, NULL);
+    if (client_sock == -1) {
+        perror("accept");
+        continue;
+    }
+    
+    printf("[INFO] Input client connected\n");
 
-        // Handle the input client...
-        AiThreadArg thread_arg;
-        thread_arg.sockfd = client_sock;
-        thread_arg.output_file_path = "/tmp/audio_record.pcm"; // This can be adjusted
-        
-        pthread_t ai_thread;
-        pthread_create(&ai_thread, NULL, ai_record_thread, &thread_arg);
-        pthread_detach(ai_thread);
+    // Handle the input client...
+    AiThreadArg thread_arg;
+    thread_arg.sockfd = client_sock;
+    thread_arg.output_file_path = "/tmp/audio_record.pcm"; // This can be adjusted
 
-        printf("[INFO] Input Client Disconnected\n");
+    pthread_t ai_thread;
+    pthread_create(&ai_thread, NULL, ai_record_thread, &thread_arg);
+    pthread_detach(ai_thread);
+
     }
 
     close(sockfd);
