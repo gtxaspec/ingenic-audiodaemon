@@ -29,6 +29,7 @@ The audio client provides various functionalities, from playing audio to recordi
 - `-f`: Play an audio file specified by `<audio_file_path>`.
 - `-s`: Read audio from the standard input (`stdin`).
 - `-r`: Record audio and save it to a file specified by `<audio_output_file_path>`.
+- `-o`: Output audio to the standard output (`stdout`).
 
 For example, if you want to play a specific audio file, you can use:
 
@@ -36,9 +37,19 @@ For example, if you want to play a specific audio file, you can use:
 ./audio_client -f path_to_your_audio_file.wav
 ```
 
-todo:
+####stdin examples:
 
-json config file for all variables, including AI and AO device IDs
+```
+ffmpeg -re -i https://wpr-ice.streamguys1.com/wpr-ideas-mp3-64 -af volume=-15dB  -acodec pcm_s16le -f s16le -ac 1 -ar 48000 - | ./audio_client -s
+ffmpeg -f s16le -ar 16000 -ac 1 -i test_file.pcm -acodec pcm_s16le -f s16le -ac 1 -ar 48000 - | ./audio_client -s
+```
+
+Set the sample rate on the ffmpeg command line to match your settings.
+
+
+####todo:
+
+json config file for all variables, including AI and AO device IDs, samplerate, etc, all AI and AO options should be configurable
 on the fly config changes via webui
-auto compute audio frames depending on sample rate selected by user
+audioclient should be able to output AI to stdout
 
