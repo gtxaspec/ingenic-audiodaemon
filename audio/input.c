@@ -71,7 +71,7 @@ void *ai_record_thread(void *arg) {
 
     int ret;
 
-    printf("[INFO] Sending audio data to input client\n");  // Moved out of the loop
+    printf("[INFO] Sending audio data to input client\n");
 
     while (1) {  // Infinite loop
         // Polling for frame
@@ -91,15 +91,15 @@ void *ai_record_thread(void *arg) {
         ssize_t wr_sock = write(sockfd, frm.virAddr, frm.len);  // Send the recorded audio data to the client over the socket
 
         // Check for SIGPIPE or other errors
-       if (wr_sock < 0) {
-           if (errno == EPIPE) {
-               printf("[INFO] Client disconnected\n");
-           } else {
-               perror("write to sockfd");
-       }
-       IMP_AI_ReleaseFrame(0, 0, &frm);
-       return NULL;
-}
+        if (wr_sock < 0) {
+            IMP_AI_ReleaseFrame(0, 0, &frm);
+            if (errno == EPIPE) {
+                printf("[INFO] Client disconnected\n");
+            } else {
+                perror("write to sockfd");
+            }
+            return NULL;
+        }
 
         IMP_AI_ReleaseFrame(0, 0, &frm);
     }
