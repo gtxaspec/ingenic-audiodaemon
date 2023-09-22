@@ -44,7 +44,7 @@ ffmpeg -re -i https://wpr-ice.streamguys1.com/wpr-ideas-mp3-64 -af volume=-15dB 
 ffmpeg -f s16le -ar 16000 -ac 1 -i test_file.pcm -acodec pcm_s16le -f s16le -ac 1 -ar 48000 - | ./audio_client -s
 ```
 
-send audio from laptop to device:
+#### send audio from laptop to device:
 
 on device:
 
@@ -57,7 +57,9 @@ on laptop:
 ffmpeg -f alsa -ac 1 -i default -f s16le -ar 48000 -ac 1 - | ffmpeg -f s16le -i - -f s16le - | nc 192.168.2.2 8081
 ```
 
-Set the sample rate on the ffmpeg command line to match your settings.
+Latency is decent!
+
+Note: Set the sample rate on the ffmpeg command line to match your settings.
 
 
 #### todo:
