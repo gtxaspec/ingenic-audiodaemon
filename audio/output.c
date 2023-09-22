@@ -13,11 +13,11 @@ void reinitialize_audio_device(int devID) {
 
     // Initialize the audio device again
     IMPAudioIOAttr attr = {
-        .samplerate = AUDIO_SAMPLE_RATE_16000,
+        .samplerate = AO_SAMPLE_RATE,
         .bitwidth = AUDIO_BIT_WIDTH_16,
         .soundmode = AUDIO_SOUND_MODE_MONO,
         .frmNum = 20,
-        .numPerFrm = 640,
+        .numPerFrm = AO_NUM_PER_FRM,
         .chnCnt = 1
     };
 

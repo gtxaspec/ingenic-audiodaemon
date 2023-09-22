@@ -15,4 +15,16 @@ extern int active_client_sock;
 
 int create_thread(pthread_t *thread_id, void *(*start_routine) (void *), void *arg);
 
+// Sample rates
+#define AUDIO_SAMPLE_RATE_8000	 8000
+#define AUDIO_SAMPLE_RATE_16000  16000
+#define AUDIO_SAMPLE_RATE_24000  24000
+#define AUDIO_SAMPLE_RATE_32000  32000
+#define AUDIO_SAMPLE_RATE_44100  44100
+#define AUDIO_SAMPLE_RATE_48000  48000
+#define AUDIO_SAMPLE_RATE_96000  96000
+
+// Compute numPerFrm based on sample rate
+int compute_numPerFrm(int sample_rate);
+
 #endif // UTILS_H

@@ -16,3 +16,7 @@ int create_thread(pthread_t *thread_id, void *(*start_routine) (void *), void *a
     }
     return ret;
 }
+
+int compute_numPerFrm(int sample_rate) {
+    return sample_rate * 0.040;  // Assuming a 40ms frame duration
+}

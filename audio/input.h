@@ -5,7 +5,8 @@
 #include <imp/imp_audio.h>
 #include "output.h"   // Add this line to include output.h
 
-#define AI_SAMPLE_RATE 16000
+#define AI_SAMPLE_RATE AUDIO_SAMPLE_RATE_48000  // Default sample rate for audio input; can be changed
+#define AI_NUM_PER_FRM compute_numPerFrm(AI_SAMPLE_RATE)
 #define AI_CHN_VOL 100
 #define AI_GAIN 25
 

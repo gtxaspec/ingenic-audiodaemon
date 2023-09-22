@@ -10,13 +10,13 @@ int initialize_audio_input_device(int devID) {
     IMPAudioIOAttr attr;
 
     // Set public attribute of AI device
-    attr.samplerate = AUDIO_SAMPLE_RATE_16000;
+    attr.samplerate = AI_SAMPLE_RATE;
     attr.bitwidth = AUDIO_BIT_WIDTH_16;
     attr.soundmode = AUDIO_SOUND_MODE_MONO;
     attr.frmNum = 40;
-    attr.numPerFrm = 640;
+    attr.numPerFrm = AI_NUM_PER_FRM;
     attr.chnCnt = 1;
-    
+
     ret = IMP_AI_SetPubAttr(devID, &attr);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetPubAttr failed");
