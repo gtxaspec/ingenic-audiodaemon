@@ -12,17 +12,18 @@ int main(int argc, char *argv[]) {
     char *audio_file_path = NULL;
     int record_audio = 0;  // New flag for audio recording
 
-    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio) != 0) {  // Adjusted for the new flag
+    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio) != 0) {
         exit(1);
     }
 
     int sockfd = setup_client_connection(record_audio ? AUDIO_INPUT_REQUEST : AUDIO_OUTPUT_REQUEST);
 
-    printf("[INFO] Connected to daemon\n");
-
     if (sockfd < 0) {
+        perror("Failed to connect to daemon");
         exit(1);
     }
+
+    printf("[INFO] Connected to daemon\n");
 
     if (record_audio) {
         // Send audio input request to the server
