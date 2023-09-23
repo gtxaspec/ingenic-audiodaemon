@@ -140,7 +140,6 @@ void *audio_output_server_thread(void *arg) {
         pthread_cond_broadcast(&audio_data_cond);
         pthread_mutex_unlock(&audio_buffer_lock);
 
-
         close(client_sock);
         printf("[INFO] Client Disconnected\n");
     }
