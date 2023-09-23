@@ -1,20 +1,22 @@
 # Ingenic Audio Daemon
 
-The **Ingenic Audio Daemon** serves as an intermediary between the audio kernel modules and client applications, facilitating audio input and output operations.
+The **Ingenic Audio Daemon** serves as an intermediary between the audio kernel modules and client applications, facilitating audio input and output operations on Ingenic hardware.
 
 ## Prerequisites
 
-T20/31/T40: Audio Input & Playback tested on T20/T31.  Before running the audio daemon, ensure that the audio kernel modules are loaded. The daemon sets up the `IMP_AI` and `IMP_AO` devices, so it's essential for these modules to be initialized first.
+T20/T31/T40: Audio Input & Playback tested on T20/T31.  
+Before running the audio daemon, ensure that the audio kernel modules are loaded.  
+The daemon sets up the `IMP_AI` and `IMP_AO` devices, so it's essential for these modules to be initialized first.
+
+## Features
+
+- Low latency
+- AI supports multiple clients
+- AO supports queued playback from multiple sources
 
 ## Running the Daemon
 
 To run the audio daemon:
-
-```
-./audio_daemon
-```
-
-### Usage:
 
 ```
 ./audio_daemon [-d <AI|AO>]
@@ -26,20 +28,20 @@ To run the audio daemon:
 
 ## Using the Audio Client
 
-The audio client provides various functionalities, from playing audio to recording it.
+The audio client provides various functionalities, from playing audio to recording it.  Audio client functionality can be integrated into your own program to interface with the daemon if desired.
 
 ### Usage:
 
 ```
-./audio_client [-f <audio_file_path>] [-s] [-r <audio_output_file_path>]
+./audio_client [-f <audio_file_path>] [-s] [-r <audio_output_file_path>] [-o]
 ```
 
 #### Options:
 
-- `-f`: Play an audio file specified by `<audio_file_path>`.
-- `-s`: Read audio from the standard input (`stdin`).
-- `-r`: Record audio and save it to a file specified by `<audio_output_file_path>`.
-- `-o`: Output audio to the standard output (`stdout`).
+- `-f`: AO - Play an audio file specified by `<audio_file_path>`.
+- `-s`: AO - Read audio from the standard input (`stdin`).
+- `-r`: AI - Record audio and save it to a file specified by `<audio_output_file_path>`.
+- `-o`: AI - Output audio to the standard output (`stdout`).
 
 For example, if you want to play a specific audio file, you can use:
 
@@ -74,7 +76,6 @@ Note: Set the sample rate on the ffmpeg command line to match your settings.
 
 #### todo:
 
-json config file for all variables, including AI and AO device IDs, samplerate, etc, all AI and AO options should be configurable
-on the fly config changes via webui
-output AI and AO parameters to logcat, switch some logging to logcat
-add option to disable AO or AI on run
+- json config file for all variables, including AI and AO device IDs, samplerate, etc, all AI and AO options should be configurable  
+- on the fly config changes via webui  
+- output AI and AO parameters to logcat, add switch to log to logcat if desired  

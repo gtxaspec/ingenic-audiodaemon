@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     // Variables to track if we should disable AI or AO
     int disable_ai = 0;
     int disable_ao = 0;
-    
+
     // Parse command line arguments
     int opt;
     while ((opt = getopt(argc, argv, "d:")) != -1) {
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     if (!disable_ai) {
         pthread_join(input_server_thread, NULL);
     }
-    
+
     if (!disable_ao) {
         pthread_join(output_server_thread, NULL);
         pthread_join(play_thread_id, NULL);
