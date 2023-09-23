@@ -1,0 +1,23 @@
+{
+    "audio": {
+        "sample_rate": 48000,
+        "device_id": 0,
+        "channel_id": 0,
+        "AO_attributes": {
+            "frmNum": 40
+        },
+        "AI_attributes": {
+            "frmNum": 40
+        },
+        "channel_counts": 1,
+        "AO_channel_gain": 25,
+        "AO_channel_volume": 100,
+        "AI_channel_gain": 25,
+        "AI_channel_volume": 100,
+        "frame_size": 1280
+    },
+    "network": {
+        "audio_input_socket_path": "ingenic_audio_input",
+        "audio_output_socket_path": "ingenic_audio_output"
+    }
+}
