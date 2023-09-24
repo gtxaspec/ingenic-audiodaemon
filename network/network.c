@@ -24,7 +24,7 @@ void *audio_input_server_thread(void *arg) {
         return NULL;
     } else {
         printf("[INFO] Successfully bound socket\n");
-        printf("[DEBUG] Binding to socket path: %s\n", &addr.sun_path[1]);
+        printf("[DEBUG] Bound to socket path: %s\n", &addr.sun_path[1]);
     }
 
     printf("[INFO] Attempting to listen on socket\n");
@@ -82,7 +82,7 @@ void *audio_output_server_thread(void *arg) {
         return NULL;
     } else {
         printf("[INFO] Successfully bound socket\n");
-        printf("[DEBUG] Binding to socket path: %s\n", &addr.sun_path[1]);
+        printf("[DEBUG] Bound to socket path: %s\n", &addr.sun_path[1]);
     }
 
     printf("[INFO] Attempting to listen on socket\n");
