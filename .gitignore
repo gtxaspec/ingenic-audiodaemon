@@ -4,3 +4,4 @@ audio_daemon
 audio_client
 audioplay_t31
 echo_core_files.sh
+version.h

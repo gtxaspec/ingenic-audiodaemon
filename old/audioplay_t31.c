@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <imp/imp_audio.h>
 #include <imp/imp_log.h>
+#include "../version.h"
 
 #define TAG "AO_T31"
 #define AO_TEST_SAMPLE_RATE 16000
@@ -102,6 +103,8 @@ int ao_basic_test(AudioConfig *config) {
 }
 
 int main(int argc, char *argv[]) {
+    printf("INGENIC AUDIOPLAY_T31 Version: %s\n", VERSION);
+
     if (argc < 2) usage();
 
     AudioConfig config = {

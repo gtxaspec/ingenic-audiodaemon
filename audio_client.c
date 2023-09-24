@@ -6,12 +6,15 @@
 #include "client/client_network.h"
 #include "client/playback.h"
 #include "client/record.h"
+#include "version.h"
 
 int main(int argc, char *argv[]) {
     int use_stdin = 0;
     char *audio_file_path = NULL;
     int record_audio = 0;
     int output_to_stdout = 0;
+
+    printf("INGENIC AUDIO CLIENT Version: %s\n", VERSION);
 
     if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio, &output_to_stdout) != 0) {
         exit(1);

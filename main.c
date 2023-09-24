@@ -5,8 +5,11 @@
 #include <signal.h>
 #include <unistd.h>
 #include <string.h>
+#include "version.h"
 
 int main(int argc, char *argv[]) {
+    printf("INGENIC AUDIO DAEMON Version: %s\n", VERSION);
+
     // Variables to track if we should disable AI or AO
     int disable_ai = 0;
     int disable_ao = 0;
