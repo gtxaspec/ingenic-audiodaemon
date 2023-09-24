@@ -1,49 +1,49 @@
 {
-    "audio": {
-        "AO_attributes": {
-            "device_id": 0,
-            "channel_id": 0,
-            "sample_rate": 48000,
-            "frmNum": 40,
-            "channel_gain": 25,
-            "channel_counts": 1,
-            "frame_size": 1280,
-            "bitwidth": "AUDIO_BIT_WIDTH_16",
-            "soundmode": "AUDIO_SOUND_MODE_MONO",
-            "enable_agc": false,
-            "enable_hpf": false
-        },
-        "AI_attributes": {
-            "device_id": 0,
-            "channel_id": 0,
-            "sample_rate": 48000,
-            "frmNum": 40,
-            "channel_gain": 25,
-            "channel_counts": 1,
-            "frame_size": 1280,
-            "bitwidth": "AUDIO_BIT_WIDTH_16",
-            "soundmode": "AUDIO_SOUND_MODE_MONO",
-            "SetAlcGain": 0,
-            "enable_ns": false,
-            "enable_agc": false,
-            "enable_hpf": false,
-            "set_alc_gain": 0
-        },
-        "AI_AGC_attributes": {
-           "TargetLevelDbfs": 0,
-           "CompressionGaindB": 6
-        },
-        "AO_HPF_attributes": {
-        "IMP_AO_SetHpfCoFrequency": 100
-        },
-        "AO_AGC_attributes": {
-        "IMP_AO_AGC_TargetLevelDbfs": 0,
-        "IMP_AO_AGC_CompressionGaindB": 6
-       },
-        "frame_size": 1280
+  "audio": {
+    "AO_attributes": {
+      "device_id": 0,
+      "channel_id": 0,
+      "sample_rate": 48000,
+      "frmNum": 40,
+      "frame_size": 1280,
+      "bitwidth": "AUDIO_BIT_WIDTH_16",
+      "soundmode": "AUDIO_SOUND_MODE_MONO",
+      "SetVol": 100,
+      "SetGain": 25,
+      "Enable_Agc": false,
+      "AGC_attributes": {
+        "TargetLevelDbfs": 0,
+        "CompressionGaindB": 6
+      },
+      "Enable_Hpf": false,
+      "HPF_attributes": {
+        "SetHpfCoFrequency": 100
+      }
+    },
+    "AI_attributes": {
+      "device_id": 0,
+      "channel_id": 0,
+      "sample_rate": 48000,
+      "frmNum": 40,
+      "frame_size": 1280,
+      "bitwidth": "AUDIO_BIT_WIDTH_16",
+      "soundmode": "AUDIO_SOUND_MODE_MONO",
+      "SetAlcGain": 0,
+      "SetVol": 100,
+      "SetGain": 25,
+      "Enable_Ns": false,
+      "Level_Ns": 0,
+      "Enable_Hpf": false,
+      "EnableAec": false,
+      "Enable_Agc": false,
+      "AGC_attributes": {
+        "TargetLevelDbfs": 0,
+        "CompressionGaindB": 6
+      }
     },
     "network": {
-        "audio_input_socket_path": "ingenic_audio_input",
-        "audio_output_socket_path": "ingenic_audio_output"
+      "audio_input_socket_path": "ingenic_audio_input",
+      "audio_output_socket_path": "ingenic_audio_output"
     }
+  }
 }

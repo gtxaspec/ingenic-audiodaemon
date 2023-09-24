@@ -1,14 +1,11 @@
 #include "audio/output.h"
 #include "audio/input.h"
 #include "network/network.h"
-#include "utils/utils.h"  // Make sure to include utils
+#include "utils/utils.h"
 #include <signal.h>
 #include <unistd.h>
 #include <string.h>
 #include "version.h"
-
-//As libimp is based on C++ libraries, so mips-linux-gnu-g++ is used for linking process.
-//API linking order: [IVS libraries] [mxu libraries] [libimp/libsysutils] [libalog].
 
 int main(int argc, char *argv[]) {
     printf("INGENIC AUDIO DAEMON Version: %s\n", VERSION);

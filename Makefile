@@ -54,6 +54,10 @@ version:
 %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
+#As libimp is based on C++ libraries, so mips-linux-gnu-g++ is used for linking process.
+#API linking order: [IVS libraries] [mxu libraries] [libimp/libsysutils] [libalog]
+#(2022). T31 Development resource compilation (Rev 1.0). [Ingenic]. Section 4.1, Page 9.
+
 audio_daemon: $(AUDIO_DAEMON_OBJS)
 	$(CPLUSPLUS) $(LDFLAG) -o $@ $^ $(LIBS) -lpthread -lm -lrt -ldl
 	$(STRIP) $@
