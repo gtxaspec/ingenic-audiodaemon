@@ -79,3 +79,5 @@ Note: Set the sample rate on the ffmpeg command line to match your settings.
 - json config file for all variables, including AI and AO device IDs, samplerate, etc, all AI and AO options should be configurable  
 - on the fly config changes via webui  
 - output AI and AO parameters to logcat, add switch to log to logcat if desired  
+- add logging to indicate is AI or AO are currently in use by another program, as well as logging in stdout that gives debug output upon initing AI and AO  
+- possibly add on the fly sample rate conversion  
