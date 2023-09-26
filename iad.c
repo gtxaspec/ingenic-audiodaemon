@@ -1,3 +1,5 @@
+/* INGENIC AUDIO DAEMON */
+
 #include "audio/output.h"
 #include "audio/input.h"
 #include "network/network.h"

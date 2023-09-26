@@ -1,7 +1,7 @@
 # Ignore object files and binaries
 *.o
-audio_daemon
-audio_client
-audioplay_t31
+iad
+iac
+audioplay
 echo_core_files.sh
 version.h

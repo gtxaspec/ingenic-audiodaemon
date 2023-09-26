@@ -38,8 +38,8 @@ endif
 # Targets and Object Files
 AUDIO_PROGS = audioplay iad iac
 
-iad_OBJS = main.o audio/output.o audio/input.o network/network.o utils/utils.o utils/logging.o $(SHIM)
-iac_OBJS = audio_client.o client/cmdline.o client/client_network.o client/playback.o client/record.o $(SHIM)
+iad_OBJS = iad.o audio/output.o audio/input.o network/network.o utils/utils.o utils/logging.o $(SHIM)
+iac_OBJS = iac.o client/cmdline.o client/client_network.o client/playback.o client/record.o $(SHIM)
 
 .PHONY: all version clean distclean
 
