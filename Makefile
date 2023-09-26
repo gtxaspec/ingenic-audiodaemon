@@ -36,10 +36,10 @@ LIBS = $(SDK_LIB_DIR)/libimp.so $(SDK_LIB_DIR)/libalog.so
 endif
 
 # Targets and Object Files
-AUDIO_PROGS = audioplay_t31 audio_daemon audio_client
+AUDIO_PROGS = audioplay iad iac
 
-AUDIO_DAEMON_OBJS = main.o audio/output.o audio/input.o network/network.o utils/utils.o utils/logging.o $(SHIM)
-AUDIO_CLIENT_OBJS = audio_client.o client/cmdline.o client/client_network.o client/playback.o client/record.o $(SHIM)
+iad_OBJS = main.o audio/output.o audio/input.o network/network.o utils/utils.o utils/logging.o $(SHIM)
+iac_OBJS = audio_client.o client/cmdline.o client/client_network.o client/playback.o client/record.o $(SHIM)
 
 .PHONY: all version clean distclean
 
@@ -58,20 +58,20 @@ version:
 #API linking order: [IVS libraries] [mxu libraries] [libimp/libsysutils] [libalog]
 #(2022). T31 Development resource compilation (Rev 1.0). [Ingenic]. Section 4.1, Page 9.
 
-audio_daemon: $(AUDIO_DAEMON_OBJS)
+iad: $(iad_OBJS)
 	$(CPLUSPLUS) $(LDFLAG) -o $@ $^ $(LIBS) -lpthread -lm -lrt -ldl
 	$(STRIP) $@
 
-audio_client: $(AUDIO_CLIENT_OBJS)
+iac: $(iac_OBJS)
 	$(CPLUSPLUS) $(LDFLAG) -o $@ $^ -lpthread -lm -lrt -ldl
 	$(STRIP) $@
 
-audioplay_t31: old/audioplay_t31.o $(SHIM)
+audioplay: standalone/audioplay.o $(SHIM)
 	$(CPLUSPLUS) $(LDFLAG) -o $@ $^ $(LIBS) -lpthread -lm -lrt -ldl
 	$(STRIP) $@
 
 clean:
-	rm -f *.o *~ audio/*.o network/*.o client/*.o utils/*.o version.h audio_daemon audio_client audioplay_t31
+	rm -f *.o *~ audio/*.o network/*.o client/*.o utils/*.o version.h iad iac audioplay
 
 distclean: clean
 	rm -f $(AUDIO_PROGS)

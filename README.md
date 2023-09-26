@@ -1,6 +1,6 @@
 # Ingenic Audio Daemon
 
-The **Ingenic Audio Daemon** serves as an intermediary between the audio kernel modules and client applications, facilitating audio input and output operations on Ingenic hardware.
+The **Ingenic Audio Daemon** (iad) serves as an intermediary between the audio kernel modules and client applications, facilitating audio input and output operations on Ingenic hardware.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ The daemon sets up the `IMP_AI` and `IMP_AO` devices, so it's essential for thes
 To run the audio daemon:
 
 ```
-./audio_daemon [-d <AI|AO>]
+./iad [-d <AI|AO>]
 ```
 
 #### Options:
@@ -33,7 +33,7 @@ The audio client provides various functionalities, from playing audio to recordi
 ### Usage:
 
 ```
-./audio_client [-f <audio_file_path>] [-s] [-r <audio_output_file_path>] [-o]
+./iac [-f <audio_file_path>] [-s] [-r <audio_output_file_path>] [-o]
 ```
 
 #### Options:
@@ -46,14 +46,14 @@ The audio client provides various functionalities, from playing audio to recordi
 For example, if you want to play a specific audio file, you can use:
 
 ```
-./audio_client -f path_to_your_audio_file.wav
+./iac -f path_to_your_audio_file.wav
 ```
 
 #### stdin examples:
 
 ```
-ffmpeg -re -i https://wpr-ice.streamguys1.com/wpr-ideas-mp3-64 -af volume=-15dB  -acodec pcm_s16le -f s16le -ac 1 -ar 48000 - | ./audio_client -s
-ffmpeg -f s16le -ar 16000 -ac 1 -i test_file.pcm -acodec pcm_s16le -f s16le -ac 1 -ar 48000 - | ./audio_client -s
+ffmpeg -re -i https://wpr-ice.streamguys1.com/wpr-ideas-mp3-64 -af volume=-15dB  -acodec pcm_s16le -f s16le -ac 1 -ar 48000 - | ./iac -s
+ffmpeg -f s16le -ar 16000 -ac 1 -i test_file.pcm -acodec pcm_s16le -f s16le -ac 1 -ar 48000 - | ./iac -s
 ```
 
 #### send audio from laptop to device:
@@ -61,7 +61,7 @@ ffmpeg -f s16le -ar 16000 -ac 1 -i test_file.pcm -acodec pcm_s16le -f s16le -ac 
 on device:
 
 ```
-nc -l -p 8081 | ffmpeg -f s16le -ar 48000 -ac 1 -i - -af volume=-15dB -f s16le -ar 48000 -ac 1 - | ./audio_client -s
+nc -l -p 8081 | ffmpeg -f s16le -ar 48000 -ac 1 -i - -af volume=-15dB -f s16le -ar 48000 -ac 1 - | ./iac -s
 ```
 on laptop:
 
