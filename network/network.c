@@ -2,6 +2,7 @@
 #include "../audio/output.h"
 #include "../utils/utils.h"
 #include "../audio/input.h"
+#include "../client/client_network.h"
 
 #define AUDIO_CONTROL_SOCKET_PATH "ingenic_audio_control"
 #define CLIENT_QUEUED 1
@@ -46,16 +47,21 @@ void *audio_control_server_thread(void *arg) {
             continue;
         }
 
-        pthread_mutex_lock(&audio_buffer_lock);
+    int client_request_type;
+    recv(client_sock, &client_request_type, sizeof(int), 0);
 
-        if (active_client_sock != -1) {
-            write(client_sock, "queued", strlen("queued"));
-        } else {
-            write(client_sock, "not_queued", strlen("not_queued"));
-        }
+    pthread_mutex_lock(&audio_buffer_lock);
 
-        pthread_mutex_unlock(&audio_buffer_lock);
-        close(client_sock);  // Close the control socket after sending the message
+    if (client_request_type == AUDIO_OUTPUT_REQUEST && active_client_sock != -1) {
+        write(client_sock, "queued", strlen("queued"));
+    } else {
+        write(client_sock, "not_queued", strlen("not_queued"));
+    }
+
+    pthread_mutex_unlock(&audio_buffer_lock);
+
+    close(client_sock);  // Close the control socket after sending the message
+
     }
 
     close(sockfd);

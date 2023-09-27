@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
     char *audio_file_path = NULL;
     int record_audio = 0;
     int output_to_stdout = 0;
+    int request_type;
 
     printf("INGENIC AUDIO CLIENT Version: %s\n", VERSION);
 
@@ -22,7 +23,16 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    if (record_audio) {
+        request_type = AUDIO_INPUT_REQUEST;
+    } else {
+        request_type = AUDIO_OUTPUT_REQUEST;
+    }
+
     int control_sockfd = setup_control_client_connection();
+    // Send the request type to the control server
+    write(control_sockfd, &request_type, sizeof(int));
+
     char control_msg[100];
     int read_size = read(control_sockfd, control_msg, sizeof(control_msg) - 1);
     if (read_size > 0) {
