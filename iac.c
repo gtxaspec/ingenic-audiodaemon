@@ -22,6 +22,19 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    int control_sockfd = setup_control_client_connection();
+    char control_msg[100];
+    int read_size = read(control_sockfd, control_msg, sizeof(control_msg) - 1);
+    if (read_size > 0) {
+	control_msg[read_size] = '\0';
+        printf("%s\n", control_msg);
+        if (strcmp(control_msg, "queued") == 0) {
+            close(control_sockfd);
+            exit(0);  // Exit the client if it's queued
+        }
+    }
+    close(control_sockfd);
+
     int sockfd = setup_client_connection(record_audio ? AUDIO_INPUT_REQUEST : AUDIO_OUTPUT_REQUEST);
 
     if (sockfd < 0) {

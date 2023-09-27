@@ -7,9 +7,11 @@
 
 #define AUDIO_INPUT_SOCKET_PATH "ingenic_audio_input"
 #define AUDIO_OUTPUT_SOCKET_PATH "ingenic_audio_output"
+#define AUDIO_CONTROL_SOCKET_PATH "ingenic_audio_control"
 
 // Functions
 void *audio_input_server_thread(void *arg);
 void *audio_output_server_thread(void *arg);
+void *audio_control_server_thread(void *arg);  // Added this line
 
 #endif // NETWORK_H

@@ -3,6 +3,65 @@
 #include "../utils/utils.h"
 #include "../audio/input.h"
 
+#define AUDIO_CONTROL_SOCKET_PATH "ingenic_audio_control"
+#define CLIENT_QUEUED 1
+#define CLIENT_NOT_QUEUED 0
+
+void *audio_control_server_thread(void *arg) {
+    printf("[INFO] Entering audio_control_server_thread\n");
+
+    int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("socket");
+        return NULL;
+    }
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    strncpy(&addr.sun_path[1], AUDIO_CONTROL_SOCKET_PATH, sizeof(addr.sun_path) - 2);
+
+    printf("[INFO] Attempting to bind control socket\n");
+    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(sa_family_t) + strlen(AUDIO_CONTROL_SOCKET_PATH) + 1) == -1) {
+        perror("bind failed");
+        close(sockfd);
+        return NULL;
+    } else {
+        printf("[INFO] Successfully bound control socket\n");
+        printf("[DEBUG] Bound to control socket path: %s\n", &addr.sun_path[1]);
+    }
+
+    printf("[INFO] Attempting to listen on control socket\n");
+    if (listen(sockfd, 5) == -1) {
+        perror("listen");
+        close(sockfd);
+        return NULL;
+    }
+
+    while (1) {
+        printf("[INFO] Waiting for control client connection\n");
+        int client_sock = accept(sockfd, NULL, NULL);
+        if (client_sock == -1) {
+            perror("accept");
+            continue;
+        }
+
+        pthread_mutex_lock(&audio_buffer_lock);
+
+        if (active_client_sock != -1) {
+            write(client_sock, "queued", strlen("queued"));
+        } else {
+            write(client_sock, "not_queued", strlen("not_queued"));
+        }
+
+        pthread_mutex_unlock(&audio_buffer_lock);
+        close(client_sock);  // Close the control socket after sending the message
+    }
+
+    close(sockfd);
+    return NULL;
+}
+
 void *audio_input_server_thread(void *arg) {
     printf("[INFO] Entering audio_input_server_thread\n");
 

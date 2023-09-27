@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     signal(SIGPIPE, SIG_IGN);
     printf("[INFO] Starting audio daemon\n");
 
-    pthread_t play_thread_id, input_server_thread, output_server_thread;
+    pthread_t play_thread_id, input_server_thread, output_server_thread, control_server_thread;
 
     if (!disable_ao) {
         if (create_thread(&play_thread_id, ao_test_play_thread, NULL)) {
@@ -67,6 +67,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // Create the control server thread
+    if (create_thread(&control_server_thread, audio_control_server_thread, NULL)) {
+        return 1;
+    }
+
     if (!disable_ai) {
         pthread_join(input_server_thread, NULL);
     }
@@ -75,6 +80,8 @@ int main(int argc, char *argv[]) {
         pthread_join(output_server_thread, NULL);
         pthread_join(play_thread_id, NULL);
     }
+
+    pthread_join(control_server_thread, NULL);  // Wait for control server thread to finish
 
     pthread_mutex_destroy(&audio_buffer_lock);
     pthread_cond_destroy(&audio_data_cond);
