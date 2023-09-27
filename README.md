@@ -3,8 +3,8 @@
 The **Ingenic Audio Daemon** (iad) serves as an intermediary between the audio kernel modules and client applications, facilitating audio input and output operations on Ingenic hardware.
 
 - **iad (Ingenic Audio Daemon)**: A background process for handling audio on Ingenic devices.
-- **iac (Ingenic Audio Client)**: A client-side utility to interact with the audio daemon.
-- **audioplay**: A standalone audio player for Ingenic devices.
+  - **iac (Ingenic Audio Client)**: A client-side utility to interact with the audio daemon.
+  - **audioplay**: A standalone audio player for Ingenic devices.
 
 ---
 
