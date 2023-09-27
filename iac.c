@@ -27,10 +27,11 @@ int main(int argc, char *argv[]) {
     int read_size = read(control_sockfd, control_msg, sizeof(control_msg) - 1);
     if (read_size > 0) {
 	control_msg[read_size] = '\0';
-        printf("%s\n", control_msg);
+//        printf("%s\n", control_msg);
         if (strcmp(control_msg, "queued") == 0) {
+        printf("There is another client currently playing audio, audio from this client is queued, waiting for current client to finish.\n");
             close(control_sockfd);
-            exit(0);  // Exit the client if it's queued
+//            exit(0);  // We can exit the client if it's queued, but not right now
         }
     }
     close(control_sockfd);
