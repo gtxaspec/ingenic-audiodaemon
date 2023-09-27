@@ -2,17 +2,70 @@
 
 The **Ingenic Audio Daemon** (iad) serves as an intermediary between the audio kernel modules and client applications, facilitating audio input and output operations on Ingenic hardware.
 
+- **iad (Ingenic Audio Daemon)**: A background process for handling audio on Ingenic devices.
+  - **iac (Ingenic Audio Client)**: A client-side utility to interact with the audio daemon.
+  - **audioplay**: A standalone audio player for Ingenic devices.
+
+---
+
 ## Prerequisites
 
-T20/T31/T40: Audio Input & Playback tested on T20/T31.  
-Before running the audio daemon, ensure that the audio kernel modules are loaded.  
-The daemon sets up the `IMP_AI` and `IMP_AO` devices, so it's essential for these modules to be initialized first.
+- T20/T31/T40 Devices: Audio Input & Playback tested on T20/T31.  If you have a T40 device, feedback is welcome.
+- Before running the audio daemon, ensure that the audio kernel modules are loaded.
+- The daemon sets up the `IMP_AI` and `IMP_AO` devices, so it's essential for these modules to be initialized first.
+
+---
 
 ## Features
 
 - Low latency
 - AI supports multiple clients
 - AO supports queued playback from multiple sources
+
+---
+
+## Compiling
+
+### Prerequisites
+
+Before you begin, ensure you have:
+
+- A Linux-based operating system.
+- The required cross-compilation tools for Ingenic devices.
+- Git (for versioning support in the build system).
+
+### Directory Structure
+
+- `src/`: Contains the source code for the tools. Each tool has its own subdirectory.
+- `lib/`: Contains necessary libraries.
+- `include/`: Contains header files.
+- `build/`: Contains object files and binaries after compilation.
+- `config/`: Contains configuration files and templates.
+
+### Compiling the Tools
+
+1. **Prepare the Environment**: Ensure you have set up the cross-compilation environment for Ingenic devices.
+
+2. **Clone the Repository**
+
+3. **Compile All Tools**: `make`
+This will compile the audio daemon (iad), audio client (iac), and the standalone audio player (audioplay)
+
+4. **Compile Individual Tools**:
+If you only need to compile one of the tools, you can do so individually:
+```
+make iad        # For the audio daemon
+make iac        # For the audio client
+make audioplay  # For the standalone audio player
+```
+
+5. **Clean the Build**:
+If you need to clean up the compiled objects and binaries:
+`make clean`
+For a deeper clean (removes the compiled binaries as well):
+`make distclean`
+
+---
 
 ## Running the Daemon
 
@@ -25,6 +78,8 @@ To run the audio daemon:
 #### Options:
 
 - `-d`: Disable Audio Input or Output by `<AI|AO>`.
+
+---
 
 ## Using the Audio Client
 
@@ -73,6 +128,7 @@ Latency is decent!
 
 Note: Set the sample rate on the ffmpeg command line to match your settings.
 
+---
 
 #### todo:
 
@@ -80,4 +136,3 @@ Note: Set the sample rate on the ffmpeg command line to match your settings.
 - on the fly config changes via webui  
 - output AI and AO parameters to logcat, add switch to log to logcat if desired  
 - add logging to indicate is AI or AO are currently in use by another program, as well as logging in stdout that gives debug output upon initing AI and AO  
-- possibly add on the fly sample rate conversion  

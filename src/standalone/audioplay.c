@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <imp/imp_audio.h>
 #include <imp/imp_log.h>
-#include "../version.h"
+#include "../build/version.h"
 
 #define TAG "AO_T31"
 #define AO_TEST_SAMPLE_RATE 16000
