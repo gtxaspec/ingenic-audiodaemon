@@ -1,9 +1,9 @@
-#include "input.h"
-#include "../utils/utils.h"
-#include <imp/imp_audio.h>
-#include <imp/imp_log.h>
 #include <unistd.h>
 #include <errno.h>
+#include <imp/imp_audio.h>
+#include <imp/imp_log.h>
+#include "input.h"
+#include "../utils/utils.h"
 
 int initialize_audio_input_device(int devID) {
     int ret;
@@ -66,9 +66,6 @@ int initialize_audio_input_device(int devID) {
 }
 
 void *ai_record_thread(void *arg) {
-    AiThreadArg *thread_arg = (AiThreadArg *) arg;
-    int sockfd = thread_arg->sockfd;
-
     int ret;
 
     printf("[INFO] Sending audio data to input client\n");
@@ -88,18 +85,41 @@ void *ai_record_thread(void *arg) {
             return NULL;
         }
 
-        ssize_t wr_sock = write(sockfd, frm.virAddr, frm.len);  // Send the recorded audio data to the client over the socket
+        pthread_mutex_lock(&audio_buffer_lock);
 
-        // Check for SIGPIPE or other errors
-        if (wr_sock < 0) {
-            IMP_AI_ReleaseFrame(0, 0, &frm);
-            if (errno == EPIPE) {
-                printf("[INFO] Client disconnected\n");
-            } else {
-                perror("write to sockfd");
+        // Iterate over all clients and send the audio data
+        ClientNode *current = client_list_head;
+        while (current) {
+            ssize_t wr_sock = write(current->sockfd, frm.virAddr, frm.len);
+
+            if (wr_sock < 0) {
+                // Handle disconnection of a client
+                if (errno == EPIPE) {
+                    printf("[INFO] Client disconnected\n");
+                } else {
+                    perror("write to sockfd");
+                }
+
+                // Remove the client from the list
+                if (current == client_list_head) {
+                    client_list_head = current->next;
+                    free(current);
+                    current = client_list_head;
+                } else {
+                    ClientNode *temp = client_list_head;
+                    while (temp->next != current) {
+                        temp = temp->next;
+                    }
+                    temp->next = current->next;
+                    free(current);
+                    current = temp->next;
+                }
+                continue;
             }
-            return NULL;
+            current = current->next;
         }
+
+        pthread_mutex_unlock(&audio_buffer_lock);
 
         IMP_AI_ReleaseFrame(0, 0, &frm);
     }

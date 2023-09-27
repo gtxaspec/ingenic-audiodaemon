@@ -7,6 +7,12 @@
 
 #define TAG "AO_T31"
 
+typedef struct ClientNode {
+    int sockfd;  // Socket descriptor for the client
+    struct ClientNode *next;  // Pointer to the next client node
+} ClientNode;
+
+extern ClientNode *client_list_head;
 extern pthread_mutex_t audio_buffer_lock;
 extern pthread_cond_t audio_data_cond;
 extern unsigned char audio_buffer[AO_MAX_FRAME_SIZE];

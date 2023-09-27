@@ -107,7 +107,17 @@ void *audio_input_server_thread(void *arg) {
             continue;
         }
 
-        printf("[INFO] Input client connected\n");
+              pthread_mutex_lock(&audio_buffer_lock);
+
+        // Add the client to the list
+        ClientNode *new_client = (ClientNode *)malloc(sizeof(ClientNode));
+        new_client->sockfd = client_sock;
+        new_client->next = client_list_head;
+        client_list_head = new_client;
+
+        pthread_mutex_unlock(&audio_buffer_lock);
+
+	  printf("[INFO] Input client connected\n");
 
         // Handle the input client...
         AiThreadArg thread_arg;

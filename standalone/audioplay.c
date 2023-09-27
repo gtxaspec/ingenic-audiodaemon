@@ -1,3 +1,5 @@
+/* AUDIO PLAY FOR INGENIC, BASED OFF SAMPLES */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

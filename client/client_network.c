@@ -1,9 +1,9 @@
-#include "client_network.h"
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <unistd.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include "client_network.h"
 
 int setup_control_client_connection() {
     int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);

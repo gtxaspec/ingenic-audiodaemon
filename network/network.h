@@ -12,6 +12,6 @@
 // Functions
 void *audio_input_server_thread(void *arg);
 void *audio_output_server_thread(void *arg);
-void *audio_control_server_thread(void *arg);  // Added this line
+void *audio_control_server_thread(void *arg);
 
 #endif // NETWORK_H

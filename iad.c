@@ -1,12 +1,12 @@
 /* INGENIC AUDIO DAEMON */
 
+#include <signal.h>
+#include <unistd.h>
+#include <string.h>
 #include "audio/output.h"
 #include "audio/input.h"
 #include "network/network.h"
 #include "utils/utils.h"
-#include <signal.h>
-#include <unistd.h>
-#include <string.h>
 #include "version.h"
 
 int main(int argc, char *argv[]) {

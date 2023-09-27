@@ -1,6 +1,6 @@
-#include "output.h"
 #include <pthread.h>
 #include <sched.h>
+#include "output.h"
 #include "../utils/utils.h"
 #include "../utils/logging.h"
 

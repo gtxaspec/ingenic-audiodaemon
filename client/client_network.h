@@ -10,6 +10,6 @@
 
 // Function declarations
 int setup_client_connection(int request_type);
-int setup_control_client_connection();  // Added this line
+int setup_control_client_connection();
 
 #endif // CLIENT_NETWORK_H

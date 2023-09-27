@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
     int read_size = read(control_sockfd, control_msg, sizeof(control_msg) - 1);
     if (read_size > 0) {
 	control_msg[read_size] = '\0';
+//        Don't print the control for now
 //        printf("%s\n", control_msg);
         if (strcmp(control_msg, "queued") == 0) {
         printf("There is another client currently playing audio, audio from this client is queued, waiting for current client to finish.\n");
