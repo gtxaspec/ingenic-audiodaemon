@@ -84,4 +84,6 @@ function stopRecording() {
 }
 
 recordButton.addEventListener("mousedown", startRecording);
-recordButton.addEventListener("mouseup", stopRecording);
+recordButton.addEventListener("mouseup", function() {
+    setTimeout(stopRecording, 300);
+});
