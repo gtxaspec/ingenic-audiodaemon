@@ -5,9 +5,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <libwebsockets.h>
-#include "web_client/cmdline.h"
-#include "web_client/client_network.h"
-#include "web_client/playback.h"
+#include "web_client_src/cmdline.h"
+#include "web_client_src/client_network.h"
+#include "web_client_src/playback.h"
 #include "version.h"
 
 static int active_ws_connections = 0;  // Number of active WebSocket connections
@@ -51,12 +51,27 @@ static struct lws_protocols protocols[] = {
 };
 
 int main(int argc, char *argv[]) {
-    printf("INGENIC WEB AUDIO CLIENT Version: %s\n", VERSION);
+    char *ip_address = NULL;
+    int port = 8089;
+    int debug = 0;
+    int silent = 0;
+
+    parse_cmdline_args(argc, argv, &ip_address, &port, &debug, &silent);
+
+    if (!silent) {
+        printf("INGENIC WEB AUDIO CLIENT Version: %s\n", VERSION);
+        if (!debug) {
+            lws_set_log_level(0, NULL);
+        }
+    } else {
+        lws_set_log_level(LLL_ERR, NULL);
+    }
 
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
 
-    info.port = 8089;
+    info.port = port;
+    info.iface = ip_address;
     info.protocols = protocols;
 
     struct lws_context *context = lws_create_context(&info);
