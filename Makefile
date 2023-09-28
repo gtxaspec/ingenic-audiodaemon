@@ -1,12 +1,18 @@
 # Variables
 commit_tag=$(shell git rev-parse --short HEAD)
 
-CC = $(CROSS_COMPILE)gcc
-CXX = $(CROSS_COMPILE)g++
+CC = ccache $(CROSS_COMPILE)gcc
+CXX = ccache $(CROSS_COMPILE)g++
 STRIP = $(CROSS_COMPILE)strip
 
 SDK_INC_DIR = include
-INCLUDES = -I$(SDK_INC_DIR) -I./build -I./src/network -I./src/audio -I./src/client -I./src/utils
+INCLUDES = -I$(SDK_INC_DIR) \
+           -I./src/iad/network \
+           -I./src/iad/audio \
+           -I./src/iac/client \
+           -I./src/iad/utils\
+           -I./build
+
 CFLAGS = $(INCLUDES) -O2 -Wall -march=mips32r2
 LDFLAGS += -Wl,-gc-sections
 LDLIBS = -lpthread -lm -lrt -ldl
@@ -41,20 +47,13 @@ AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac
 
 iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/network/network.o build/obj/utils/utils.o build/obj/utils/logging.o $(SHIM)
 iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o $(SHIM)
+web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o $(SHIM)
 audioplay_OBJS = build/obj/standalone/audioplay.o $(SHIM)
 wc_console_OBJS = build/obj/wc-console/wc-console.o
 
-.PHONY: all version clean distclean iad iac audioplay deps
+.PHONY: all version clean distclean audioplay wc-console web_client
 
-all: prepare version $(AUDIO_PROGS)
-
-deps:
-	./config/make_libwebsockets_deps.sh
-
-dependancies: deps
-
-prepare:
-	mkdir -p build/obj/audio build/obj/network build/obj/client build/obj/utils build/obj/standalone build/bin build/obj/wc-console build/bin
+all: version $(AUDIO_PROGS)
 
 version:
 	@if  ! grep "$(commit_tag)" build/version.h >/dev/null 2>&1 ; then \
@@ -62,54 +61,80 @@ version:
 	sed 's/COMMIT_TAG/"$(commit_tag)"/g' config/version.tpl.h > build/version.h ; \
 	fi
 
+deps:
+	./scripts/make_libwebsockets_deps.sh
+
+dependancies: deps
+
+build/obj/%.o: src/common/%.c
+	@mkdir -p $(@D)
+	$(CC) -c $(CFLAGS) $< -o $@
+
+build/obj/%.o: src/iad/%.c
+	@mkdir -p $(@D)
+	$(CC) -c $(CFLAGS) $< -o $@
+
+build/obj/%.o: src/iac/%.c
+	@mkdir -p $(@D)
+	$(CC) -c $(CFLAGS) $< -o $@
+
+build/obj/%.o: src/web_client/%.c
+	@mkdir -p $(@D)
+	$(CC) -c $(CFLAGS) $< -o $@
+
+build/obj/standalone/%.o: src/standalone/%.c
+	@mkdir -p $(@D)
+	$(CC) -c $(CFLAGS) $< -o $@
+
+build/obj/wc-console/%.o: src/wc-console/%.c
+	@mkdir -p $(@D)
+	$(CC) -c $(CFLAGS) $< -o $@
+
 #As libimp is based on C++ libraries, so mips-linux-gnu-g++ is used for linking process.
 #API linking order: [IVS libraries] [mxu libraries] [libimp/libsysutils] [libalog]
 #(2022). T31 Development resource compilation (Rev 1.0). [Ingenic]. Section 4.1, Page 9.
 
-build/obj/%.o: src/common/%.c
-	$(CC) -c $(CFLAGS) $< -o $@
-
-build/obj/%.o: src/iad/%.c
-	$(CC) -c $(CFLAGS) $< -o $@
-
-build/obj/%.o: src/iac/%.c
-	$(CC) -c $(CFLAGS) $< -o $@
-
-build/obj/standalone/%.o: src/standalone/%.c
-	$(CC) -c $(CFLAGS) $< -o $@
-
-build/obj/wc-console/%.o: src/wc-console/%.c
-	$(CC) -c $(CFLAGS) $< -o $@
-
 iad: build/bin/iad
 
 build/bin/iad: version $(iad_OBJS)
+	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(LDLIBS)
 	$(STRIP) $@
 
 iac: build/bin/iac
 
 build/bin/iac: version $(iac_OBJS)
+	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) -o $@ $(iac_OBJS) $(LDLIBS)
 	$(STRIP) $@
 
 audioplay: build/bin/audioplay
 
 build/bin/audioplay: version $(audioplay_OBJS)
+	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) -o $@ $(audioplay_OBJS) $(LIBS) $(LDLIBS)
 	$(STRIP) $@
 
 wc-console: build/bin/wc-console
 
 build/bin/wc-console: version $(wc_console_OBJS)
+	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) -o $@ $(wc_console_OBJS) $(SDK_LIB_DIR)/libwebsockets.a $(LDLIBS)
 	$(STRIP) $@
 
+web_client: build/bin/web_client
+
+build/bin/web_client: version $(web_client_OBJS)
+	@mkdir -p $(@D)
+	$(CXX) $(LDFLAGS) -o $@ $(web_client_OBJS) $(SDK_LIB_DIR)/libwebsockets.a $(LDLIBS)
+	$(STRIP) $@
+
 clean:
-	find build/obj -type f -name "*.o" -exec rm {} \;
-	rm -f build/bin/* build/version.h
-	rm -f lib/libwebsockets.a include/lws_config.h include/libwebsockets.h
-	rm -rf build/lws-build include/libwebsockets
+	-find build/obj -type f -name "*.o" -exec rm {} \;
+	-rm -f build/version.h
 
 distclean: clean
-	rm -f $(AUDIO_PROGS)
+	-rm -f $(AUDIO_PROGS)
+	-rm -rf build/*
+	-rm -f lib/libwebsockets.a include/lws_config.h include/libwebsockets.h
+	-rm -rf include/libwebsockets

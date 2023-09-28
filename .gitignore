@@ -4,10 +4,11 @@ build/bin/iad
 build/bin/iac
 build/bin/audioplay
 build/bin/wc-console
+build/bin/web_client
 build/version.h
 build/lws-build/
 include/libwebsockets
 include/libwebsockets.h
 include/lws_config.h
 lib/libwebsockets.a
-config/echo_core_files.sh
+scripts/echo_core_files.sh
