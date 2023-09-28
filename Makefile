@@ -26,7 +26,7 @@ endif
 ifeq ($(CONFIG_MUSL_BUILD), y)
 CROSS_COMPILE?= mipsel-openipc-linux-musl-
 SDK_LIB_DIR = lib
-SHIM = src/common/musl_shim.o
+SHIM = build/obj/musl_shim.o
 endif
 
 ifeq ($(CONFIG_STATIC_BUILD), y)
@@ -42,19 +42,32 @@ AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac
 iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/network/network.o build/obj/utils/utils.o build/obj/utils/logging.o $(SHIM)
 iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o $(SHIM)
 audioplay_OBJS = build/obj/standalone/audioplay.o $(SHIM)
+wc_console_OBJS = build/obj/wc-console/wc-console.o
 
-.PHONY: all version clean distclean iad iac audioplay
+.PHONY: all version clean distclean iad iac audioplay deps
 
 all: prepare version $(AUDIO_PROGS)
 
+deps:
+	./config/make_libwebsockets_deps.sh
+
+dependancies: deps
+
 prepare:
-	mkdir -p build/obj/audio build/obj/network build/obj/client build/obj/utils build/obj/standalone build/bin
+	mkdir -p build/obj/audio build/obj/network build/obj/client build/obj/utils build/obj/standalone build/bin build/obj/wc-console build/bin
 
 version:
 	@if  ! grep "$(commit_tag)" build/version.h >/dev/null 2>&1 ; then \
 	echo "update version.h" ; \
 	sed 's/COMMIT_TAG/"$(commit_tag)"/g' config/version.tpl.h > build/version.h ; \
 	fi
+
+#As libimp is based on C++ libraries, so mips-linux-gnu-g++ is used for linking process.
+#API linking order: [IVS libraries] [mxu libraries] [libimp/libsysutils] [libalog]
+#(2022). T31 Development resource compilation (Rev 1.0). [Ingenic]. Section 4.1, Page 9.
+
+build/obj/%.o: src/common/%.c
+	$(CC) -c $(CFLAGS) $< -o $@
 
 build/obj/%.o: src/iad/%.c
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -63,6 +76,9 @@ build/obj/%.o: src/iac/%.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
 build/obj/standalone/%.o: src/standalone/%.c
+	$(CC) -c $(CFLAGS) $< -o $@
+
+build/obj/wc-console/%.o: src/wc-console/%.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
 iad: build/bin/iad
@@ -83,9 +99,17 @@ build/bin/audioplay: version $(audioplay_OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(audioplay_OBJS) $(LIBS) $(LDLIBS)
 	$(STRIP) $@
 
+wc-console: build/bin/wc-console
+
+build/bin/wc-console: version $(wc_console_OBJS)
+	$(CXX) $(LDFLAGS) -o $@ $(wc_console_OBJS) $(SDK_LIB_DIR)/libwebsockets.a $(LDLIBS)
+	$(STRIP) $@
+
 clean:
 	find build/obj -type f -name "*.o" -exec rm {} \;
 	rm -f build/bin/* build/version.h
+	rm -f lib/libwebsockets.a include/lws_config.h include/libwebsockets.h
+	rm -rf build/lws-build include/libwebsockets
 
 distclean: clean
 	rm -f $(AUDIO_PROGS)

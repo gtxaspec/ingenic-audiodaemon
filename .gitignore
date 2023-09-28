@@ -1,7 +1,13 @@
 # Ignore object files and binaries
 *.o
-iad
-iac
-audioplay
-echo_core_files.sh
-version.h
+build/bin/iad
+build/bin/iac
+build/bin/audioplay
+build/bin/wc-console
+build/version.h
+build/lws-build/
+include/libwebsockets
+include/libwebsockets.h
+include/lws_config.h
+lib/libwebsockets.a
+config/echo_core_files.sh

@@ -5,6 +5,7 @@ The **Ingenic Audio Daemon** (iad) serves as an intermediary between the audio k
 - **iad (Ingenic Audio Daemon)**: A background process for handling audio on Ingenic devices.
   - **iac (Ingenic Audio Client)**: A client-side utility to interact with the audio daemon.
   - **audioplay**: A standalone audio player for Ingenic devices.
+  - **wc-console**: A client utility that establishes a WebSocket server, enabling the capture and streaming of audio data from web browsers.
 
 ---
 
@@ -57,6 +58,8 @@ If you only need to compile one of the tools, you can do so individually:
 make iad        # For the audio daemon
 make iac        # For the audio client
 make audioplay  # For the standalone audio player
+make wc-console # For the websocket server, run `make deps` to build dependencies, 
+                # then `make wc-console`.
 ```
 
 5. **Clean the Build**:
@@ -135,4 +138,4 @@ Note: Set the sample rate on the ffmpeg command line to match your settings.
 - json config file for all variables, including AI and AO device IDs, samplerate, etc, all AI and AO options should be configurable  
 - on the fly config changes via webui  
 - output AI and AO parameters to logcat, add switch to log to logcat if desired  
-- add logging to indicate is AI or AO are currently in use by another program, as well as logging in stdout that gives debug output upon initing AI and AO  
+- stdout logging that gives debug output upon initing AI and AO  
