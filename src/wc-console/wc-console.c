@@ -34,17 +34,37 @@ static struct lws_protocols protocols[] = {
     {NULL, NULL, 0, 0}  // terminator
 };
 
+void display_help(const char *progname) {
+    printf("Usage: %s [options]\n\n", progname);
+    printf("Options:\n");
+    printf("  -s           Run in silent mode\n");
+    printf("  -i <IP>      IP address to bind to (default: bind to all available interfaces)\n");
+    printf("  -p <port>    Port to listen on (default: 8089)\n");
+    printf("  -h           Display this help message\n");
+}
+
 int main(int argc, char **argv) {
     int opt;
+    char *ip = NULL;
+    int port = 8089;
 
     // Parse command line arguments using getopt
-    while ((opt = getopt(argc, argv, "s")) != -1) {
+    while ((opt = getopt(argc, argv, "si:p:h")) != -1) {
         switch (opt) {
             case 's':
                 silent = 1;
                 break;
+            case 'i':
+                ip = optarg;
+                break;
+            case 'p':
+                port = atoi(optarg);
+                break;
+            case 'h':
+                display_help(argv[0]);
+                return 0;
             default:
-                fprintf(stderr, "Usage: %s [-s (for silent mode)]\n", argv[0]);
+                display_help(argv[0]);
                 exit(EXIT_FAILURE);
         }
     }
@@ -59,7 +79,8 @@ int main(int argc, char **argv) {
 
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
-    info.port = 8089;
+    info.port = port;
+    info.iface = ip;
     info.protocols = protocols;
     info.gid = -1;
     info.uid = -1;
@@ -70,7 +91,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    if (!silent) printf("[INFO] Server started on port 8089\n");
+    if (!silent) printf("[INFO] Server started on port %d\n", port);
 
     while (1) {
         lws_service(context, 50);

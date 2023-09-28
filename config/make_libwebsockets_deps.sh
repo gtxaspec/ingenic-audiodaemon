@@ -35,16 +35,6 @@ echo "Creating libwebsockets build directory..."
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
-# Set cross compile toolchain file for cmake
-echo "Setting cross compile toolchain file for cmake..."
-cat <<EOF > lws-toolchain.cmake
-set(CMAKE_SYSTEM_NAME Linux)
-set(CMAKE_SYSTEM_PROCESSOR mipsle)
-set(CMAKE_C_COMPILER ${CC})
-set(CMAKE_CXX_COMPILER ${CXX})
-set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
-EOF
-
 # Clone libwebsockets if not already present
 if [ ! -d "$LWS_DIR" ]; then
     echo "Cloning libwebsockets..."
@@ -59,7 +49,17 @@ cd build
 
 # Configure and build libwebsockets library
 echo "Configuring libwebsockets library..."
-cmake -DCMAKE_TOOLCHAIN_FILE=../../lws-toolchain.cmake -DLWS_WITH_NETLINK=OFF -DLWS_WITH_SSL=OFF -DLWS_HAVE_LIBCAP=FALSE ..
+cmake \
+-D CMAKE_SYSTEM_NAME=Linux \
+-D CMAKE_SYSTEM_PROCESSOR=mipsle \
+-D CMAKE_C_COMPILER=${CC} \
+-D CMAKE_CXX_COMPILER=${CXX} \
+-D CMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+-DLWS_WITH_NETLINK=OFF \
+-DLWS_WITH_SSL=OFF \
+-DLWS_HAVE_LIBCAP=FALSE \
+..
+
 echo "Building libwebsockets library..."
 make
 

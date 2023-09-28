@@ -105,11 +105,8 @@ build/bin/wc-console: version $(wc_console_OBJS)
 clean:
 	find build/obj -type f -name "*.o" -exec rm {} \;
 	rm -f build/bin/* build/version.h
-	rm -rf build/lws-build
-	rm -rf include/libwebsockets
-	rm -f lib/libwebsockets.a
-	rm -f include/lws_config.h
-	rm -f include/libwebsockets.h
+	rm -f lib/libwebsockets.a include/lws_config.h include/libwebsockets.h
+	rm -rf build/lws-build include/libwebsockets
 
 distclean: clean
 	rm -f $(AUDIO_PROGS)

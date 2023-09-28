@@ -5,7 +5,7 @@ The **Ingenic Audio Daemon** (iad) serves as an intermediary between the audio k
 - **iad (Ingenic Audio Daemon)**: A background process for handling audio on Ingenic devices.
   - **iac (Ingenic Audio Client)**: A client-side utility to interact with the audio daemon.
   - **audioplay**: A standalone audio player for Ingenic devices.
-  - **wc-console**: A client-side utility 
+  - **wc-console**: A client utility that establishes a WebSocket server, enabling the capture and streaming of audio data from web browsers.
 
 ---
 
