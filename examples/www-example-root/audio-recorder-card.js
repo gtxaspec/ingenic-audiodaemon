@@ -1,14 +1,15 @@
 // Dynamically load recorder.js from a URL, adjust accordingly
 const recorderScript = document.createElement('script');
-recorderScript.src = 'http://192.168.1.2:3333/library/recorder.js';
+recorderScript.src = 'http://localhost:8123/local/recorder.js';
 document.head.appendChild(recorderScript);
+
+const SERVER_IP = "192.168.2.1";
 
 recorderScript.onload = () => {
     class AudioRecorderCard extends HTMLElement {
         constructor() {
             super();
             this.attachShadow({ mode: 'open' });
-            this.audioChunks = [];
         }
 
         set hass(hass) {
@@ -30,7 +31,6 @@ recorderScript.onload = () => {
                 `;
                 card.appendChild(style);
                 
-                
                 this.content = document.createElement('div');
                 this.content.className = 'card-content';
                 
@@ -43,64 +43,88 @@ recorderScript.onload = () => {
                 this.shadowRoot.appendChild(card);
 
                 const recordButton = this.content.querySelector("#recordButton");
+                
                 recordButton.addEventListener("pointerdown", this.startRecording.bind(this));
-                recordButton.addEventListener("pointerup", this.stopRecording.bind(this));
-                recordButton.addEventListener("touchend", this.stopRecording.bind(this));   // Handling touchend
+                recordButton.addEventListener("pointerup", () => setTimeout(this.stopRecording.bind(this), 300));
+                recordButton.addEventListener("touchend", () => setTimeout(this.stopRecording.bind(this), 300));
                 recordButton.addEventListener("touchmove", this.stopRecording.bind(this));  // Handling unintentional drags
+            }
+        }
+
+        startWebSocket() {
+            // WebSocket initialization
+            this.ws = new WebSocket(`ws://${SERVER_IP}:8089`);
+            this.ws.onopen = function() {
+                console.log("WebSocket connection opened");
+            };
+            this.ws.onerror = function(error) {
+                console.error("WebSocket Error:", error);
+            };
+            this.ws.onclose = function() {
+                console.log("WebSocket connection closed");
+            };
+        }
+
+        sendAudioChunk(chunk) {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(chunk.buffer);
             }
         }
 
         async startRecording(event) {
             event.preventDefault();
         
-            if (this.isRecording) return; // Prevent starting multiple recordings
-            this.isRecording = true;
-        
-            // Always create a new AudioContext and Recorder instance
+            // Open WebSocket connection
+            this.startWebSocket();
+
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             let source = this.audioContext.createMediaStreamSource(this.stream);
+
+            // Always create a new Recorder instance
+            if (this.recorder) {
+                this.recorder.clear();
+            }
             this.recorder = new Recorder(source, { numChannels: 1 });
-        
-            this.audioChunks = [];
             this.recorder.record();
             this.content.querySelector("#recordButton").innerText = "Listening...";
+
+            this.recorder.node.onaudioprocess = (e) => {
+                if (!this.recorder.recording) return;
+
+                // Get the audio buffer data
+                let input = e.inputBuffer.getChannelData(0);
+                let chunk = new Int16Array(input.length);
+                for (let i = 0; i < input.length; i++) {
+                    chunk[i] = Math.min(1, input[i]) * 0x7FFF;
+                }
+                this.sendAudioChunk(chunk);
+            };
         }
         
-        stopRecording(event) {
-            event.preventDefault();
-        
-            if (!this.isRecording) return; // Prevent stopping multiple times
-            this.isRecording = false;
+        stopRecording(event = null) {
+            if (event) {
+                event.preventDefault();
+            }
         
             if (this.recorder) {
                 this.recorder.stop();
-                this.recorder.exportWAV(this.sendDataToServer.bind(this));
-                this.recorder.clear();
                 this.stream.getTracks().forEach(track => track.stop());
             }
-        
+            
             this.content.querySelector("#recordButton").innerText = "Push and Hold to Talk";
-        }
-
-        sendDataToServer(blob) {
-            const formData = new FormData();
-            formData.append('audio', blob, 'audio.wav');
-
-            //Adjust the url to match the server address
-            const serverUrl = `http://192.168.1.2:3333/upload`;
-
-            fetch(serverUrl, {
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.text())
-            .then(data => {
-                console.log(data);
-            })
-            .catch(error => {
-                console.error("There was an error uploading the audio:", error);
-            });
+            
+            // Close the WebSocket after sending data
+            if (this.ws) {
+                this.ws.close();
+                this.ws = null;
+            }
+            
+            if (this.audioContext) {
+                this.audioContext.close().then(() => {
+                    this.audioContext = null;
+                });
+            }
         }
 
         setConfig(config) {
