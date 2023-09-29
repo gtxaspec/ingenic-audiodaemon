@@ -7,33 +7,35 @@
 #include "audio/input.h"
 #include "network/network.h"
 #include "utils/utils.h"
+#include "utils/cmdline.h"
 #include "version.h"
+#include "config.h"
 
 int main(int argc, char *argv[]) {
     printf("INGENIC AUDIO DAEMON Version: %s\n", VERSION);
 
-    // Variables to track if we should disable AI or AO
-    int disable_ai = 0;
-    int disable_ao = 0;
+    CmdOptions options;
+    if (parse_cmdline(argc, argv, &options)) {
+        return 1; // Exit if there was an error parsing the command line
+    }
 
-    // Parse command line arguments
-    int opt;
-    while ((opt = getopt(argc, argv, "d:")) != -1) {
-        switch (opt) {
-            case 'd':
-                if (strcmp(optarg, "AI") == 0) {
-                    disable_ai = 1;
-                } else if (strcmp(optarg, "AO") == 0) {
-                    disable_ao = 1;
-                } else {
-                    fprintf(stderr, "Invalid option for -d. Use AI or AO.\n");
-                    return 1;
-                }
-                break;
-            default:
-                fprintf(stderr, "Usage: %s [-d <AI|AO>]\n", argv[0]);
-                return 1;
-        }
+    char *config_file_path = options.config_file_path;
+    int disable_ai = options.disable_ai;
+    int disable_ao = options.disable_ao;
+
+    // Initialize the configuration system
+    if (config_load_from_file(config_file_path) != 0) {
+        fprintf(stderr, "Failed to load configuration from %s\n", config_file_path);
+        // Continue with the default settings
+    }
+
+    // Update disable_ai and disable_ao based on config if they weren't set by command line
+    if (!disable_ai) {
+        disable_ai = !config_get_ai_enabled();
+    }
+    
+    if (!disable_ao) {
+        disable_ao = !config_get_ao_enabled();
     }
 
     // Ignore SIGPIPE to prevent the daemon from exiting when writing to a closed socket
@@ -85,6 +87,8 @@ int main(int argc, char *argv[]) {
 
     pthread_mutex_destroy(&audio_buffer_lock);
     pthread_cond_destroy(&audio_data_cond);
+
+    config_cleanup();  // Cleanup the configuration system before exiting
 
     return 0;
 }
