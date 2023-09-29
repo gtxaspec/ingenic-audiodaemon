@@ -16,9 +16,9 @@ cJSON *get_network_config(void);
 int config_get_ai_enabled(void);
 int config_get_ao_enabled(void);
 
+// Retrieve socket paths; caller is responsible for freeing the returned string using free()
 char* config_get_ai_socket(void);
 char* config_get_ao_socket(void);
 char* config_get_ctrl_socket(void);
-
 
 #endif // CONFIG_H
