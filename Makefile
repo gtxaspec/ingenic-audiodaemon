@@ -45,7 +45,7 @@ endif
 # Targets and Object Files
 AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac
 
-iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/network/network.o build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o $(SHIM)
+iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/network/network.o build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o $(SHIM)
 iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o $(SHIM)
 web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o $(SHIM)
 audioplay_OBJS = build/obj/standalone/audioplay.o $(SHIM)
