@@ -45,7 +45,7 @@ endif
 # Targets and Object Files
 AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac
 
-iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/network/network.o build/obj/utils/utils.o build/obj/utils/logging.o $(SHIM)
+iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/network/network.o build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o $(SHIM)
 iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o $(SHIM)
 web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o $(SHIM)
 audioplay_OBJS = build/obj/standalone/audioplay.o $(SHIM)
@@ -98,7 +98,7 @@ iad: build/bin/iad
 
 build/bin/iad: version $(iad_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(LDLIBS)
+	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(SDK_LIB_DIR)/libcjson.a $(LDLIBS)
 	$(STRIP) $@
 
 iac: build/bin/iac
@@ -136,5 +136,5 @@ clean:
 distclean: clean
 	-rm -f $(AUDIO_PROGS)
 	-rm -rf build/*
-	-rm -f lib/libwebsockets.a include/lws_config.h include/libwebsockets.h
+	-rm -f lib/libwebsockets.a include/lws_config.h include/libwebsockets.h lib/libcjson.a include/cJSON.h
 	-rm -rf include/libwebsockets
