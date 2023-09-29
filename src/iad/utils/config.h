@@ -1,6 +1,5 @@
 #ifndef CONFIG_H
 #define CONFIG_H
-
 #include <cJSON.h>
 
 // Initialize the configuration system
@@ -20,5 +19,12 @@ int config_get_ao_enabled(void);
 char* config_get_ai_socket(void);
 char* config_get_ao_socket(void);
 char* config_get_ctrl_socket(void);
+
+typedef enum {
+    AUDIO_INPUT,
+    AUDIO_OUTPUT
+} AudioType;
+
+cJSON* get_audio_attribute(AudioType type, const char* attribute_name);
 
 #endif // CONFIG_H

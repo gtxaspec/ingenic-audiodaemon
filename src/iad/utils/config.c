@@ -17,7 +17,7 @@ int config_load_from_file(const char *config_file_path) {
     pthread_mutexattr_init(&config_mutex_attr);
     pthread_mutexattr_settype(&config_mutex_attr, PTHREAD_MUTEX_RECURSIVE);
     pthread_mutex_init(&config_mutex, &config_mutex_attr);
-    
+
     FILE *file = fopen(config_file_path, "r");
     if (!file) {
         return -1;
@@ -142,4 +142,16 @@ char* config_get_ao_socket() {
 // Get the control socket path
 char* config_get_ctrl_socket() {
     return config_get_socket_path("audio_control_socket_path");
+}
+
+cJSON* get_audio_attribute(AudioType type, const char* attribute_name) {
+    cJSON *audioConfigRoot = get_audio_config();
+    if (audioConfigRoot) {
+        const char* typeStr = (type == AUDIO_INPUT) ? "AI_attributes" : "AO_attributes";
+        cJSON *audioConfig = cJSON_GetObjectItemCaseSensitive(audioConfigRoot, typeStr);
+        if (audioConfig) {
+            return cJSON_GetObjectItemCaseSensitive(audioConfig, attribute_name);
+        }
+    }
+    return NULL;
 }
