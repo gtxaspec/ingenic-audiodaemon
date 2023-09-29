@@ -12,14 +12,17 @@ void update_socket_paths_from_config() {
     char *ao_socket_from_config = config_get_ao_socket();
     if (ao_socket_from_config) {
         strncpy(AUDIO_OUTPUT_SOCKET_PATH, ao_socket_from_config, sizeof(AUDIO_OUTPUT_SOCKET_PATH) - 1);
+        free(ao_socket_from_config);  // Free the dynamically allocated string
     }
     char *ai_socket_from_config = config_get_ai_socket();
     if (ai_socket_from_config) {
         strncpy(AUDIO_INPUT_SOCKET_PATH, ai_socket_from_config, sizeof(AUDIO_INPUT_SOCKET_PATH) - 1);
+        free(ai_socket_from_config);  // Free the dynamically allocated string
     }
     char *ctrl_socket_from_config = config_get_ctrl_socket();
     if (ctrl_socket_from_config) {
         strncpy(AUDIO_CONTROL_SOCKET_PATH, ctrl_socket_from_config, sizeof(AUDIO_CONTROL_SOCKET_PATH) - 1);
+        free(ctrl_socket_from_config);  // Free the dynamically allocated string
     }
 }
 
