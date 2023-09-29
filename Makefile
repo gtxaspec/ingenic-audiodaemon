@@ -63,6 +63,7 @@ version:
 
 deps:
 	./scripts/make_libwebsockets_deps.sh
+	./scripts/make_cJSON_deps.sh
 
 dependancies: deps
 
