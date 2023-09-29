@@ -91,6 +91,13 @@ void *audio_control_server_thread(void *arg) {
 void *audio_input_server_thread(void *arg) {
     printf("[INFO] Entering audio_input_server_thread\n");
 
+    printf("[INFO] Initializing audio input device\n");
+    int devID = 0;
+    if (initialize_audio_input_device(devID) != 0) {
+        fprintf(stderr, "[ERROR] Failed to initialize audio input device\n");
+        return NULL;
+    }
+
     // Update the socket path from the configuration (if it's provided)
     update_socket_paths_from_config();
 
