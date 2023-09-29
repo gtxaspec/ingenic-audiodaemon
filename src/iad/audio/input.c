@@ -3,20 +3,55 @@
 #include <imp/imp_audio.h>
 #include <imp/imp_log.h>
 #include "input.h"
-#include "../utils/utils.h"
+#include "utils.h"
+#include "config.h"
+
+// Convert string representation of bitwidth to the corresponding enum value
+IMPAudioBitWidth string_to_bitwidth(const char* str) {
+    if (strcmp(str, "AUDIO_BIT_WIDTH_16") == 0) {
+        return AUDIO_BIT_WIDTH_16;
+    }
+    // We should add more mappings if there are other possible values in the JSON.
+    return AUDIO_BIT_WIDTH_16;  // Default value
+}
+
+// Convert string representation of sound mode to the corresponding enum value
+IMPAudioSoundMode string_to_soundmode(const char* str) {
+    if (strcmp(str, "AUDIO_SOUND_MODE_MONO") == 0) {
+        return AUDIO_SOUND_MODE_MONO;
+    }
+    // We should add more mappings if there are other possible values in the JSON.
+    return AUDIO_SOUND_MODE_MONO;  // Default value
+}
 
 int initialize_audio_input_device(int devID) {
     int ret;
     IMPAudioIOAttr attr;
 
-    // Set public attribute of AI device
-    attr.samplerate = AI_SAMPLE_RATE;
-    attr.bitwidth = AUDIO_BIT_WIDTH_16;
-    attr.soundmode = AUDIO_SOUND_MODE_MONO;
-    attr.frmNum = 40;
-    attr.numPerFrm = AI_NUM_PER_FRM;
-    attr.chnCnt = 1;
+    cJSON* samplerateItem = get_audio_attribute(AUDIO_INPUT, "sample_rate");
+    cJSON* bitwidthItem = get_audio_attribute(AUDIO_INPUT, "bitwidth");
+    cJSON* soundmodeItem = get_audio_attribute(AUDIO_INPUT, "soundmode");
+    cJSON* frmNumItem = get_audio_attribute(AUDIO_INPUT, "frmNum");
+    cJSON* chnCntItem = get_audio_attribute(AUDIO_INPUT, "chnCnt");
+    cJSON* channel_idItem = get_audio_attribute(AUDIO_INPUT, "channel_id");
+    cJSON* SetVolItem = get_audio_attribute(AUDIO_INPUT, "SetVol");
+    cJSON* SetGainItem = get_audio_attribute(AUDIO_INPUT, "SetGain");
 
+    attr.samplerate = samplerateItem ? samplerateItem->valueint : DEFAULT_AI_SAMPLE_RATE;
+    attr.bitwidth = bitwidthItem ? string_to_bitwidth(bitwidthItem->valuestring) : AUDIO_BIT_WIDTH_16;
+    attr.soundmode = soundmodeItem ? string_to_soundmode(soundmodeItem->valuestring) : AUDIO_SOUND_MODE_MONO;
+    attr.frmNum = frmNumItem ? frmNumItem->valueint : DEFAULT_AI_FRM_NUM;
+    attr.numPerFrm = AI_NUM_PER_FRM; // Automatically calculated from sample rate
+    attr.chnCnt = chnCntItem ? chnCntItem->valueint : DEFAULT_AI_CHN_CNT;
+
+    printf("[DEBUG] samplerate: %d\n", attr.samplerate);
+    printf("[DEBUG] bitwidth: %d\n", attr.bitwidth);
+    printf("[DEBUG] soundmode: %d\n", attr.soundmode);
+    printf("[DEBUG] frmNum: %d\n", attr.frmNum);
+    printf("[DEBUG] numPerFrm: %d\n", attr.numPerFrm);
+    printf("[DEBUG] chnCnt: %d\n", attr.chnCnt);
+
+    // Set public attribute of AI device
     ret = IMP_AI_SetPubAttr(devID, &attr);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetPubAttr failed");
@@ -30,7 +65,8 @@ int initialize_audio_input_device(int devID) {
         return -1;
     }
 
-    int chnID = 0;
+    int chnID = channel_idItem ? channel_idItem->valueint : DEFAULT_AI_CHN_ID;
+
     IMPAudioIChnParam chnParam;
     chnParam.usrFrmDepth = 40;
 
@@ -49,14 +85,17 @@ int initialize_audio_input_device(int devID) {
     }
 
     // Set audio channel volume
-    ret = IMP_AI_SetVol(devID, chnID, AI_CHN_VOL);
+    int vol = SetVolItem ? SetVolItem->valueint : DEFAULT_AI_CHN_VOL;
+
+    ret = IMP_AI_SetVol(devID, chnID, vol);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetVol failed");
         return -1;
     }
 
     // Set audio channel gain
-    ret = IMP_AI_SetGain(devID, chnID, AI_GAIN);
+    int gain = SetGainItem ? SetGainItem->valueint : DEFAULT_AI_GAIN;
+    ret = IMP_AI_SetGain(devID, chnID, gain);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetGain failed");
         return -1;
@@ -93,7 +132,6 @@ void *ai_record_thread(void *arg) {
             ssize_t wr_sock = write(current->sockfd, frm.virAddr, frm.len);
 
             if (wr_sock < 0) {
-                // Handle disconnection of a client
                 if (errno == EPIPE) {
                     printf("[INFO] Client disconnected\n");
                 } else {
@@ -121,6 +159,7 @@ void *ai_record_thread(void *arg) {
 
         pthread_mutex_unlock(&audio_buffer_lock);
 
+        // Release audio frame
         IMP_AI_ReleaseFrame(0, 0, &frm);
     }
 

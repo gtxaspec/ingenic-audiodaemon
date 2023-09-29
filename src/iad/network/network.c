@@ -1,8 +1,8 @@
 #include "network.h"
-#include "../audio/output.h"
-#include "../utils/utils.h"
 #include "../audio/input.h"
-#include "config.h"
+#include "../audio/output.h"
+#include "../utils/config.h"
+#include "../utils/utils.h"
 
 char AUDIO_INPUT_SOCKET_PATH[32] = "ingenic_audio_input";
 char AUDIO_OUTPUT_SOCKET_PATH[32] = "ingenic_audio_output";
@@ -92,7 +92,10 @@ void *audio_input_server_thread(void *arg) {
     printf("[INFO] Entering audio_input_server_thread\n");
 
     printf("[INFO] Initializing audio input device\n");
-    int devID = 0;
+
+    cJSON* device_idItem = get_audio_attribute(AUDIO_INPUT, "device_id");
+    int devID = device_idItem ? device_idItem->valueint : DEFAULT_AI_DEV_ID;
+
     if (initialize_audio_input_device(devID) != 0) {
         fprintf(stderr, "[ERROR] Failed to initialize audio input device\n");
         return NULL;
