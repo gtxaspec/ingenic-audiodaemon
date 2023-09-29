@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     if (!disable_ai) {
         disable_ai = !config_get_ai_enabled();
     }
-    
+
     if (!disable_ao) {
         disable_ao = !config_get_ao_enabled();
     }
@@ -51,13 +51,6 @@ int main(int argc, char *argv[]) {
     }
 
     if (!disable_ai) {
-        // Initialize the audio input device
-        int devID = 0;
-        if (initialize_audio_input_device(devID) != 0) {
-            fprintf(stderr, "[ERROR] Failed to initialize audio input device\n");
-            return 1;
-        }
-
         if (create_thread(&input_server_thread, audio_input_server_thread, NULL)) {
             return 1;
         }
