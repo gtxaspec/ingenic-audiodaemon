@@ -1,9 +1,12 @@
+#include <errno.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include "client_network.h"
+
+static int was_connected_successfully = 0; // Added global flag
 
 int setup_control_client_connection() {
     int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -23,6 +26,8 @@ int setup_control_client_connection() {
         return -1;
     }
 
+    was_connected_successfully = 1; // Set the flag
+    printf("Connected to control socket successfully.\n");
     return sockfd;
 }
 
@@ -47,10 +52,20 @@ int setup_client_connection(int request_type) {
     }
 
     if (connect(sockfd, (struct sockaddr*)&addr, sizeof(sa_family_t) + strlen(&addr.sun_path[1]) + 1) == -1) {
-        perror("connect");
+        printf("Failed to connect to output socket: %s\n", strerror(errno));
         close(sockfd);
         return -1;
     }
 
+    was_connected_successfully = 1; // Set the flag
+    printf("Connected to output socket successfully.\n");
     return sockfd;
+}
+
+void close_client_connection(int sockfd) {
+    close(sockfd);
+    if (was_connected_successfully) { // Check the flag
+        printf("Disconnected from socket successfully.\n");
+    }
+    was_connected_successfully = 0; // Reset the flag
 }
