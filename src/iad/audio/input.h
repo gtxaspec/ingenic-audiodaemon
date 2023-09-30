@@ -18,7 +18,7 @@
 #define DEFAULT_AI_CHN_ID 0
 
 // Initialize the audio input device
-int initialize_audio_input_device(int devID);
+int initialize_audio_input_device(int devID, int chnID);
 
 // Thread function to handle audio input, taking output file path as an argument
 void *ai_record_thread(void *output_file_path);

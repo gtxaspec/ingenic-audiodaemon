@@ -1,8 +1,8 @@
-#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include "config.h"
 
 // Global pointer for the root of the configuration JSON object
 static cJSON *config_root = NULL;

@@ -45,7 +45,7 @@ endif
 # Targets and Object Files
 AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac
 
-iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/network/network.o build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o $(SHIM)
+iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/network/network.o build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o build/cJSON-build/cJSON/cJSON.o $(SHIM)
 iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o $(SHIM)
 web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o $(SHIM)
 audioplay_OBJS = build/obj/standalone/audioplay.o $(SHIM)
@@ -55,7 +55,12 @@ wc_console_OBJS = build/obj/wc-console/wc-console.o
 
 all: version $(AUDIO_PROGS)
 
-version:
+BUILD_DIR = build
+
+$(BUILD_DIR):
+	@mkdir -p $(BUILD_DIR)
+
+version: $(BUILD_DIR)
 	@if  ! grep "$(commit_tag)" build/version.h >/dev/null 2>&1 ; then \
 	echo "update version.h" ; \
 	sed 's/COMMIT_TAG/"$(commit_tag)"/g' config/version.tpl.h > build/version.h ; \
@@ -63,7 +68,7 @@ version:
 
 deps:
 	./scripts/make_libwebsockets_deps.sh
-	./scripts/make_cJSON_deps.sh
+	./scripts/make_cJSON_deps.sh download_only
 
 dependancies: deps
 
@@ -99,7 +104,8 @@ iad: build/bin/iad
 
 build/bin/iad: version $(iad_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(SDK_LIB_DIR)/libcjson.a $(LDLIBS)
+	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(LDLIBS)
+#	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(SDK_LIB_DIR)/libcjson.a $(LDLIBS)
 	$(STRIP) $@
 
 iac: build/bin/iac

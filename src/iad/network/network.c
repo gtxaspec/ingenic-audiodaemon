@@ -96,7 +96,10 @@ void *audio_input_server_thread(void *arg) {
     cJSON* device_idItem = get_audio_attribute(AUDIO_INPUT, "device_id");
     int devID = device_idItem ? device_idItem->valueint : DEFAULT_AI_DEV_ID;
 
-    if (initialize_audio_input_device(devID) != 0) {
+    cJSON* channel_idItem = get_audio_attribute(AUDIO_INPUT, "channel_id");
+    int chnID = channel_idItem ? channel_idItem->valueint : DEFAULT_AI_CHN_ID;
+
+    if (initialize_audio_input_device(devID, chnID) != 0) {
         fprintf(stderr, "[ERROR] Failed to initialize audio input device\n");
         return NULL;
     }
@@ -231,7 +234,7 @@ void *audio_output_server_thread(void *arg) {
 
         pthread_mutex_unlock(&audio_buffer_lock);
 
-        unsigned char buf[AO_MAX_FRAME_SIZE];
+        unsigned char buf[DEFAULT_AO_MAX_FRAME_SIZE];
         ssize_t read_size;
 
         // Resume audio output, before receiving audio data

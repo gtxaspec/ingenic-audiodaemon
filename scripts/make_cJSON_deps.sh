@@ -12,17 +12,6 @@
 set -e
 set -o pipefail
 
-# Set compiler prefix here
-CROSS_COMPILE="mipsel-openipc-linux-musl-"
-
-CC="${CROSS_COMPILE}gcc"
-
-# Ensure CC is set
-if [ -z "$CC" ]; then
-    echo "Error: CC environment variable must be set."
-    exit 1
-fi
-
 # Variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/../build/cJSON-build"
@@ -33,6 +22,31 @@ CJSON_DIR="${BUILD_DIR}/cJSON"
 echo "Creating cJSON build directory..."
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
+
+if [[ "$1" == "download_only" ]]; then
+
+# Clone cJSON if not already present
+if [ ! -d "$CJSON_DIR" ]; then
+    echo "Cloning cJSON..."
+    git clone "$CJSON_REPO"
+fi
+pwd
+cp -R cJSON/cJSON.h ../../include/
+
+exit 0
+
+fi
+
+# Set compiler prefix here
+CROSS_COMPILE="mipsel-openipc-linux-musl-"
+
+CC="${CROSS_COMPILE}gcc"
+
+# Ensure CC is set
+if [ -z "$CC" ]; then
+    echo "Error: CC environment variable must be set."
+    exit 1
+fi
 
 # Clone cJSON if not already present
 if [ ! -d "$CJSON_DIR" ]; then
@@ -64,5 +78,4 @@ make
 echo "Copying cJSON library and headers..."
 cp ./libcjson.a ../../../../lib/
 cp -R ../cJSON.h ../../../../include/
-
 echo "cJSON build complete!"
