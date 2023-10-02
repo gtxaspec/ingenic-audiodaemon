@@ -21,6 +21,15 @@ LDLIBS = -lpthread -lm -lrt -ldl
 CONFIG_UCLIBC_BUILD=n
 CONFIG_MUSL_BUILD=y
 CONFIG_STATIC_BUILD=y
+DEBUG=y
+
+ifeq ($(DEBUG), y)
+CFLAGS += -g -O0  # Add -g for debugging symbols and -O0 to disable optimizations
+STRIPCMD = @echo "Not stripping binary due to DEBUG mode."
+else
+CFLAGS += -O2  # Use -O2 optimization level when not in DEBUG mode
+STRIPCMD = $(STRIP)
+endif
 
 ifeq ($(CONFIG_UCLIBC_BUILD), y)
 CROSS_COMPILE?= mips-linux-uclibc-gnu-
@@ -106,35 +115,35 @@ build/bin/iad: version $(iad_OBJS)
 	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(LDLIBS)
 #	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(SDK_LIB_DIR)/libcjson.a $(LDLIBS)
-	$(STRIP) $@
+	$(STRIPCMD) $@
 
 iac: build/bin/iac
 
 build/bin/iac: version $(iac_OBJS)
 	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) -o $@ $(iac_OBJS) $(LDLIBS)
-	$(STRIP) $@
+	$(STRIPCMD) $@
 
 audioplay: build/bin/audioplay
 
 build/bin/audioplay: version $(audioplay_OBJS)
 	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) -o $@ $(audioplay_OBJS) $(LIBS) $(LDLIBS)
-	$(STRIP) $@
+	$(STRIPCMD) $@
 
 wc-console: build/bin/wc-console
 
 build/bin/wc-console: version $(wc_console_OBJS)
 	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) -o $@ $(wc_console_OBJS) $(SDK_LIB_DIR)/libwebsockets.a $(LDLIBS)
-	$(STRIP) $@
+	$(STRIPCMD) $@
 
 web_client: build/bin/web_client
 
 build/bin/web_client: version $(web_client_OBJS)
 	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) -o $@ $(web_client_OBJS) $(SDK_LIB_DIR)/libwebsockets.a $(LDLIBS)
-	$(STRIP) $@
+	$(STRIPCMD) $@
 
 clean:
 	-find build/obj -type f -name "*.o" -exec rm {} \;
