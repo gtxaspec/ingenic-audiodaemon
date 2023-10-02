@@ -51,10 +51,7 @@ void handle_and_reinitialize(int devID, int chnID, const char *errorMsg) {
     reinitialize_audio_device(devID, chnID);
 }
 
-void reinitialize_audio_device(int devID, int chnID) {
-    IMP_AO_DisableChn(devID, chnID);
-    IMP_AO_Disable(devID);
-
+void initialize_audio_device(int devID, int chnID) {
     IMPAudioIOAttr attr;
     AudioAttributes attrs = get_audio_attributes();
 
@@ -86,6 +83,13 @@ void reinitialize_audio_device(int devID, int chnID) {
     printf("[DEBUG] chnCnt: %d\n", attr.chnCnt);
 
     free_audio_attributes(&attrs);
+}
+
+void reinitialize_audio_device(int devID, int chnID) {
+    IMP_AO_DisableChn(devID, chnID);
+    IMP_AO_Disable(devID);
+
+    initialize_audio_device(devID, chnID);
 }
 
 void pause_audio_output(int devID, int chnID) {
@@ -124,7 +128,7 @@ void *ao_test_play_thread(void *arg) {
 
     printf("[DEBUG] CHNID JSON: %d\n", chnID);
 
-    reinitialize_audio_device(devID, chnID);
+    initialize_audio_device(devID, chnID);  // Call initialize instead of reinitialize
 
     while (TRUE) {
         pthread_mutex_lock(&audio_buffer_lock);
