@@ -4,14 +4,20 @@
 #include "cmdline.h"
 
 void print_usage(char *program_name) {
-    printf("Usage: %s [-f <audio_file_path>] [-s] [-r <audio_output_file_path>] [-o]\n", program_name);
+    printf("Usage: %s [options]\n\n", program_name);
+    printf("Options:\n");
+    printf("  -f <path>   Path to audio file\n");
+    printf("  -s          Use stdin for audio input\n");
+    printf("  -r <path>   Record audio to given file path\n");
+    printf("  -o          Output recorded audio to stdout\n");
+    printf("  -h          Display this help message\n");
 }
 
 int parse_arguments(int argc, char *argv[], int *use_stdin, char **audio_file_path, int *record_audio, int *output_to_stdout) {
     int opt;
     *record_audio = 0;
     *output_to_stdout = 0;
-    while ((opt = getopt(argc, argv, "sf:r:o")) != -1) {
+    while ((opt = getopt(argc, argv, "sf:r:oh")) != -1) {
         switch (opt) {
             case 's':
                 *use_stdin = 1;
@@ -27,6 +33,9 @@ int parse_arguments(int argc, char *argv[], int *use_stdin, char **audio_file_pa
                 *output_to_stdout = 1;
                 *record_audio = 1;
                 break;
+            case 'h':
+                print_usage(argv[0]);
+                exit(0);
             default:
                 print_usage(argv[0]);
                 return -1;

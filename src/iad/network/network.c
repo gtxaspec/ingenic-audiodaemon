@@ -1,15 +1,36 @@
 #include "network.h"
-#include "../audio/output.h"
-#include "../utils/utils.h"
 #include "../audio/input.h"
-#include "../src/iac/client/client_network.h"
+#include "../audio/output.h"
+#include "../utils/config.h"
+#include "../utils/utils.h"
 
-#define AUDIO_CONTROL_SOCKET_PATH "ingenic_audio_control"
-#define CLIENT_QUEUED 1
-#define CLIENT_NOT_QUEUED 0
+char AUDIO_INPUT_SOCKET_PATH[32] = "ingenic_audio_input";
+char AUDIO_OUTPUT_SOCKET_PATH[32] = "ingenic_audio_output";
+char AUDIO_CONTROL_SOCKET_PATH[32] = "ingenic_audio_control";
+
+void update_socket_paths_from_config() {
+    char *ao_socket_from_config = config_get_ao_socket();
+    if (ao_socket_from_config) {
+        strncpy(AUDIO_OUTPUT_SOCKET_PATH, ao_socket_from_config, sizeof(AUDIO_OUTPUT_SOCKET_PATH) - 1);
+        free(ao_socket_from_config);  // Free the dynamically allocated string
+    }
+    char *ai_socket_from_config = config_get_ai_socket();
+    if (ai_socket_from_config) {
+        strncpy(AUDIO_INPUT_SOCKET_PATH, ai_socket_from_config, sizeof(AUDIO_INPUT_SOCKET_PATH) - 1);
+        free(ai_socket_from_config);  // Free the dynamically allocated string
+    }
+    char *ctrl_socket_from_config = config_get_ctrl_socket();
+    if (ctrl_socket_from_config) {
+        strncpy(AUDIO_CONTROL_SOCKET_PATH, ctrl_socket_from_config, sizeof(AUDIO_CONTROL_SOCKET_PATH) - 1);
+        free(ctrl_socket_from_config);  // Free the dynamically allocated string
+    }
+}
 
 void *audio_control_server_thread(void *arg) {
     printf("[INFO] Entering audio_control_server_thread\n");
+
+    // Update the socket path from the configuration (if it's provided)
+    update_socket_paths_from_config();
 
     int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -47,21 +68,20 @@ void *audio_control_server_thread(void *arg) {
             continue;
         }
 
-    int client_request_type;
-    recv(client_sock, &client_request_type, sizeof(int), 0);
+        int client_request_type;
+        recv(client_sock, &client_request_type, sizeof(int), 0);
 
-    pthread_mutex_lock(&audio_buffer_lock);
+        pthread_mutex_lock(&audio_buffer_lock);
 
-    if (client_request_type == AUDIO_OUTPUT_REQUEST && active_client_sock != -1) {
-        write(client_sock, "queued", strlen("queued"));
-    } else {
-        write(client_sock, "not_queued", strlen("not_queued"));
-    }
+        if (client_request_type == AUDIO_OUTPUT_REQUEST && active_client_sock != -1) {
+            write(client_sock, "queued", strlen("queued"));
+        } else {
+            write(client_sock, "not_queued", strlen("not_queued"));
+        }
 
-    pthread_mutex_unlock(&audio_buffer_lock);
+        pthread_mutex_unlock(&audio_buffer_lock);
 
-    close(client_sock);  // Close the control socket after sending the message
-
+        close(client_sock);  // Close the control socket after sending the message
     }
 
     close(sockfd);
@@ -70,6 +90,22 @@ void *audio_control_server_thread(void *arg) {
 
 void *audio_input_server_thread(void *arg) {
     printf("[INFO] Entering audio_input_server_thread\n");
+
+    printf("[INFO] Initializing audio input device\n");
+
+    cJSON* device_idItem = get_audio_attribute(AUDIO_INPUT, "device_id");
+    int devID = device_idItem ? device_idItem->valueint : DEFAULT_AI_DEV_ID;
+
+    cJSON* channel_idItem = get_audio_attribute(AUDIO_INPUT, "channel_id");
+    int chnID = channel_idItem ? channel_idItem->valueint : DEFAULT_AI_CHN_ID;
+
+    if (initialize_audio_input_device(devID, chnID) != 0) {
+        fprintf(stderr, "[ERROR] Failed to initialize audio input device\n");
+        return NULL;
+    }
+
+    // Update the socket path from the configuration (if it's provided)
+    update_socket_paths_from_config();
 
     int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -107,7 +143,7 @@ void *audio_input_server_thread(void *arg) {
             continue;
         }
 
-              pthread_mutex_lock(&audio_buffer_lock);
+        pthread_mutex_lock(&audio_buffer_lock);
 
         // Add the client to the list
         ClientNode *new_client = (ClientNode *)malloc(sizeof(ClientNode));
@@ -117,7 +153,7 @@ void *audio_input_server_thread(void *arg) {
 
         pthread_mutex_unlock(&audio_buffer_lock);
 
-	  printf("[INFO] Input client connected\n");
+        printf("[INFO] Input client connected\n");
 
         // Handle the input client...
         AiThreadArg thread_arg;
@@ -138,6 +174,9 @@ void *audio_input_server_thread(void *arg) {
 
 void *audio_output_server_thread(void *arg) {
     printf("[INFO] Entering audio_output_server_thread\n");
+
+    // Update the socket path from the configuration (if it's provided)
+    update_socket_paths_from_config();
 
     int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -195,7 +234,7 @@ void *audio_output_server_thread(void *arg) {
 
         pthread_mutex_unlock(&audio_buffer_lock);
 
-        unsigned char buf[AO_MAX_FRAME_SIZE];
+        unsigned char buf[DEFAULT_AO_MAX_FRAME_SIZE];
         ssize_t read_size;
 
         // Resume audio output, before receiving audio data

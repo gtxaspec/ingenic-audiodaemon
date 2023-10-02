@@ -9,5 +9,6 @@
 // Function declarations
 int setup_client_connection(int request_type);
 int setup_control_client_connection();
+void close_client_connection(int sockfd);
 
 #endif // CLIENT_NETWORK_H

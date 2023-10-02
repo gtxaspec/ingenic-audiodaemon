@@ -30,7 +30,7 @@ static int ws_callback(struct lws *wsi, enum lws_callback_reasons reason, void *
         case LWS_CALLBACK_CLOSED:
             active_ws_connections--;
             if (active_ws_connections == 0 && daemon_sockfd != -1) {
-                close(daemon_sockfd);
+                close_client_connection(daemon_sockfd);
                 daemon_sockfd = -1;
             }
             break;

@@ -7,8 +7,6 @@
 #ifndef __IMP_SYSTEM_H__
 #define __IMP_SYSTEM_H__
 
-#include "imp_common.h"
-
 #ifdef __cplusplus
 #if __cplusplus
 extern "C"
