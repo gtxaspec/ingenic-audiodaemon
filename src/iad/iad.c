@@ -11,8 +11,27 @@
 #include "version.h"
 #include "config.h"
 
+void perform_cleanup() {
+    pthread_mutex_destroy(&audio_buffer_lock);
+    pthread_cond_destroy(&audio_data_cond);
+    config_cleanup();
+}
+
+// Signal handler function
+void handle_sigint(int sig) {
+    printf("Caught signal %d. Exiting gracefully...\n", sig);
+
+    // Call the cleanup function
+    perform_cleanup();
+
+    exit(0);
+}
+
 int main(int argc, char *argv[]) {
     printf("INGENIC AUDIO DAEMON Version: %s\n", VERSION);
+
+    // Set up the signal handler for SIGINT
+    signal(SIGINT, handle_sigint);
 
     CmdOptions options;
     if (parse_cmdline(argc, argv, &options)) {
@@ -78,10 +97,8 @@ int main(int argc, char *argv[]) {
 
     pthread_join(control_server_thread, NULL);  // Wait for control server thread to finish
 
-    pthread_mutex_destroy(&audio_buffer_lock);
-    pthread_cond_destroy(&audio_data_cond);
-
-    config_cleanup();  // Cleanup the configuration system before exiting
+    // Call the cleanup function
+    perform_cleanup();
 
     return 0;
 }
