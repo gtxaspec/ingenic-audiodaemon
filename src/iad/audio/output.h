@@ -42,4 +42,8 @@ void free_audio_attributes(AudioOutputAttributes *attrs);
 PlayAttributes get_audio_play_attributes(void);
 void free_audio_play_attributes(PlayAttributes *attrs);
 
+extern int g_ao_max_frame_size;
+void set_ao_max_frame_size(int frame_size);
+void cleanup_audio_output();
+
 #endif // OUTPUT_H

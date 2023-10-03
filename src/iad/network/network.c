@@ -250,13 +250,13 @@ void *audio_output_server_thread(void *arg) {
         active_client_sock = client_sock;
         printf("[INFO] Client connected\n");
 
-        memset(audio_buffer, 0, sizeof(audio_buffer));
+	memset(audio_buffer, 0, g_ao_max_frame_size);
         audio_buffer_size = 0;
         clear_audio_output_buffer(0, 0);
 
         pthread_mutex_unlock(&audio_buffer_lock);
 
-        unsigned char buf[DEFAULT_AO_MAX_FRAME_SIZE];
+        unsigned char buf[g_ao_max_frame_size];  // Use the global variable instead of DEFAULT_AO_MAX_FRAME_SIZE
         ssize_t read_size;
 
         resume_audio_output(0, 0);

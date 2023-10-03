@@ -16,7 +16,7 @@ typedef struct ClientNode {
 extern ClientNode *client_list_head;
 extern pthread_mutex_t audio_buffer_lock;
 extern pthread_cond_t audio_data_cond;
-extern unsigned char audio_buffer[DEFAULT_AO_MAX_FRAME_SIZE];
+extern unsigned char *audio_buffer;
 extern ssize_t audio_buffer_size;
 extern int active_client_sock;
 

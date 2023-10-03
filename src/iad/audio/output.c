@@ -8,6 +8,17 @@
 #define TRUE 1
 #define TAG "AO"
 
+// Global variable to hold the maximum frame size for audio output.
+int g_ao_max_frame_size = DEFAULT_AO_MAX_FRAME_SIZE;
+
+/**
+ * Set the global maximum frame size for audio output.
+ * @param frame_size The desired frame size.
+ */
+void set_ao_max_frame_size(int frame_size) {
+    g_ao_max_frame_size = frame_size;
+}
+
 /**
  * Fetches the audio attributes from the configuration.
  * @return A structure containing the audio attributes.
@@ -106,6 +117,29 @@ void initialize_audio_device(int devID, int chnID) {
     if (IMP_AO_SetVol(devID, chnID, attrs.SetVolItem ? attrs.SetVolItem->valueint : DEFAULT_AO_CHN_VOL) ||
         IMP_AO_SetGain(devID, chnID, attrs.SetGainItem ? attrs.SetGainItem->valueint : DEFAULT_AO_GAIN)) {
         handle_and_reinitialize(devID, chnID, "Failed to set volume or gain attributes");
+    }
+
+    // Get frame size from config and set it
+    int frame_size_from_config = config_get_ao_frame_size();
+    set_ao_max_frame_size(frame_size_from_config);
+
+    // Allocate memory for audio_buffer based on the frame size
+    audio_buffer = (unsigned char*) malloc(g_ao_max_frame_size);
+    if (!audio_buffer) {
+        // Handle memory allocation failure
+        handle_audio_error("AO: Failed to allocate memory for audio_buffer");
+        exit(EXIT_FAILURE);
+    }
+}
+
+/**
+ * Cleans up resources used for audio output.
+ * This primarily involves freeing the memory allocated for the audio buffer.
+ */
+void cleanup_audio_output() {
+    if (audio_buffer) {
+        free(audio_buffer);
+        audio_buffer = NULL;
     }
 }
 

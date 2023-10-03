@@ -27,4 +27,7 @@ typedef enum {
 
 cJSON* get_audio_attribute(AudioType type, const char* attribute_name);
 
+// Retrieve the AO frame size from the configuration
+int config_get_ao_frame_size(void);
+
 #endif // CONFIG_H

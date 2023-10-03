@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <string.h>
 #include "config.h"
+#include "utils.h"
 
 // Global pointer for the root of the configuration JSON object
 static cJSON *config_root = NULL;
@@ -154,4 +155,21 @@ cJSON* get_audio_attribute(AudioType type, const char* attribute_name) {
         }
     }
     return NULL;
+}
+
+
+// Retrieve the AO frame size from the configuration
+int config_get_ao_frame_size() {
+    cJSON *audio = get_audio_config();
+    if (!audio) return DEFAULT_AO_MAX_FRAME_SIZE;
+
+    cJSON *AO_attributes = cJSON_GetObjectItemCaseSensitive(audio, "AO_attributes");
+    if (!AO_attributes) return DEFAULT_AO_MAX_FRAME_SIZE;
+
+    cJSON *frame_size = cJSON_GetObjectItemCaseSensitive(AO_attributes, "frame_size");
+    if (!frame_size || !cJSON_IsNumber(frame_size)) {
+        return DEFAULT_AO_MAX_FRAME_SIZE;
+    }
+
+    return frame_size->valueint;
 }
