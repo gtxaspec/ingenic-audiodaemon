@@ -75,12 +75,17 @@ For a deeper clean (removes the compiled binaries as well):
 To run the audio daemon:
 
 ```
-./iad [-d <AI|AO>]
+./iad [-c] [-d <AI|AO>] [-h]
+
 ```
 
 #### Options:
 
-- `-d`: Disable Audio Input or Output by `<AI|AO>`.
+```
+  -c <path>   Path to configuration file (default: ./daemon.json)
+  -d <AI|AO>  Disable AI (Audio Input) or AO (Audio Output)
+  -h          Display this help message
+```
 
 ---
 

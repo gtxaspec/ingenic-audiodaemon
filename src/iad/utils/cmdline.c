@@ -4,6 +4,7 @@
 #include <string.h>
 #include "cmdline.h"
 
+// Function to print the usage of the program.
 void print_usage(const char *prog_name) {
     printf("Usage: %s [options]\n\n", prog_name);
     printf("Options:\n");
@@ -12,16 +13,27 @@ void print_usage(const char *prog_name) {
     printf("  -h          Display this help message\n");
 }
 
+// Function to parse command line arguments.
+// Populates the options structure based on user input.
 int parse_cmdline(int argc, char *argv[], CmdOptions *options) {
     int opt;
+
+    // Set default values
     options->config_file_path = "./daemon.json";  // Default configuration file path
     options->disable_ai = 0;
     options->disable_ao = 0;
 
+    // Use getopt to parse the command line arguments
     while ((opt = getopt(argc, argv, "d:c:h")) != -1) {
         switch (opt) {
             case 'c':
-                options->config_file_path = optarg;
+                if (optarg) {  // Check if optarg is not NULL before assigning
+                    options->config_file_path = optarg;
+                } else {
+                    fprintf(stderr, "No path provided for -c option.\n");
+                    print_usage(argv[0]);
+                    return 1;
+                }
                 break;
             case 'd':
                 if (strcmp(optarg, "AI") == 0) {

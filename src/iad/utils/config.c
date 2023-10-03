@@ -12,7 +12,12 @@ static cJSON *config_root = NULL;
 static pthread_mutex_t config_mutex;
 static pthread_mutexattr_t config_mutex_attr;  // Attributes for the recursive mutex
 
-// Load configuration from a file into the global config_root cJSON object
+/**
+ * Load configuration from the specified file into the global config_root cJSON object.
+ * This function will initialize the mutex, read the file, and parse its contents as JSON.
+ * @param config_file_path Path to the configuration file.
+ * @return 0 on success, -1 on failure.
+ */
 int config_load_from_file(const char *config_file_path) {
     // Initialize the recursive mutex attribute and the mutex
     pthread_mutexattr_init(&config_mutex_attr);
@@ -42,16 +47,22 @@ int config_load_from_file(const char *config_file_path) {
 
     fclose(file);
     config_root = cJSON_Parse(content);
-    free(content);
 
+    // Check if parsing was successful and log an error if it wasn't
     if (!config_root) {
+        fprintf(stderr, "Failed to parse JSON config. Error near: %s\n", cJSON_GetErrorPtr());
+        free(content);
         return -1;
     }
 
+    free(content);
     return 0;
 }
 
-// Cleanup the loaded configuration
+/**
+ * Cleanup the loaded configuration. This function will free the memory associated 
+ * with the global cJSON object and destroy the mutex.
+ */
 void config_cleanup(void) {
     pthread_mutex_lock(&config_mutex);
     if (config_root) {
@@ -59,10 +70,16 @@ void config_cleanup(void) {
         config_root = NULL;
     }
     pthread_mutex_unlock(&config_mutex);
+
+    // Destroy the mutex
+    pthread_mutex_destroy(&config_mutex);
     pthread_mutexattr_destroy(&config_mutex_attr);
 }
 
-// Get the 'audio' configuration object
+/**
+ * Retrieve the 'audio' configuration object.
+ * @return Pointer to the cJSON 'audio' object, or NULL if not found.
+ */
 cJSON *get_audio_config(void) {
     pthread_mutex_lock(&config_mutex);
     cJSON *item = cJSON_GetObjectItemCaseSensitive(config_root, "audio");
@@ -70,7 +87,10 @@ cJSON *get_audio_config(void) {
     return item;
 }
 
-// Get the 'network' configuration object
+/**
+ * Retrieve the 'network' configuration object.
+ * @return Pointer to the cJSON 'network' object, or NULL if not found.
+ */
 cJSON *get_network_config(void) {
     pthread_mutex_lock(&config_mutex);
     cJSON *item = cJSON_GetObjectItemCaseSensitive(config_root, "network");
@@ -78,31 +98,48 @@ cJSON *get_network_config(void) {
     return item;
 }
 
-// Check if AI (Audio Input) is enabled in the configuration
+/**
+ * Check if AI (Audio Input) is enabled in the configuration.
+ * @return 1 if enabled, 0 otherwise.
+ */
 int config_get_ai_enabled() {
     cJSON *audio = get_audio_config();
-    if (!audio) return 1; // Default to enabled if no audio config
+    if (!audio) {
+        fprintf(stderr, "Warning: Using default AI enabled value.\n");
+        return 1; // Default to enabled if no audio config
+    }
 
     cJSON *AI_attributes = cJSON_GetObjectItemCaseSensitive(audio, "AI_attributes");
-    if (!AI_attributes) return 1; // Default to enabled if no AI_attributes
+    if (!AI_attributes) {
+        fprintf(stderr, "Warning: Using default AI enabled value.\n");
+        return 1; // Default to enabled if no AI_attributes
+    }
 
     cJSON *enabled = cJSON_GetObjectItemCaseSensitive(AI_attributes, "enabled");
     return cJSON_IsTrue(enabled);
 }
 
-// Check if AO (Audio Output) is enabled in the configuration
+/**
+ * Check if AO (Audio Output) is enabled in the configuration.
+ * @return 1 if enabled, 0 otherwise.
+ */
 int config_get_ao_enabled() {
     cJSON *audio = get_audio_config();
-    if (!audio) return 1;
+    if (!audio) {
+        fprintf(stderr, "Warning: Using default AO enabled value.\n");
+        return 1;
+    }
 
     cJSON *AO_attributes = cJSON_GetObjectItemCaseSensitive(audio, "AO_attributes");
-    if (!AO_attributes) return 1;
+    if (!AO_attributes) {
+        fprintf(stderr, "Warning: Using default AO enabled value.\n");
+        return 1;
+    }
 
     cJSON *enabled = cJSON_GetObjectItemCaseSensitive(AO_attributes, "enabled");
     return cJSON_IsTrue(enabled);
 }
 
-// Helper function to get the socket path for the given socket name
 char* config_get_socket_path(const char *socket_name) {
     pthread_mutex_lock(&config_mutex);
 
@@ -127,20 +164,17 @@ char* config_get_socket_path(const char *socket_name) {
     char* result = strdup(socket_item->valuestring);
     pthread_mutex_unlock(&config_mutex);
 
-    return result;  // Caller is responsible for freeing this string using free()
+    return result;
 }
 
-// Get the AI (Audio Input) socket path
 char* config_get_ai_socket() {
     return config_get_socket_path("audio_input_socket_path");
 }
 
-// Get the AO (Audio Output) socket path
 char* config_get_ao_socket() {
     return config_get_socket_path("audio_output_socket_path");
 }
 
-// Get the control socket path
 char* config_get_ctrl_socket() {
     return config_get_socket_path("audio_control_socket_path");
 }
@@ -157,8 +191,6 @@ cJSON* get_audio_attribute(AudioType type, const char* attribute_name) {
     return NULL;
 }
 
-
-// Retrieve the AO frame size from the configuration
 int config_get_ao_frame_size() {
     cJSON *audio = get_audio_config();
     if (!audio) return DEFAULT_AO_MAX_FRAME_SIZE;
