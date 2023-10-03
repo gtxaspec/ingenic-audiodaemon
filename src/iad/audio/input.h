@@ -5,7 +5,6 @@
 #include <imp/imp_audio.h>
 #include "config.h"
 
-#define DEFAULT_AO_MAX_FRAME_SIZE 1280
 #define DEFAULT_AI_SAMPLE_RATE AUDIO_SAMPLE_RATE_48000
 #define DEFAULT_AI_CHN_VOL 100
 #define DEFAULT_AI_GAIN 25
