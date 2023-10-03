@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "utils/logging.h"
+
+#define TAG "IAD"
 
 /**
  * @brief Clean up resources.
@@ -64,8 +67,8 @@ int main(int argc, char *argv[]) {
 
     // Load configuration settings from the provided file
     if (config_load_from_file(config_file_path) != 0) {
-        fprintf(stderr, "Failed to load configuration from %s\n", config_file_path);
         // Continue with the default settings
+	handle_audio_error("Failed to load configuration from %s. Continuing with default settings", config_file_path);
     }
 
     // Fetch audio play attributes

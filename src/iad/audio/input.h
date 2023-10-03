@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <imp/imp_audio.h>
 #include "config.h"
-#include "output.h"
 
+#define DEFAULT_AO_MAX_FRAME_SIZE 1280
 #define DEFAULT_AI_SAMPLE_RATE AUDIO_SAMPLE_RATE_48000
 #define DEFAULT_AI_CHN_VOL 100
 #define DEFAULT_AI_GAIN 25
@@ -25,7 +25,7 @@ typedef struct {
 } AudioInputAttributes;
 
 typedef struct {
-    cJSON *devIDItem;
+    cJSON *device_idItem;
     cJSON *channel_idItem;
 } PlayInputAttributes;
 

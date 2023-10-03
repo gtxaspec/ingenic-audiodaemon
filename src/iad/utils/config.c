@@ -80,10 +80,10 @@ cJSON *get_network_config(void) {
 // Check if AI (Audio Input) is enabled in the configuration
 int config_get_ai_enabled() {
     cJSON *audio = get_audio_config();
-    if (!audio) return 0;
+    if (!audio) return 1; // Default to enabled if no audio config
 
     cJSON *AI_attributes = cJSON_GetObjectItemCaseSensitive(audio, "AI_attributes");
-    if (!AI_attributes) return 0;
+    if (!AI_attributes) return 1; // Default to enabled if no AI_attributes
 
     cJSON *enabled = cJSON_GetObjectItemCaseSensitive(AI_attributes, "enabled");
     return cJSON_IsTrue(enabled);
@@ -92,10 +92,10 @@ int config_get_ai_enabled() {
 // Check if AO (Audio Output) is enabled in the configuration
 int config_get_ao_enabled() {
     cJSON *audio = get_audio_config();
-    if (!audio) return 0;
+    if (!audio) return 1;
 
     cJSON *AO_attributes = cJSON_GetObjectItemCaseSensitive(audio, "AO_attributes");
-    if (!AO_attributes) return 0;
+    if (!AO_attributes) return 1;
 
     cJSON *enabled = cJSON_GetObjectItemCaseSensitive(AO_attributes, "enabled");
     return cJSON_IsTrue(enabled);

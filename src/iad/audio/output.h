@@ -22,7 +22,7 @@ typedef struct {
     cJSON *chnCntItem;
     cJSON *SetVolItem;
     cJSON *SetGainItem;
-} AudioAttributes;
+} AudioOutputAttributes;
 
 typedef struct {
     cJSON *devIDItem;
@@ -37,8 +37,8 @@ void clear_audio_output_buffer(int devID, int chnID);
 void resume_audio_output(int devID, int chnID);
 void flush_audio_output_buffer(int devID, int chnID);
 
-AudioAttributes get_audio_attributes(void);
-void free_audio_attributes(AudioAttributes *attrs);
+AudioOutputAttributes get_audio_attributes(void);
+void free_audio_attributes(AudioOutputAttributes *attrs);
 PlayAttributes get_audio_play_attributes(void);
 void free_audio_play_attributes(PlayAttributes *attrs);
 

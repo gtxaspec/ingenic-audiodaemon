@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define TAG "AO_T31"
+#define PROG_TAG "AO_T31"
 
 typedef struct ClientNode {
     int sockfd;  // Socket descriptor for the client

@@ -130,11 +130,3 @@ ffmpeg -f alsa -ac 1 -i default -f s16le -ar 48000 -ac 1 - | ffmpeg -f s16le -i 
 Latency is decent!
 
 Note: Set the sample rate on the ffmpeg command line to match your settings.
-
----
-
-#### todo:
-
-- on the fly config changes via webui  
-- output AI and AO parameters to logcat, add switch to log to logcat if desired  
-- stdout logging that gives debug output upon initing AI and AO  
