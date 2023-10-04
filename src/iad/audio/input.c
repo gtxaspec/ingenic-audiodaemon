@@ -95,9 +95,22 @@ int initialize_audio_input_device(int devID, int chnID) {
     attr.bitwidth = attrs.bitwidthItem ? string_to_bitwidth(attrs.bitwidthItem->valuestring) : AUDIO_BIT_WIDTH_16;
     attr.soundmode = attrs.soundmodeItem ? string_to_soundmode(attrs.soundmodeItem->valuestring) : AUDIO_SOUND_MODE_MONO;
     attr.frmNum = attrs.frmNumItem ? attrs.frmNumItem->valueint : DEFAULT_AI_FRM_NUM;
+
+    // Validate and set samplerate for the audio device
     attr.samplerate = attrs.samplerateItem ? attrs.samplerateItem->valueint : DEFAULT_AI_SAMPLE_RATE;
+    if (!is_valid_samplerate(attr.samplerate)) {
+        IMP_LOG_ERR(TAG, "Invalid samplerate value: %d. Using default value: %d.\n", attr.samplerate, DEFAULT_AI_SAMPLE_RATE);
+        attr.samplerate = DEFAULT_AI_SAMPLE_RATE;
+    }
+
     attr.numPerFrm = compute_numPerFrm(attr.samplerate);
-    attr.chnCnt = attrs.chnCntItem ? attrs.chnCntItem->valueint : DEFAULT_AI_CHN_CNT;
+
+    int chnCnt = attrs.chnCntItem ? attrs.chnCntItem->valueint : DEFAULT_AI_CHN_CNT;
+    if (chnCnt > 1) {
+        IMP_LOG_ERR(TAG, "chnCnt value out of range: %d. Using default value: %d.\n", chnCnt, DEFAULT_AI_CHN_CNT);
+        chnCnt = DEFAULT_AI_CHN_CNT;
+    }
+    attr.chnCnt = chnCnt;
 
     // Debugging prints
     printf("[DEBUG] AI samplerate: %d\n", attr.samplerate);
@@ -140,20 +153,23 @@ int initialize_audio_input_device(int devID, int chnID) {
 	exit(EXIT_FAILURE);
     }
 
-    // Set audio channel volume
+    // Set volume and gain for the audio device
     int vol = attrs.SetVolItem ? attrs.SetVolItem->valueint : DEFAULT_AI_CHN_VOL;
-    ret = IMP_AI_SetVol(devID, chnID, vol);
-    if (ret != 0) {
-        IMP_LOG_ERR(TAG, "IMP_AI_SetVol failed");
-        return -1;
+    if (vol < -30 || vol > 120) {
+        IMP_LOG_ERR(TAG, "SetVol value out of range: %d. Using default value: %d.\n", vol, DEFAULT_AI_CHN_VOL);
+        vol = DEFAULT_AI_CHN_VOL;
+    }
+    if (IMP_AI_SetVol(devID, chnID, vol)) {
+        handle_audio_error("Failed to set volume attribute");
     }
 
-    // Set audio channel gain
     int gain = attrs.SetGainItem ? attrs.SetGainItem->valueint : DEFAULT_AI_GAIN;
-    ret = IMP_AI_SetGain(devID, chnID, gain);
-    if (ret != 0) {
-        IMP_LOG_ERR(TAG, "IMP_AI_SetGain failed");
-        return -1;
+    if (gain < 0 || gain > 31) {
+        IMP_LOG_ERR(TAG, "SetGain value out of range: %d. Using default value: %d.\n", gain, DEFAULT_AI_GAIN);
+        gain = DEFAULT_AI_GAIN;
+    }
+    if (IMP_AI_SetGain(devID, chnID, gain)) {
+        handle_audio_error("Failed to set gain attribute");
     }
 
     return 0;
