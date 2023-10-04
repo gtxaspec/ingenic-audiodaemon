@@ -68,10 +68,19 @@ int main(int argc, char *argv[]) {
     int disable_ao = options.disable_ao;
 
     // Load configuration settings from the provided file
-    if (config_load_from_file(config_file_path) != 0) {
-        // Continue with the default settings
-	handle_audio_error("Failed to load configuration. Continuing with default settings.  File", config_file_path);
+    if (config_load_from_file(config_file_path) == 0) {
+        // Successfully loaded the configuration, now validate its format
+        if (!validate_json(get_audio_config())) {
+            handle_audio_error("Invalid configuration format. Continuing with default settings.", config_file_path);
+        }
+    } else {
+        handle_audio_error("Failed to load configuration. Continuing with default settings. File", config_file_path);
     }
+
+    /* Debug only
+    cJSON *loaded_config = get_audio_config();
+    printf("Loaded JSON: %s\n", cJSON_Print(loaded_config));
+    */
 
     // Fetch audio play attributes
     PlayInputAttributes get_audio_input_play_attributes(void);

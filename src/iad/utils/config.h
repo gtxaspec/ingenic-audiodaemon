@@ -104,4 +104,19 @@ cJSON* get_audio_attribute(AudioType type, const char* attribute_name);
  */
 int config_get_ao_frame_size(void);
 
+/**
+ * Checks if the provided samplerate is valid.
+ * @param samplerate The samplerate value to be checked.
+ * @return 1 if the samplerate is valid, 0 otherwise.
+ */
+int is_valid_samplerate(int samplerate);
+
+/**
+ * @brief Validates the loaded configuration JSON for correct structure and keys.
+ *
+ * @param root The root cJSON object of the loaded configuration.
+ * @return int 1 if the configuration is valid, 0 otherwise.
+ */
+int validate_json(cJSON *root);
+
 #endif // CONFIG_H
