@@ -12,6 +12,7 @@
 #define DEFAULT_AI_FRM_NUM 40
 #define DEFAULT_AI_DEV_ID 1
 #define DEFAULT_AI_CHN_ID 0
+#define DEFAULT_AI_USR_FRM_DEPTH 40
 
 typedef struct {
     cJSON *samplerateItem;
@@ -21,6 +22,7 @@ typedef struct {
     cJSON *chnCntItem;
     cJSON *SetVolItem;
     cJSON *SetGainItem;
+    cJSON *usrFrmDepthItem;
 } AudioInputAttributes;
 
 typedef struct {

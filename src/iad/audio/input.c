@@ -30,6 +30,7 @@ AudioInputAttributes get_audio_input_attributes() {
     attrs.chnCntItem = get_audio_attribute(AUDIO_INPUT, "chnCnt");
     attrs.SetVolItem = get_audio_attribute(AUDIO_INPUT, "SetVol");
     attrs.SetGainItem = get_audio_attribute(AUDIO_INPUT, "SetGain");
+    attrs.usrFrmDepthItem = get_audio_attribute(AUDIO_INPUT, "usrFrmDepth");
 
     return attrs;
 }
@@ -50,6 +51,7 @@ void free_audio_input_attributes(AudioInputAttributes *attrs) {
     cJSON_Delete(attrs->chnCntItem);
     cJSON_Delete(attrs->SetVolItem);
     cJSON_Delete(attrs->SetGainItem);
+    cJSON_Delete(attrs->usrFrmDepthItem);
 }
 
 /**
@@ -120,10 +122,16 @@ int initialize_audio_input_device(int devID, int chnID) {
 	exit(EXIT_FAILURE);
     }
 
+    // Set audio frame depth attribute
     IMPAudioIChnParam chnParam;
-    chnParam.usrFrmDepth = 40; // TODO: this should be configurable from json in the future
+    chnParam.usrFrmDepth = attrs.usrFrmDepthItem ? attrs.usrFrmDepthItem->valueint : DEFAULT_AI_USR_FRM_DEPTH;
+    if (chnParam.usrFrmDepth != 0) {
+        IMP_LOG_ERR(TAG, "chnParam.usrFrmDepth failed");
+        handle_audio_error(TAG, "Failed to set usrFrmDepth");
+    }
 
-    // Set audio channel attribute
+
+    // Set audio channel attributes
     ret = IMP_AI_SetChnParam(devID, chnID, &chnParam);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetChnParam failed");
