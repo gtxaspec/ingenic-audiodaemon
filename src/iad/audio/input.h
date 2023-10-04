@@ -10,7 +10,7 @@
 #define DEFAULT_AI_GAIN 25
 #define DEFAULT_AI_CHN_CNT 1
 #define DEFAULT_AI_FRM_NUM 40
-#define DEFAULT_AI_DEV_ID 1
+#define DEFAULT_AI_DEV_ID 0
 #define DEFAULT_AI_CHN_ID 0
 #define DEFAULT_AI_USR_FRM_DEPTH 40
 
@@ -42,5 +42,6 @@ AudioInputAttributes get_audio_input_attributes(void);
 void free_audio_input_attributes(AudioInputAttributes *attrs);
 PlayInputAttributes get_audio_play_input_attributes(void);
 void free_audio_play_input_attributes(PlayInputAttributes *attrs);
+int disable_audio_input(void);
 
 #endif // INPUT_H

@@ -23,9 +23,9 @@
 void perform_cleanup() {
     pthread_mutex_destroy(&audio_buffer_lock);
     pthread_cond_destroy(&audio_data_cond);
+    disable_audio_output();
+    disable_audio_input();
     config_cleanup();
-    cleanup_audio_output();
-   //cleanup input
 }
 
 /**

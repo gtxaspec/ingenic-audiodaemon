@@ -224,3 +224,33 @@ void *ao_test_play_thread(void *arg) {
 
     return NULL;
 }
+
+/**
+ * Disables the audio channel and audio devices.
+ * @return 0 on success, -1 on failure.
+ */
+int disable_audio_output() {
+    int ret;
+
+    PlayAttributes attrs = get_audio_play_attributes();
+    int devID = attrs.devIDItem ? attrs.devIDItem->valueint : DEFAULT_AO_DEV_ID;
+    int chnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AO_CHN_ID;
+
+    /* Disable the audio channel */
+    ret = IMP_AO_DisableChn(devID, chnID);
+    if (ret != 0) {
+        IMP_LOG_ERR(TAG, "Audio channel disable error\n");
+        return -1;
+    }
+
+    /* Disable the audio device */
+    ret = IMP_AO_Disable(devID);
+    if (ret != 0) {
+        IMP_LOG_ERR(TAG, "Audio device disable error\n");
+        return -1;
+    }
+
+    cleanup_audio_output();
+
+    return 0;
+}

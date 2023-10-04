@@ -125,11 +125,6 @@ int initialize_audio_input_device(int devID, int chnID) {
     // Set audio frame depth attribute
     IMPAudioIChnParam chnParam;
     chnParam.usrFrmDepth = attrs.usrFrmDepthItem ? attrs.usrFrmDepthItem->valueint : DEFAULT_AI_USR_FRM_DEPTH;
-    if (chnParam.usrFrmDepth != 0) {
-        IMP_LOG_ERR(TAG, "chnParam.usrFrmDepth failed");
-        handle_audio_error(TAG, "Failed to set usrFrmDepth");
-    }
-
 
     // Set audio channel attributes
     ret = IMP_AI_SetChnParam(devID, chnID, &chnParam);
@@ -238,4 +233,26 @@ void *ai_record_thread(void *arg) {
     }
 
     return NULL;
+}
+
+int disable_audio_input() {
+    int ret;
+
+    PlayInputAttributes attrs = get_audio_input_play_attributes();
+    int devID = attrs.device_idItem ? attrs.device_idItem->valueint : DEFAULT_AI_DEV_ID;
+    int chnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AI_CHN_ID;
+
+    /* Disable the audio channel. */
+    ret = IMP_AI_DisableChn(devID, chnID);
+    if(ret != 0) {
+        IMP_LOG_ERR(TAG, "Audio channel disable error\n");
+	return -1;
+    }
+    /* Disable the audio devices. */
+    ret = IMP_AI_Disable(devID);
+    if(ret != 0) {
+        IMP_LOG_ERR(TAG, "Audio device disable error\n");
+	return -1;
+    }
+    return 0;
 }
