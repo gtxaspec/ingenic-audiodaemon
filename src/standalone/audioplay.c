@@ -8,10 +8,12 @@
 #include <imp/imp_log.h>
 #include "../build/version.h"
 
-#define TAG "AO_T31"
-#define AO_TEST_SAMPLE_RATE 16000
-#define AO_TEST_SAMPLE_TIME 1
-#define AO_TEST_BUF_SIZE (AO_TEST_SAMPLE_RATE * sizeof(short) * AO_TEST_SAMPLE_TIME / 1000)
+const char *TAG = "AO_T31";
+const int AO_TEST_SAMPLE_RATE = 16000;
+const int AO_TEST_SAMPLE_TIME = 1;
+const int AO_TEST_BUF_SIZE = AO_TEST_SAMPLE_RATE * sizeof(short) * AO_TEST_SAMPLE_TIME / 1000;
+const int DEFAULT_VOLUME = 10;
+const int DEFAULT_GAIN = 28;
 
 typedef struct {
     FILE *input;
@@ -19,6 +21,7 @@ typedef struct {
     int aogain;
 } AudioConfig;
 
+/* Display the usage of the program */
 void usage() {
     printf("AUDIOPLAY for INGENIC\n");
     printf("Info: 16khz, raw pcm_s16le, mono format supported.\n");
@@ -27,6 +30,7 @@ void usage() {
     exit(1);
 }
 
+/* Open the audio source, either from stdin or from a file */
 FILE* open_audio_source(const char *source) {
     if (strcmp(source, "-s") == 0 || strcmp(source, "--stdin") == 0) {
         return stdin;
@@ -40,9 +44,10 @@ FILE* open_audio_source(const char *source) {
     }
 }
 
-void *handle_audio_error(const char *msg) {
+/* Handle any audio error by logging the error message */
+int handle_audio_error(const char *msg) {
     IMP_LOG_ERR(TAG, "%s", msg);
-    return NULL;
+    return -1;
 }
 
 void *ao_test_play_thread(void *arg) {
@@ -50,7 +55,10 @@ void *ao_test_play_thread(void *arg) {
     AudioConfig *config = (AudioConfig *)arg;
 
     unsigned char *buf = (unsigned char *)malloc(AO_TEST_BUF_SIZE);
-    if (!buf) return handle_audio_error("[FATAL] malloc audio buf error");
+    if (!buf) {
+        handle_audio_error("[FATAL] malloc audio buf error");
+        return NULL;
+    }
 
     FILE *play_file = config->input;
     if (!play_file) {
@@ -64,7 +72,7 @@ void *ao_test_play_thread(void *arg) {
         .bitwidth = AUDIO_BIT_WIDTH_16,
         .soundmode = AUDIO_SOUND_MODE_MONO,
         .frmNum = 20,
-        .numPerFrm = 640,
+        .numPerFrm = 640,  // Number of samples per frame
         .chnCnt = 1
     };
 
@@ -78,7 +86,11 @@ void *ao_test_play_thread(void *arg) {
     int size;
     while ((size = fread(buf, 1, AO_TEST_BUF_SIZE, play_file)) == AO_TEST_BUF_SIZE) {
         IMPAudioFrame frm = {.virAddr = (uint32_t *)buf, .len = size};
-        if (IMP_AO_SendFrame(devID, 0, &frm, BLOCK)) return handle_audio_error("IMP_AO_SendFrame data error");
+        if (IMP_AO_SendFrame(devID, 0, &frm, BLOCK)) {
+            handle_audio_error("IMP_AO_SendFrame data error");
+            free(buf);
+            return NULL;
+        }
     }
 
     if (IMP_AO_FlushChnBuf(devID, 0) || IMP_AO_DisableChn(devID, 0) || IMP_AO_Disable(devID)) {
@@ -111,8 +123,8 @@ int main(int argc, char *argv[]) {
 
     AudioConfig config = {
         .input = open_audio_source(argv[1]),
-        .chnVol = (argc > 2) ? atoi(argv[2]) : 10,
-        .aogain = (argc > 3) ? atoi(argv[3]) : 28
+        .chnVol = (argc > 2) ? atoi(argv[2]) : DEFAULT_VOLUME,
+        .aogain = (argc > 3) ? atoi(argv[3]) : DEFAULT_GAIN
     };
 
     if (!config.input) return 1;
