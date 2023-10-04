@@ -11,6 +11,7 @@ include/libwebsockets
 include/libwebsockets.h
 include/lws_config.h
 lib/libwebsockets.a
+lib/libwebsockets.so
 build/cJSON-build/
 include/cJSON.h
 lib/libcjson.a

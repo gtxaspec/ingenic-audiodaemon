@@ -10,8 +10,9 @@ INCLUDES = -I$(SDK_INC_DIR) \
            -I./src/iad/network \
            -I./src/iad/audio \
            -I./src/iac/client \
-           -I./src/iad/utils\
-           -I./build
+           -I./src/iad/utils \
+           -I./build \
+	   -I$(SDK_INC_DIR)/libwebsockets
 
 CFLAGS = $(INCLUDES) -O2 -Wall -march=mips32r2
 LDFLAGS += -Wl,-gc-sections
@@ -21,7 +22,7 @@ LDLIBS = -lpthread -lm -lrt -ldl
 CONFIG_UCLIBC_BUILD=n
 CONFIG_MUSL_BUILD=y
 CONFIG_STATIC_BUILD=y
-DEBUG=y
+DEBUG=n
 
 ifeq ($(DEBUG), y)
 CFLAGS += -g -O0  # Add -g for debugging symbols and -O0 to disable optimizations
@@ -47,12 +48,14 @@ endif
 ifeq ($(CONFIG_STATIC_BUILD), y)
 LDFLAGS += -static
 LIBS = $(SDK_LIB_DIR)/libimp.a $(SDK_LIB_DIR)/libalog.a
+LWS = $(SDK_LIB_DIR)/libwebsockets.a
 else
 LIBS = $(SDK_LIB_DIR)/libimp.so $(SDK_LIB_DIR)/libalog.so
+LWS = $(SDK_LIB_DIR)/libwebsockets.so
 endif
 
 # Targets and Object Files
-AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac
+AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac build/bin/wc-console build/bin/web_client
 
 iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/network/network.o build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o build/cJSON-build/cJSON/cJSON.o $(SHIM)
 iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o $(SHIM)
@@ -134,14 +137,14 @@ wc-console: build/bin/wc-console
 
 build/bin/wc-console: version $(wc_console_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(wc_console_OBJS) $(SDK_LIB_DIR)/libwebsockets.a $(LDLIBS)
+	$(CXX) $(LDFLAGS) -o $@ $(wc_console_OBJS) ${LWS} $(LDLIBS)
 	$(STRIPCMD) $@
 
 web_client: build/bin/web_client
 
 build/bin/web_client: version $(web_client_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(web_client_OBJS) $(SDK_LIB_DIR)/libwebsockets.a $(LDLIBS)
+	$(CXX) $(LDFLAGS) -o $@ $(web_client_OBJS) ${LWS} $(LDLIBS)
 	$(STRIPCMD) $@
 
 clean:
@@ -151,5 +154,5 @@ clean:
 distclean: clean
 	-rm -f $(AUDIO_PROGS)
 	-rm -rf build/*
-	-rm -f lib/libwebsockets.a include/lws_config.h include/libwebsockets.h lib/libcjson.a include/cJSON.h
+	-rm -f lib/libwebsockets.* include/lws_config.h include/libwebsockets.h lib/libcjson.a include/cJSON.h
 	-rm -rf include/libwebsockets
