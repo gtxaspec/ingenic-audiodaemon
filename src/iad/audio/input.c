@@ -1,30 +1,118 @@
 #include <unistd.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <imp/imp_audio.h>
 #include <imp/imp_log.h>
 #include "input.h"
 #include "utils.h"
 #include "config.h"
+#include "logging.h"
 
+#define TRUE 1
+#define TAG "AI"
+
+/**
+ * Fetches the audio input attributes from the configuration.
+ *
+ * This function retrieves various audio attributes such as sample rate,
+ * bitwidth, soundmode, etc., from the configuration.
+ *
+ * @return A structure containing the audio input attributes.
+ */
+AudioInputAttributes get_audio_input_attributes() {
+    AudioInputAttributes attrs;
+
+    // Fetch each audio attribute from the configuration
+    attrs.samplerateItem = get_audio_attribute(AUDIO_INPUT, "sample_rate");
+    attrs.bitwidthItem = get_audio_attribute(AUDIO_INPUT, "bitwidth");
+    attrs.soundmodeItem = get_audio_attribute(AUDIO_INPUT, "soundmode");
+    attrs.frmNumItem = get_audio_attribute(AUDIO_INPUT, "frmNum");
+    attrs.chnCntItem = get_audio_attribute(AUDIO_INPUT, "chnCnt");
+    attrs.SetVolItem = get_audio_attribute(AUDIO_INPUT, "SetVol");
+    attrs.SetGainItem = get_audio_attribute(AUDIO_INPUT, "SetGain");
+    attrs.usrFrmDepthItem = get_audio_attribute(AUDIO_INPUT, "usrFrmDepth");
+
+    return attrs;
+}
+
+/**
+ * Frees the memory allocated for the audio input attributes.
+ *
+ * This function ensures that the memory allocated for each of the cJSON items
+ * in the audio attributes structure is properly released.
+ *
+ * @param attrs Pointer to the audio input attributes structure.
+ */
+void free_audio_input_attributes(AudioInputAttributes *attrs) {
+    cJSON_Delete(attrs->samplerateItem);
+    cJSON_Delete(attrs->bitwidthItem);
+    cJSON_Delete(attrs->soundmodeItem);
+    cJSON_Delete(attrs->frmNumItem);
+    cJSON_Delete(attrs->chnCntItem);
+    cJSON_Delete(attrs->SetVolItem);
+    cJSON_Delete(attrs->SetGainItem);
+    cJSON_Delete(attrs->usrFrmDepthItem);
+}
+
+/**
+ * Fetches the play attributes from the configuration.
+ * @return A structure containing the play attributes.
+ */
+PlayInputAttributes get_audio_input_play_attributes() {
+    PlayInputAttributes attrs;
+
+    // Populate the structure with play attributes from the configuration
+    attrs.device_idItem = get_audio_attribute(AUDIO_INPUT, "device_id");
+    attrs.channel_idItem = get_audio_attribute(AUDIO_INPUT, "channel_id");
+
+    return attrs;
+}
+
+/**
+ * Frees the memory allocated for the play attributes.
+ * @param attrs Pointer to the play attributes structure.
+ */
+void free_audio_input_play_attributes(PlayInputAttributes *attrs) {
+    cJSON_Delete(attrs->device_idItem);
+    cJSON_Delete(attrs->channel_idItem);
+}
+
+/**
+ * Initializes the audio input device with the specified attributes.
+ *
+ * This function sets up the audio input device with attributes either
+ * fetched from the configuration or defaults to pre-defined values.
+ *
+ * @param devID Device ID.
+ * @param chnID Channel ID.
+ * @return 0 on success, -1 on failure.
+ */
 int initialize_audio_input_device(int devID, int chnID) {
     int ret;
     IMPAudioIOAttr attr;
+    AudioInputAttributes attrs = get_audio_input_attributes();
 
-    cJSON* samplerateItem = get_audio_attribute(AUDIO_INPUT, "sample_rate");
-    cJSON* bitwidthItem = get_audio_attribute(AUDIO_INPUT, "bitwidth");
-    cJSON* soundmodeItem = get_audio_attribute(AUDIO_INPUT, "soundmode");
-    cJSON* frmNumItem = get_audio_attribute(AUDIO_INPUT, "frmNum");
-    cJSON* chnCntItem = get_audio_attribute(AUDIO_INPUT, "chnCnt");
-    cJSON* SetVolItem = get_audio_attribute(AUDIO_INPUT, "SetVol");
-    cJSON* SetGainItem = get_audio_attribute(AUDIO_INPUT, "SetGain");
+    attr.bitwidth = attrs.bitwidthItem ? string_to_bitwidth(attrs.bitwidthItem->valuestring) : AUDIO_BIT_WIDTH_16;
+    attr.soundmode = attrs.soundmodeItem ? string_to_soundmode(attrs.soundmodeItem->valuestring) : AUDIO_SOUND_MODE_MONO;
+    attr.frmNum = attrs.frmNumItem ? attrs.frmNumItem->valueint : DEFAULT_AI_FRM_NUM;
 
-    attr.bitwidth = bitwidthItem ? string_to_bitwidth(bitwidthItem->valuestring) : AUDIO_BIT_WIDTH_16;
-    attr.soundmode = soundmodeItem ? string_to_soundmode(soundmodeItem->valuestring) : AUDIO_SOUND_MODE_MONO;
-    attr.frmNum = frmNumItem ? frmNumItem->valueint : DEFAULT_AI_FRM_NUM;
-    attr.samplerate = samplerateItem ? samplerateItem->valueint : DEFAULT_AI_SAMPLE_RATE;
-    attr.numPerFrm = compute_numPerFrm(attr.samplerate); // Updated this line to compute at runtime
-    attr.chnCnt = chnCntItem ? chnCntItem->valueint : DEFAULT_AI_CHN_CNT;
+    // Validate and set samplerate for the audio device
+    attr.samplerate = attrs.samplerateItem ? attrs.samplerateItem->valueint : DEFAULT_AI_SAMPLE_RATE;
+    if (!is_valid_samplerate(attr.samplerate)) {
+        IMP_LOG_ERR(TAG, "Invalid samplerate value: %d. Using default value: %d.\n", attr.samplerate, DEFAULT_AI_SAMPLE_RATE);
+        attr.samplerate = DEFAULT_AI_SAMPLE_RATE;
+    }
 
+    attr.numPerFrm = compute_numPerFrm(attr.samplerate);
+
+    int chnCnt = attrs.chnCntItem ? attrs.chnCntItem->valueint : DEFAULT_AI_CHN_CNT;
+    if (chnCnt > 1) {
+        IMP_LOG_ERR(TAG, "chnCnt value out of range: %d. Using default value: %d.\n", chnCnt, DEFAULT_AI_CHN_CNT);
+        chnCnt = DEFAULT_AI_CHN_CNT;
+    }
+    attr.chnCnt = chnCnt;
+
+    // Debugging prints
     printf("[DEBUG] AI samplerate: %d\n", attr.samplerate);
     printf("[DEBUG] AI bitwidth: %d\n", attr.bitwidth);
     printf("[DEBUG] AI soundmode: %d\n", attr.soundmode);
@@ -36,66 +124,77 @@ int initialize_audio_input_device(int devID, int chnID) {
     ret = IMP_AI_SetPubAttr(devID, &attr);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetPubAttr failed");
-        return -1;
+        handle_audio_error(TAG, "Failed to initialize audio attributes");
+	exit(EXIT_FAILURE);
     }
 
     // Enable AI device
     ret = IMP_AI_Enable(devID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_Enable failed");
-        return -1;
+	exit(EXIT_FAILURE);
     }
 
+    // Set audio frame depth attribute
     IMPAudioIChnParam chnParam;
-    // TODO: this should be configureable from json in the future
-    chnParam.usrFrmDepth = 40;
+    chnParam.usrFrmDepth = attrs.usrFrmDepthItem ? attrs.usrFrmDepthItem->valueint : DEFAULT_AI_USR_FRM_DEPTH;
 
-    // Set audio channel attribute
+    // Set audio channel attributes
     ret = IMP_AI_SetChnParam(devID, chnID, &chnParam);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetChnParam failed");
-        return -1;
+	exit(EXIT_FAILURE);
     }
 
     // Enable AI channel
     ret = IMP_AI_EnableChn(devID, chnID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_EnableChn failed");
-        return -1;
+	exit(EXIT_FAILURE);
     }
 
-    // Set audio channel volume
-    int vol = SetVolItem ? SetVolItem->valueint : DEFAULT_AI_CHN_VOL;
-
-    ret = IMP_AI_SetVol(devID, chnID, vol);
-    if (ret != 0) {
-        IMP_LOG_ERR(TAG, "IMP_AI_SetVol failed");
-        return -1;
+    // Set volume and gain for the audio device
+    int vol = attrs.SetVolItem ? attrs.SetVolItem->valueint : DEFAULT_AI_CHN_VOL;
+    if (vol < -30 || vol > 120) {
+        IMP_LOG_ERR(TAG, "SetVol value out of range: %d. Using default value: %d.\n", vol, DEFAULT_AI_CHN_VOL);
+        vol = DEFAULT_AI_CHN_VOL;
+    }
+    if (IMP_AI_SetVol(devID, chnID, vol)) {
+        handle_audio_error("Failed to set volume attribute");
     }
 
-    // Set audio channel gain
-    int gain = SetGainItem ? SetGainItem->valueint : DEFAULT_AI_GAIN;
-    ret = IMP_AI_SetGain(devID, chnID, gain);
-    if (ret != 0) {
-        IMP_LOG_ERR(TAG, "IMP_AI_SetGain failed");
-        return -1;
+    int gain = attrs.SetGainItem ? attrs.SetGainItem->valueint : DEFAULT_AI_GAIN;
+    if (gain < 0 || gain > 31) {
+        IMP_LOG_ERR(TAG, "SetGain value out of range: %d. Using default value: %d.\n", gain, DEFAULT_AI_GAIN);
+        gain = DEFAULT_AI_GAIN;
+    }
+    if (IMP_AI_SetGain(devID, chnID, gain)) {
+        handle_audio_error("Failed to set gain attribute");
     }
 
     return 0;
 }
 
+/**
+ * The main thread function for recording audio input.
+ *
+ * This function continuously records audio from the specified device and
+ * channel, and sends the recorded data to connected clients. It handles
+ * errors gracefully by releasing any acquired resources.
+ *
+ * @param arg Unused thread argument.
+ * @return NULL.
+ */
 void *ai_record_thread(void *arg) {
     int ret;
 
-    cJSON* device_idItem = get_audio_attribute(AUDIO_INPUT, "device_id");
-    int devID = device_idItem ? device_idItem->valueint : DEFAULT_AI_DEV_ID;
-
-    cJSON* channel_idItem = get_audio_attribute(AUDIO_INPUT, "channel_id");
-    int chnID = channel_idItem ? channel_idItem->valueint : DEFAULT_AI_CHN_ID;
+    PlayInputAttributes attrs = get_audio_input_play_attributes();
+    int devID = attrs.device_idItem ? attrs.device_idItem->valueint : DEFAULT_AI_DEV_ID;
+    int chnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AI_CHN_ID;
 
     printf("[INFO] Sending audio data to input client\n");
 
-    while (1) {  // Infinite loop
+    while (TRUE) {
         // Polling for frame
         ret = IMP_AI_PollingFrame(devID, chnID, 1000);
         if (ret != 0) {
@@ -121,7 +220,7 @@ void *ai_record_thread(void *arg) {
                 if (errno == EPIPE) {
                     printf("[INFO] Client disconnected\n");
                 } else {
-                    perror("write to sockfd");
+		    handle_audio_error("AI: write to sockfd");
                 }
 
                 // Remove the client from the list
@@ -149,7 +248,27 @@ void *ai_record_thread(void *arg) {
         IMP_AI_ReleaseFrame(devID, chnID, &frm);
     }
 
-    // This part might never be reached unless there's a mechanism to break the loop.
-    printf("[INFO] Input Client Disconnected\n");
     return NULL;
+}
+
+int disable_audio_input() {
+    int ret;
+
+    PlayInputAttributes attrs = get_audio_input_play_attributes();
+    int devID = attrs.device_idItem ? attrs.device_idItem->valueint : DEFAULT_AI_DEV_ID;
+    int chnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AI_CHN_ID;
+
+    /* Disable the audio channel. */
+    ret = IMP_AI_DisableChn(devID, chnID);
+    if(ret != 0) {
+        IMP_LOG_ERR(TAG, "Audio channel disable error\n");
+	return -1;
+    }
+    /* Disable the audio devices. */
+    ret = IMP_AI_Disable(devID);
+    if(ret != 0) {
+        IMP_LOG_ERR(TAG, "Audio device disable error\n");
+	return -1;
+    }
+    return 0;
 }

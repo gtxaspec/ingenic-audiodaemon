@@ -75,12 +75,17 @@ For a deeper clean (removes the compiled binaries as well):
 To run the audio daemon:
 
 ```
-./iad [-d <AI|AO>]
+./iad [-c] [-d <AI|AO>] [-h]
+
 ```
 
 #### Options:
 
-- `-d`: Disable Audio Input or Output by `<AI|AO>`.
+```
+  -c <path>   Path to configuration file (default: ./daemon.json)
+  -d <AI|AO>  Disable AI (Audio Input) or AO (Audio Output)
+  -h          Display this help message
+```
 
 ---
 
@@ -130,11 +135,3 @@ ffmpeg -f alsa -ac 1 -i default -f s16le -ar 48000 -ac 1 - | ffmpeg -f s16le -i 
 Latency is decent!
 
 Note: Set the sample rate on the ffmpeg command line to match your settings.
-
----
-
-#### todo:
-
-- on the fly config changes via webui  
-- output AI and AO parameters to logcat, add switch to log to logcat if desired  
-- stdout logging that gives debug output upon initing AI and AO  
