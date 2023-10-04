@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     // Load configuration settings from the provided file
     if (config_load_from_file(config_file_path) != 0) {
         // Continue with the default settings
-	handle_audio_error("Failed to load configuration from %s. Continuing with default settings", config_file_path);
+	handle_audio_error("Failed to load configuration. Continuing with default settings.  File", config_file_path);
     }
 
     // Fetch audio play attributes

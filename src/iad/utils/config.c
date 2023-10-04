@@ -26,12 +26,20 @@ int config_load_from_file(const char *config_file_path) {
 
     FILE *file = fopen(config_file_path, "r");
     if (!file) {
+        fprintf(stderr, "[ERROR] Configuration file '%s' not found.\n", config_file_path);
         return -1;
     }
 
     fseek(file, 0, SEEK_END);
     long length = ftell(file);
     fseek(file, 0, SEEK_SET);
+
+    // Check if the file is empty
+    if (length == 0) {
+        fprintf(stderr, "[ERROR] Configuration file '%s' is empty.\n", config_file_path);
+        fclose(file);
+        return -1;
+    }
 
     char *content = calloc(1, length + 1);  // +1 for the null terminator
     if (!content) {
