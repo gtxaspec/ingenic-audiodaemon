@@ -87,6 +87,17 @@ void handle_and_reinitialize(int devID, int chnID, const char *errorMsg) {
 }
 
 /**
+ * Retrieves audio attributes (device and channel IDs) either from PlayAttributes or defaults.
+ * @param devID Pointer to store the retrieved Device ID.
+ * @param chnID Pointer to store the retrieved Channel ID.
+ */
+void get_audio_device_attributes(int *devID, int *chnID) {
+    PlayAttributes attrs = get_audio_play_attributes();
+    *devID = attrs.devIDItem ? attrs.devIDItem->valueint : DEFAULT_AO_DEV_ID;
+    *chnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AO_CHN_ID;
+}
+
+/**
  * Initializes the audio device using the attributes from the configuration.
  * @param devID Device ID.
  * @param chnID Channel ID.
@@ -144,7 +155,6 @@ void initialize_audio_device(int devID, int chnID) {
     if (IMP_AO_SetGain(devID, chnID, gain)) {
         handle_audio_error("Failed to set gain attribute");
     }
-
     // Get frame size from config and set it
     int frame_size_from_config = config_get_ao_frame_size();
     set_ao_max_frame_size(frame_size_from_config);
@@ -180,29 +190,46 @@ void reinitialize_audio_device(int devID, int chnID) {
     initialize_audio_device(devID, chnID);
 }
 
-// The following functions pause, clear, resume, and flush the audio output respectively.
+// The following functions pause, clear, resume, flush, and mute the audio output respectively.
 
-void pause_audio_output(int devID, int chnID) {
+void pause_audio_output() {
+    int devID, chnID;
+    get_audio_device_attributes(&devID, &chnID);
     if (IMP_AO_PauseChn(devID, chnID)) {
         handle_audio_error("AO: Failed to pause audio output");
     }
 }
 
-void clear_audio_output_buffer(int devID, int chnID) {
+void clear_audio_output_buffer() {
+    int devID, chnID;
+    get_audio_device_attributes(&devID, &chnID);
     if (IMP_AO_ClearChnBuf(devID, chnID)) {
         handle_audio_error("AO: Failed to clear audio output buffer");
     }
 }
 
-void resume_audio_output(int devID, int chnID) {
+void resume_audio_output() {
+    int devID, chnID;
+    get_audio_device_attributes(&devID, &chnID);
     if (IMP_AO_ResumeChn(devID, chnID)) {
         handle_audio_error("AO: Failed to resume audio output");
     }
 }
 
-void flush_audio_output_buffer(int devID, int chnID) {
+void flush_audio_output_buffer() {
+    int devID, chnID;
+    get_audio_device_attributes(&devID, &chnID);
     if (IMP_AO_FlushChnBuf(devID, chnID)) {
         handle_audio_error("AO: Failed to flush audio output buffer");
+    }
+}
+
+void mute_audio_output_device(int mute_enable) {
+    int devID, chnID;
+    get_audio_device_attributes(&devID, &chnID);
+
+    if (IMP_AO_SetVolMute(devID, chnID, mute_enable)) {
+        handle_audio_error("AO: Failed to mute audio output device");
     }
 }
 
@@ -258,11 +285,8 @@ void *ao_test_play_thread(void *arg) {
 int disable_audio_output() {
     int ret;
 
-    PlayAttributes attrs = get_audio_play_attributes();
-    int devID = attrs.devIDItem ? attrs.devIDItem->valueint : DEFAULT_AO_DEV_ID;
-    int chnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AO_CHN_ID;
-
-    flush_audio_output_buffer(devID, chnID);
+    int devID, chnID;
+    get_audio_device_attributes(&devID, &chnID);
 
     /* Disable the audio channel */
     ret = IMP_AO_DisableChn(devID, chnID);

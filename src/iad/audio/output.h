@@ -32,10 +32,11 @@ typedef struct {
 // Functions
 void reinitialize_audio_device(int devID, int chnID);
 void *ao_test_play_thread(void *arg);
-void pause_audio_output(int devID, int chnID);
-void clear_audio_output_buffer(int devID, int chnID);
-void resume_audio_output(int devID, int chnID);
-void flush_audio_output_buffer(int devID, int chnID);
+void pause_audio_output(void);
+void clear_audio_output_buffer(void);
+void resume_audio_output(void);
+void flush_audio_output_buffer(void);
+void mute_audio_output_device(int mute_enable);
 
 AudioOutputAttributes get_audio_attributes(void);
 void free_audio_attributes(AudioOutputAttributes *attrs);
@@ -46,5 +47,13 @@ extern int g_ao_max_frame_size;
 void set_ao_max_frame_size(int frame_size);
 void cleanup_audio_output();
 int disable_audio_output(void);
+
+
+/**
+ * Retrieves audio attributes (device and channel IDs) either from PlayAttributes or defaults.
+ * @param devID Pointer to store the retrieved Device ID.
+ * @param chnID Pointer to store the retrieved Channel ID.
+ */
+void get_audio_device_attributes(int *devID, int *chnID);
 
 #endif // OUTPUT_H
