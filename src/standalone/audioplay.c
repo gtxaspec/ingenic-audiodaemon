@@ -11,7 +11,13 @@
 const char *TAG = "AO_T31";
 const int AO_TEST_SAMPLE_RATE = 16000;
 const int AO_TEST_SAMPLE_TIME = 1;
+
+#ifdef __UCLIBC__
+#define AO_TEST_BUF_SIZE (AO_TEST_SAMPLE_RATE * sizeof(short) * AO_TEST_SAMPLE_TIME / 1000)
+#else
 const int AO_TEST_BUF_SIZE = AO_TEST_SAMPLE_RATE * sizeof(short) * AO_TEST_SAMPLE_TIME / 1000;
+#endif
+
 const int DEFAULT_VOLUME = 10;
 const int DEFAULT_GAIN = 28;
 
