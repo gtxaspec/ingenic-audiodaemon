@@ -5,12 +5,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audio Recorder</title>
+    <style>
+        #recordButton {
+            -webkit-touch-callout: none;  /* iOS Safari */
+            -webkit-user-select: none;    /* Safari */
+            -khtml-user-select: none;     /* Konqueror HTML */
+            -moz-user-select: none;       /* Old versions of Firefox */
+            -ms-user-select: none;        /* Internet Explorer/Edge */
+            user-select: none;            /* Non-prefixed version, currently supported by Chrome, Opera and Firefox */
+        }
+    </style>
 </head>
 <body>
+    <label for="sampleRateSelector">Select Sample Rate:</label>
+    <select id="sampleRateSelector">
+        <option value="8000">8KHz</option>
+        <option value="16000">16KHz</option>
+        <option value="24000">24KHz</option>
+        <option value="32000">32KHz</option>
+        <option value="44100">44.1KHz</option>
+        <option value="48000" selected>48KHz</option>
+        <option value="96000">96KHz</option>
+    </select>
+    <br><br>
     <button id="recordButton">Push and Hold to Record</button>
 
-<script src="library/recorder.js"></script>
-<script src="script.js"></script>
-
+    <script src="library/recorder.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
