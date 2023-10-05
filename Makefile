@@ -19,6 +19,7 @@ LDFLAGS += -Wl,-gc-sections
 LDLIBS = -lpthread -lm -lrt -ldl
 
 # Configuration
+# uClibc + Static is broken... compiler 'TLS_DTPREL_VALUE' error.
 CONFIG_UCLIBC_BUILD=n
 CONFIG_MUSL_BUILD=y
 CONFIG_STATIC_BUILD=y
@@ -35,7 +36,8 @@ endif
 ifeq ($(CONFIG_UCLIBC_BUILD), y)
 CROSS_COMPILE?= mips-linux-uclibc-gnu-
 CFLAGS += -muclibc
-LDFLAGS += -muclibc
+# Set interpreter directory to ./libs
+LDFLAGS += -muclibc -Wl,-dynamic-linker,libs/ld-uClibc.so.0
 SDK_LIB_DIR = lib
 endif
 
