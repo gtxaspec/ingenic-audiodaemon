@@ -12,8 +12,21 @@
 set -e
 set -o pipefail
 
+# Variables
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BUILD_DIR="${SCRIPT_DIR}/../build/lws-build"
+LWS_REPO="https://github.com/warmcat/libwebsockets"
+LWS_DIR="${BUILD_DIR}/libwebsockets"
+MAKEFILE="$SCRIPT_DIR/../Makefile"
+
 # Set compiler prefix here
-CROSS_COMPILE="mipsel-openipc-linux-musl-"
+if grep -q "CONFIG_UCLIBC_BUILD=y" "$MAKEFILE"; then
+	echo "uclibc"
+	CROSS_COMPILE="mips-linux-uclibc-gnu-"
+elif grep -q "CONFIG_MUSL_BUILD=y" "$MAKEFILE"; then
+	echo "musl"
+	CROSS_COMPILE="mipsel-openipc-linux-musl-"
+fi
 
 CC="${CROSS_COMPILE}gcc"
 CXX="${CROSS_COMPILE}g++"
@@ -24,13 +37,6 @@ if [ -z "$CC" ] || [ -z "$CXX" ]; then
     echo "Error: CC and CXX environment variables must be set."
     exit 1
 fi
-
-# Variables
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BUILD_DIR="${SCRIPT_DIR}/../build/lws-build"
-LWS_REPO="https://github.com/warmcat/libwebsockets"
-LWS_DIR="${BUILD_DIR}/libwebsockets"
-MAKEFILE="$SCRIPT_DIR/../Makefile"
 
 # Create libwebsockets build directory
 echo "Creating libwebsockets build directory..."
@@ -62,6 +68,7 @@ cmake \
 -DCMAKE_C_COMPILER=${CC} \
 -DCMAKE_CXX_COMPILER=${CXX} \
 -DCMAKE_BUILD_TYPE=RELEASE \
+-DDISABLE_WERROR=ON \
 -DLWS_WITH_DIR=OFF \
 -DLWS_WITH_LEJP_CONF=OFF \
 -DLWS_WITHOUT_EXTENSIONS=1 \
@@ -108,6 +115,7 @@ cmake \
 -DCMAKE_C_COMPILER=${CC} \
 -DCMAKE_CXX_COMPILER=${CXX} \
 -DCMAKE_BUILD_TYPE=RELEASE \
+-DDISABLE_WERROR=ON \
 -DLWS_WITH_DIR=OFF \
 -DLWS_WITH_LEJP_CONF=OFF \
 -DLWS_WITHOUT_EXTENSIONS=1 \
