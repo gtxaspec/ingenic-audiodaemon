@@ -25,12 +25,12 @@ typedef struct {
 } AudioOutputAttributes;
 
 typedef struct {
-    cJSON *devIDItem;
+    cJSON *aoDevIDItem;
     cJSON *channel_idItem;
 } PlayAttributes;
 
 // Functions
-void reinitialize_audio_device(int devID, int chnID);
+void reinitialize_audio_device(int aoDevID, int aoChnID);
 void *ao_test_play_thread(void *arg);
 void pause_audio_output(void);
 void clear_audio_output_buffer(void);
@@ -51,9 +51,9 @@ int disable_audio_output(void);
 
 /**
  * Retrieves audio attributes (device and channel IDs) either from PlayAttributes or defaults.
- * @param devID Pointer to store the retrieved Device ID.
- * @param chnID Pointer to store the retrieved Channel ID.
+ * @param aoDevID Pointer to store the retrieved Device ID.
+ * @param aoChnID Pointer to store the retrieved Channel ID.
  */
-void get_audio_device_attributes(int *devID, int *chnID);
+void get_audio_device_attributes(int *aoDevID, int *aoChnID);
 
 #endif // OUTPUT_H

@@ -60,7 +60,7 @@ PlayAttributes get_audio_play_attributes() {
     PlayAttributes attrs;
 
     // Populate the structure with play attributes from the configuration
-    attrs.devIDItem = get_audio_attribute(AUDIO_OUTPUT, "device_id");
+    attrs.aoDevIDItem = get_audio_attribute(AUDIO_OUTPUT, "device_id");
     attrs.channel_idItem = get_audio_attribute(AUDIO_OUTPUT, "channel_id");
 
     return attrs;
@@ -71,38 +71,38 @@ PlayAttributes get_audio_play_attributes() {
  * @param attrs Pointer to the play attributes structure.
  */
 void free_audio_play_attributes(PlayAttributes *attrs) {
-    cJSON_Delete(attrs->devIDItem);
+    cJSON_Delete(attrs->aoDevIDItem);
     cJSON_Delete(attrs->channel_idItem);
 }
 
 /**
  * Handles errors and reinitializes the audio device.
- * @param devID Device ID.
- * @param chnID Channel ID.
+ * @param aoDevID Device ID.
+ * @param aoChnID Channel ID.
  * @param errorMsg Error message to be handled.
  */
-void handle_and_reinitialize(int devID, int chnID, const char *errorMsg) {
+void handle_and_reinitialize(int aoDevID, int aoChnID, const char *errorMsg) {
     handle_audio_error(errorMsg);
-    reinitialize_audio_device(devID, chnID);
+    reinitialize_audio_device(aoDevID, aoChnID);
 }
 
 /**
  * Retrieves audio attributes (device and channel IDs) either from PlayAttributes or defaults.
- * @param devID Pointer to store the retrieved Device ID.
- * @param chnID Pointer to store the retrieved Channel ID.
+ * @param aoDevID Pointer to store the retrieved Device ID.
+ * @param aoChnID Pointer to store the retrieved Channel ID.
  */
-void get_audio_device_attributes(int *devID, int *chnID) {
+void get_audio_device_attributes(int *aoDevID, int *aoChnID) {
     PlayAttributes attrs = get_audio_play_attributes();
-    *devID = attrs.devIDItem ? attrs.devIDItem->valueint : DEFAULT_AO_DEV_ID;
-    *chnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AO_CHN_ID;
+    *aoDevID = attrs.aoDevIDItem ? attrs.aoDevIDItem->valueint : DEFAULT_AO_DEV_ID;
+    *aoChnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AO_CHN_ID;
 }
 
 /**
  * Initializes the audio device using the attributes from the configuration.
- * @param devID Device ID.
- * @param chnID Channel ID.
+ * @param aoDevID Device ID.
+ * @param aoChnID Channel ID.
  */
-void initialize_audio_device(int devID, int chnID) {
+void initialize_audio_device(int aoDevID, int aoChnID) {
     IMPAudioIOAttr attr;
     AudioOutputAttributes attrs = get_audio_attributes();
 
@@ -128,14 +128,14 @@ void initialize_audio_device(int devID, int chnID) {
     attr.chnCnt = chnCnt;
 
     // Initialize the audio device
-    if (IMP_AO_SetPubAttr(devID, &attr) || IMP_AO_GetPubAttr(devID, &attr) ||
-        IMP_AO_Enable(devID) || IMP_AO_EnableChn(devID, chnID)) {
+    if (IMP_AO_SetPubAttr(aoDevID, &attr) || IMP_AO_GetPubAttr(aoDevID, &attr) ||
+        IMP_AO_Enable(aoDevID) || IMP_AO_EnableChn(aoDevID, aoChnID)) {
 	handle_audio_error("AO: Failed to initialize audio attributes");
         exit(EXIT_FAILURE);
     }
 
     // Debugging prints
-    printf("[DEBUG] CHNID: %d\n", chnID);
+    printf("[DEBUG] aoChnID: %d\n", aoChnID);
 
     // Set volume and gain for the audio device
     int vol = attrs.SetVolItem ? attrs.SetVolItem->valueint : DEFAULT_AO_CHN_VOL;
@@ -143,7 +143,7 @@ void initialize_audio_device(int devID, int chnID) {
         IMP_LOG_ERR(TAG, "SetVol value out of range: %d. Using default value: %d.\n", vol, DEFAULT_AO_CHN_VOL);
         vol = DEFAULT_AO_CHN_VOL;
     }
-    if (IMP_AO_SetVol(devID, chnID, vol)) {
+    if (IMP_AO_SetVol(aoDevID, aoChnID, vol)) {
         handle_audio_error("Failed to set volume attribute");
     }
 
@@ -152,7 +152,7 @@ void initialize_audio_device(int devID, int chnID) {
         IMP_LOG_ERR(TAG, "SetGain value out of range: %d. Using default value: %d.\n", gain, DEFAULT_AO_GAIN);
         gain = DEFAULT_AO_GAIN;
     }
-    if (IMP_AO_SetGain(devID, chnID, gain)) {
+    if (IMP_AO_SetGain(aoDevID, aoChnID, gain)) {
         handle_audio_error("Failed to set gain attribute");
     }
     // Get frame size from config and set it
@@ -181,54 +181,54 @@ void cleanup_audio_output() {
 
 /**
  * Reinitialize the audio device by first disabling it and then initializing.
- * @param devID Device ID.
- * @param chnID Channel ID.
+ * @param aoDevID Device ID.
+ * @param aoChnID Channel ID.
  */
-void reinitialize_audio_device(int devID, int chnID) {
-    IMP_AO_DisableChn(devID, chnID);
-    IMP_AO_Disable(devID);
-    initialize_audio_device(devID, chnID);
+void reinitialize_audio_device(int aoDevID, int aoChnID) {
+    IMP_AO_DisableChn(aoDevID, aoChnID);
+    IMP_AO_Disable(aoDevID);
+    initialize_audio_device(aoDevID, aoChnID);
 }
 
 // The following functions pause, clear, resume, flush, and mute the audio output respectively.
 
 void pause_audio_output() {
-    int devID, chnID;
-    get_audio_device_attributes(&devID, &chnID);
-    if (IMP_AO_PauseChn(devID, chnID)) {
+    int aoDevID, aoChnID;
+    get_audio_device_attributes(&aoDevID, &aoChnID);
+    if (IMP_AO_PauseChn(aoDevID, aoChnID)) {
         handle_audio_error("AO: Failed to pause audio output");
     }
 }
 
 void clear_audio_output_buffer() {
-    int devID, chnID;
-    get_audio_device_attributes(&devID, &chnID);
-    if (IMP_AO_ClearChnBuf(devID, chnID)) {
+    int aoDevID, aoChnID;
+    get_audio_device_attributes(&aoDevID, &aoChnID);
+    if (IMP_AO_ClearChnBuf(aoDevID, aoChnID)) {
         handle_audio_error("AO: Failed to clear audio output buffer");
     }
 }
 
 void resume_audio_output() {
-    int devID, chnID;
-    get_audio_device_attributes(&devID, &chnID);
-    if (IMP_AO_ResumeChn(devID, chnID)) {
+    int aoDevID, aoChnID;
+    get_audio_device_attributes(&aoDevID, &aoChnID);
+    if (IMP_AO_ResumeChn(aoDevID, aoChnID)) {
         handle_audio_error("AO: Failed to resume audio output");
     }
 }
 
 void flush_audio_output_buffer() {
-    int devID, chnID;
-    get_audio_device_attributes(&devID, &chnID);
-    if (IMP_AO_FlushChnBuf(devID, chnID)) {
+    int aoDevID, aoChnID;
+    get_audio_device_attributes(&aoDevID, &aoChnID);
+    if (IMP_AO_FlushChnBuf(aoDevID, aoChnID)) {
         handle_audio_error("AO: Failed to flush audio output buffer");
     }
 }
 
 void mute_audio_output_device(int mute_enable) {
-    int devID, chnID;
-    get_audio_device_attributes(&devID, &chnID);
+    int aoDevID, aoChnID;
+    get_audio_device_attributes(&aoDevID, &aoChnID);
 
-    if (IMP_AO_SetVolMute(devID, chnID, mute_enable)) {
+    if (IMP_AO_SetVolMute(aoDevID, aoChnID, mute_enable)) {
         handle_audio_error("AO: Failed to mute audio output device");
     }
 }
@@ -245,13 +245,13 @@ void *ao_test_play_thread(void *arg) {
     pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
 
     PlayAttributes attrs = get_audio_play_attributes();
-    int devID = attrs.devIDItem ? attrs.devIDItem->valueint : DEFAULT_AO_DEV_ID;
-    int chnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AO_CHN_ID;
+    int aoDevID = attrs.aoDevIDItem ? attrs.aoDevIDItem->valueint : DEFAULT_AO_DEV_ID;
+    int aoChnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AO_CHN_ID;
 
-    printf("[DEBUG] CHNID JSON: %d\n", chnID);
+    printf("[DEBUG] aoChnID JSON: %d\n", aoChnID);
 
     // Initialize the audio device for playback
-    initialize_audio_device(devID, chnID);
+    initialize_audio_device(aoDevID, aoChnID);
 
     // Continuous loop to play audio
     while (TRUE) {
@@ -265,9 +265,9 @@ void *ao_test_play_thread(void *arg) {
         IMPAudioFrame frm = {.virAddr = (uint32_t *)audio_buffer, .len = audio_buffer_size};
 
         // Send the audio frame for playback
-        if (IMP_AO_SendFrame(devID, chnID, &frm, BLOCK)) {
+        if (IMP_AO_SendFrame(aoDevID, aoChnID, &frm, BLOCK)) {
             pthread_mutex_unlock(&audio_buffer_lock);
-            handle_and_reinitialize(devID, chnID, "IMP_AO_SendFrame data error");
+            handle_and_reinitialize(aoDevID, aoChnID, "IMP_AO_SendFrame data error");
             continue;
         }
 
@@ -285,18 +285,18 @@ void *ao_test_play_thread(void *arg) {
 int disable_audio_output() {
     int ret;
 
-    int devID, chnID;
-    get_audio_device_attributes(&devID, &chnID);
+    int aoDevID, aoChnID;
+    get_audio_device_attributes(&aoDevID, &aoChnID);
 
     /* Disable the audio channel */
-    ret = IMP_AO_DisableChn(devID, chnID);
+    ret = IMP_AO_DisableChn(aoDevID, aoChnID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "Audio channel disable error\n");
         return -1;
     }
 
     /* Disable the audio device */
-    ret = IMP_AO_Disable(devID);
+    ret = IMP_AO_Disable(aoDevID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "Audio device disable error\n");
         return -1;

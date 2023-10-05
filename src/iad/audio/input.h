@@ -35,7 +35,7 @@ typedef struct {
 } AiThreadArg;
 
 // Functions
-int initialize_audio_input_device(int devID, int chnID);
+int initialize_audio_input_device(int aiDevID, int aiChnID);
 void *ai_record_thread(void *output_file_path);
 
 AudioInputAttributes get_audio_input_attributes(void);

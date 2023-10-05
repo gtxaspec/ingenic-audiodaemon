@@ -83,11 +83,11 @@ void free_audio_input_play_attributes(PlayInputAttributes *attrs) {
  * This function sets up the audio input device with attributes either
  * fetched from the configuration or defaults to pre-defined values.
  *
- * @param devID Device ID.
- * @param chnID Channel ID.
+ * @param aiDevID Device ID.
+ * @param aiChnID Channel ID.
  * @return 0 on success, -1 on failure.
  */
-int initialize_audio_input_device(int devID, int chnID) {
+int initialize_audio_input_device(int aiDevID, int aiChnID) {
     int ret;
     IMPAudioIOAttr attr;
     AudioInputAttributes attrs = get_audio_input_attributes();
@@ -121,7 +121,7 @@ int initialize_audio_input_device(int devID, int chnID) {
     printf("[DEBUG] AI chnCnt: %d\n", attr.chnCnt);
 
     // Set public attribute of AI device
-    ret = IMP_AI_SetPubAttr(devID, &attr);
+    ret = IMP_AI_SetPubAttr(aiDevID, &attr);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetPubAttr failed");
         handle_audio_error(TAG, "Failed to initialize audio attributes");
@@ -129,7 +129,7 @@ int initialize_audio_input_device(int devID, int chnID) {
     }
 
     // Enable AI device
-    ret = IMP_AI_Enable(devID);
+    ret = IMP_AI_Enable(aiDevID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_Enable failed");
 	exit(EXIT_FAILURE);
@@ -140,14 +140,14 @@ int initialize_audio_input_device(int devID, int chnID) {
     chnParam.usrFrmDepth = attrs.usrFrmDepthItem ? attrs.usrFrmDepthItem->valueint : DEFAULT_AI_USR_FRM_DEPTH;
 
     // Set audio channel attributes
-    ret = IMP_AI_SetChnParam(devID, chnID, &chnParam);
+    ret = IMP_AI_SetChnParam(aiDevID, aiChnID, &chnParam);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetChnParam failed");
 	exit(EXIT_FAILURE);
     }
 
     // Enable AI channel
-    ret = IMP_AI_EnableChn(devID, chnID);
+    ret = IMP_AI_EnableChn(aiDevID, aiChnID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_EnableChn failed");
 	exit(EXIT_FAILURE);
@@ -159,7 +159,7 @@ int initialize_audio_input_device(int devID, int chnID) {
         IMP_LOG_ERR(TAG, "SetVol value out of range: %d. Using default value: %d.\n", vol, DEFAULT_AI_CHN_VOL);
         vol = DEFAULT_AI_CHN_VOL;
     }
-    if (IMP_AI_SetVol(devID, chnID, vol)) {
+    if (IMP_AI_SetVol(aiDevID, aiChnID, vol)) {
         handle_audio_error("Failed to set volume attribute");
     }
 
@@ -168,7 +168,7 @@ int initialize_audio_input_device(int devID, int chnID) {
         IMP_LOG_ERR(TAG, "SetGain value out of range: %d. Using default value: %d.\n", gain, DEFAULT_AI_GAIN);
         gain = DEFAULT_AI_GAIN;
     }
-    if (IMP_AI_SetGain(devID, chnID, gain)) {
+    if (IMP_AI_SetGain(aiDevID, aiChnID, gain)) {
         handle_audio_error("Failed to set gain attribute");
     }
 
@@ -189,21 +189,21 @@ void *ai_record_thread(void *arg) {
     int ret;
 
     PlayInputAttributes attrs = get_audio_input_play_attributes();
-    int devID = attrs.device_idItem ? attrs.device_idItem->valueint : DEFAULT_AI_DEV_ID;
-    int chnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AI_CHN_ID;
+    int aiDevID = attrs.device_idItem ? attrs.device_idItem->valueint : DEFAULT_AI_DEV_ID;
+    int aiChnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AI_CHN_ID;
 
     printf("[INFO] Sending audio data to input client\n");
 
     while (TRUE) {
         // Polling for frame
-        ret = IMP_AI_PollingFrame(devID, chnID, 1000);
+        ret = IMP_AI_PollingFrame(aiDevID, aiChnID, 1000);
         if (ret != 0) {
             IMP_LOG_ERR(TAG, "IMP_AI_PollingFrame failed");
             return NULL;
         }
 
         IMPAudioFrame frm;
-        ret = IMP_AI_GetFrame(devID, chnID, &frm, 1000);
+        ret = IMP_AI_GetFrame(aiDevID, aiChnID, &frm, 1000);
         if (ret != 0) {
             IMP_LOG_ERR(TAG, "IMP_AI_GetFrame failed");
             return NULL;
@@ -245,7 +245,7 @@ void *ai_record_thread(void *arg) {
         pthread_mutex_unlock(&audio_buffer_lock);
 
         // Release audio frame
-        IMP_AI_ReleaseFrame(devID, chnID, &frm);
+        IMP_AI_ReleaseFrame(aiDevID, aiChnID, &frm);
     }
 
     return NULL;
@@ -255,17 +255,17 @@ int disable_audio_input() {
     int ret;
 
     PlayInputAttributes attrs = get_audio_input_play_attributes();
-    int devID = attrs.device_idItem ? attrs.device_idItem->valueint : DEFAULT_AI_DEV_ID;
-    int chnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AI_CHN_ID;
+    int aiDevID = attrs.device_idItem ? attrs.device_idItem->valueint : DEFAULT_AI_DEV_ID;
+    int aiChnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AI_CHN_ID;
 
     /* Disable the audio channel. */
-    ret = IMP_AI_DisableChn(devID, chnID);
+    ret = IMP_AI_DisableChn(aiDevID, aiChnID);
     if(ret != 0) {
         IMP_LOG_ERR(TAG, "Audio channel disable error\n");
 	return -1;
     }
     /* Disable the audio devices. */
-    ret = IMP_AI_Disable(devID);
+    ret = IMP_AI_Disable(aiDevID);
     if(ret != 0) {
         IMP_LOG_ERR(TAG, "Audio device disable error\n");
 	return -1;
