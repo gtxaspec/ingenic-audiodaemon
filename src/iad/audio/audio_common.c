@@ -18,7 +18,7 @@ static cJSON* get_audio_device_attribute(AudioType type, const char *attr) {
  * Helper function to free the memory for a specific audio attribute.
  * @param item The cJSON item to be freed.
  */
-static void free_audio_device_attribute(cJSON *item) {
+static __attribute__((unused)) void free_audio_device_attribute(cJSON *item) {
     if (item) {
         cJSON_Delete(item);
     }
