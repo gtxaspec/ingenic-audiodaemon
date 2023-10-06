@@ -1,9 +1,16 @@
-#include <pthread.h>
-#include <sched.h>
+#include <pthread.h>        // for pthread_mutex_unlock, pthread_cond_wait
+#include <sched.h>          // for sched_get_priority_max, SCHED_FIFO, sched...
+#include <stdint.h>         // for uint32_t
+#include <stdlib.h>         // for free, malloc, NULL
+#include <stdio.h>          // for printf
+#include "imp/imp_audio.h"  // for IMPAudioIOAttr, IMP_AO_Disable, IMP_AO_Di...
+#include "imp/imp_log.h"    // for IMP_LOG_ERR
+#include "audio_common.h"   // for AudioOutputAttributes, PlayAttributes
+#include "config.h"         // for config_get_ao_frame_size, is_valid_sample...
+#include "cJSON.h"          // for cJSON
 #include "output.h"
-#include "utils.h"
-#include "logging.h"
-#include "config.h"
+#include "logging.h"        // for handle_audio_error
+#include "utils.h"          // for audio_buffer, audio_buffer_lock, audio_bu...
 
 #define TRUE 1
 #define TAG "AO"
@@ -20,62 +27,6 @@ void set_ao_max_frame_size(int frame_size) {
 }
 
 /**
- * Fetches the audio attributes from the configuration.
- * @return A structure containing the audio attributes.
- */
-AudioOutputAttributes get_audio_attributes() {
-    AudioOutputAttributes attrs;
-
-    // Populate the structure with audio attributes from the configuration
-    attrs.samplerateItem = get_audio_attribute(AUDIO_OUTPUT, "sample_rate");
-    attrs.bitwidthItem = get_audio_attribute(AUDIO_OUTPUT, "bitwidth");
-    attrs.soundmodeItem = get_audio_attribute(AUDIO_OUTPUT, "soundmode");
-    attrs.frmNumItem = get_audio_attribute(AUDIO_OUTPUT, "frmNum");
-    attrs.chnCntItem = get_audio_attribute(AUDIO_OUTPUT, "chnCnt");
-    attrs.SetVolItem = get_audio_attribute(AUDIO_OUTPUT, "SetVol");
-    attrs.SetGainItem = get_audio_attribute(AUDIO_OUTPUT, "SetGain");
-
-    return attrs;
-}
-
-/**
- * Frees the memory allocated for the audio attributes.
- * @param attrs Pointer to the audio attributes structure.
- */
-void free_audio_attributes(AudioOutputAttributes *attrs) {
-    cJSON_Delete(attrs->samplerateItem);
-    cJSON_Delete(attrs->bitwidthItem);
-    cJSON_Delete(attrs->soundmodeItem);
-    cJSON_Delete(attrs->frmNumItem);
-    cJSON_Delete(attrs->chnCntItem);
-    cJSON_Delete(attrs->SetVolItem);
-    cJSON_Delete(attrs->SetGainItem);
-}
-
-/**
- * Fetches the play attributes from the configuration.
- * @return A structure containing the play attributes.
- */
-PlayAttributes get_audio_play_attributes() {
-    PlayAttributes attrs;
-
-    // Populate the structure with play attributes from the configuration
-    attrs.aoDevIDItem = get_audio_attribute(AUDIO_OUTPUT, "device_id");
-    attrs.channel_idItem = get_audio_attribute(AUDIO_OUTPUT, "channel_id");
-
-    return attrs;
-}
-
-/**
- * Frees the memory allocated for the play attributes.
- * @param attrs Pointer to the play attributes structure.
- */
-void free_audio_play_attributes(PlayAttributes *attrs) {
-    cJSON_Delete(attrs->aoDevIDItem);
-    cJSON_Delete(attrs->channel_idItem);
-}
-
-/**
  * Handles errors and reinitializes the audio device.
  * @param aoDevID Device ID.
  * @param aoChnID Channel ID.
@@ -84,17 +35,6 @@ void free_audio_play_attributes(PlayAttributes *attrs) {
 void handle_and_reinitialize(int aoDevID, int aoChnID, const char *errorMsg) {
     handle_audio_error(errorMsg);
     reinitialize_audio_device(aoDevID, aoChnID);
-}
-
-/**
- * Retrieves audio attributes (device and channel IDs) either from PlayAttributes or defaults.
- * @param aoDevID Pointer to store the retrieved Device ID.
- * @param aoChnID Pointer to store the retrieved Channel ID.
- */
-void get_audio_device_attributes(int *aoDevID, int *aoChnID) {
-    PlayAttributes attrs = get_audio_play_attributes();
-    *aoDevID = attrs.aoDevIDItem ? attrs.aoDevIDItem->valueint : DEFAULT_AO_DEV_ID;
-    *aoChnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AO_CHN_ID;
 }
 
 /**
@@ -188,49 +128,6 @@ void reinitialize_audio_device(int aoDevID, int aoChnID) {
     IMP_AO_DisableChn(aoDevID, aoChnID);
     IMP_AO_Disable(aoDevID);
     initialize_audio_device(aoDevID, aoChnID);
-}
-
-// The following functions pause, clear, resume, flush, and mute the audio output respectively.
-
-void pause_audio_output() {
-    int aoDevID, aoChnID;
-    get_audio_device_attributes(&aoDevID, &aoChnID);
-    if (IMP_AO_PauseChn(aoDevID, aoChnID)) {
-        handle_audio_error("AO: Failed to pause audio output");
-    }
-}
-
-void clear_audio_output_buffer() {
-    int aoDevID, aoChnID;
-    get_audio_device_attributes(&aoDevID, &aoChnID);
-    if (IMP_AO_ClearChnBuf(aoDevID, aoChnID)) {
-        handle_audio_error("AO: Failed to clear audio output buffer");
-    }
-}
-
-void resume_audio_output() {
-    int aoDevID, aoChnID;
-    get_audio_device_attributes(&aoDevID, &aoChnID);
-    if (IMP_AO_ResumeChn(aoDevID, aoChnID)) {
-        handle_audio_error("AO: Failed to resume audio output");
-    }
-}
-
-void flush_audio_output_buffer() {
-    int aoDevID, aoChnID;
-    get_audio_device_attributes(&aoDevID, &aoChnID);
-    if (IMP_AO_FlushChnBuf(aoDevID, aoChnID)) {
-        handle_audio_error("AO: Failed to flush audio output buffer");
-    }
-}
-
-void mute_audio_output_device(int mute_enable) {
-    int aoDevID, aoChnID;
-    get_audio_device_attributes(&aoDevID, &aoChnID);
-
-    if (IMP_AO_SetVolMute(aoDevID, aoChnID, mute_enable)) {
-        handle_audio_error("AO: Failed to mute audio output device");
-    }
 }
 
 /**

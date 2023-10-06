@@ -1,10 +1,18 @@
-#include <string.h>
+#include <bits/socket.h>       // for SOCK_STREAM
+#include <stdlib.h>            // for free, malloc
+#include <string.h>            // for NULL, strncpy, memset, strcmp, strncmp
+#include <sys/socket.h>        // for sa_family_t, ssize_t, __pthread, pthre...
+#include <pthread.h>           // for pthread_mutex_unlock, pthread_mutex_lock
+#include <stdio.h>             // for printf, snprintf, sscanf
+#include <sys/un.h>            // for strlen, sockaddr_un
+#include <unistd.h>            // for close, write, read
+#include "input.h"    // for AiThreadArg, ai_record_thread
+#include "audio_common.h"    // for audio common
+#include "config.h"   // for config_get_ai_socket, config_get_ao_so...
+#include "logging.h"  // for handle_audio_error
+#include "utils.h"    // for audio_buffer_lock, ClientNode, active_...
 #include "network.h"
-#include "../audio/input.h"
-#include "../audio/output.h"
-#include "../utils/config.h"
-#include "../utils/utils.h"
-#include "../utils/logging.h"
+#include "output.h"            // for g_ao_max_frame_size
 
 char AUDIO_INPUT_SOCKET_PATH[32] = "ingenic_audio_input";
 char AUDIO_OUTPUT_SOCKET_PATH[32] = "ingenic_audio_output";
@@ -12,17 +20,41 @@ char AUDIO_CONTROL_SOCKET_PATH[32] = "ingenic_audio_control";
 
 #define TAG "NET"
 
-/**
- * Audio attributes structure to encapsulate device and channel IDs.
- */
 typedef struct {
     int device_id;
     int channel_id;
 } AudioAttributes;
 
-/**
- * Updates socket paths based on the configuration.
- */
+// Sample variables for demonstration purposes
+int sampleVariableA = 0;
+int sampleVariableB = 1;
+
+char* get_variable_value(const char* variable_name) {
+    if (strcmp(variable_name, "sampleVariableA") == 0) {
+        char* value = (char*) malloc(10 * sizeof(char));
+        snprintf(value, 10, "%d", sampleVariableA);
+        return value;
+    } else if (strcmp(variable_name, "sampleVariableB") == 0) {
+        char* value = (char*) malloc(10 * sizeof(char));
+        snprintf(value, 10, "%d", sampleVariableB);
+        return value;
+    } else {
+        return NULL;
+    }
+}
+
+int set_variable_value(const char* variable_name, const char* value) {
+    if (strcmp(variable_name, "sampleVariableA") == 0) {
+        sampleVariableA = atoi(value);
+        return 0;
+    } else if (strcmp(variable_name, "sampleVariableB") == 0) {
+        sampleVariableB = atoi(value);
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
 void update_socket_paths_from_config() {
     char *ao_socket_from_config = config_get_ao_socket();
     if (ao_socket_from_config) {
@@ -46,39 +78,51 @@ void update_socket_paths_from_config() {
     }
 }
 
-/**
- * Handle control client requests.
- * @param client_sock The client socket.
- */
 void handle_control_client(int client_sock) {
-    int client_request_type;
-    ssize_t bytes_received = recv(client_sock, &client_request_type, sizeof(int), 0);
+    char buffer[256];
+    ssize_t bytes_received = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
+
     if (bytes_received <= 0) {
         handle_audio_error(TAG, "recv");
         close(client_sock);
         return;
     }
 
-    pthread_mutex_lock(&audio_buffer_lock);
+    buffer[bytes_received] = '\0';  // Null-terminate the received string
 
-    if (client_request_type == AUDIO_OUTPUT_REQUEST && active_client_sock != -1) {
-        if (write(client_sock, "queued", strlen("queued")) == -1) {
-              handle_audio_error(TAG, "write");
+    if (strncmp(buffer, "GET ", 4) == 0) {
+        char variable_name[100];
+        sscanf(buffer + 4, "%s", variable_name);
+
+        char* value = get_variable_value(variable_name);
+
+        if (value) {
+            write(client_sock, value, strlen(value));
+            free(value);
+        } else {
+            write(client_sock, "RESPONSE_UNKNOWN_VARIABLE", strlen("RESPONSE_UNKNOWN_VARIABLE"));
         }
+
+    } else if (strncmp(buffer, "SET ", 4) == 0) {
+        char variable_name[100];
+        char value[100];
+        sscanf(buffer + 4, "%s %s", variable_name, value);
+
+        int result = set_variable_value(variable_name, value);
+
+        if (result == 0) {
+            write(client_sock, "RESPONSE_OK", strlen("RESPONSE_OK"));
+        } else {
+            write(client_sock, "RESPONSE_ERROR", strlen("RESPONSE_ERROR"));
+        }
+
     } else {
-        if (write(client_sock, "not_queued", strlen("not_queued")) == -1) {
-            handle_audio_error(TAG, "write");
-        }
+        write(client_sock, "RESPONSE_ERROR", strlen("RESPONSE_ERROR"));
     }
 
-    pthread_mutex_unlock(&audio_buffer_lock);
     close(client_sock);
 }
 
-/**
- * Handle audio input client requests.
- * @param client_sock The client socket.
- */
 void handle_audio_input_client(int client_sock) {
     pthread_mutex_lock(&audio_buffer_lock);
 
@@ -250,7 +294,7 @@ void *audio_output_server_thread(void *arg) {
         active_client_sock = client_sock;
         printf("[INFO] Client connected\n");
 
-	memset(audio_buffer, 0, g_ao_max_frame_size);
+        memset(audio_buffer, 0, g_ao_max_frame_size);
         audio_buffer_size = 0;
         clear_audio_output_buffer();
 
@@ -270,7 +314,6 @@ void *audio_output_server_thread(void *arg) {
             audio_buffer_size = read_size;
             pthread_cond_signal(&audio_data_cond);
             pthread_mutex_unlock(&audio_buffer_lock);
-
         }
 
         mute_status = 1;  // or some value

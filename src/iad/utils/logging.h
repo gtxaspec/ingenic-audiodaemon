@@ -1,7 +1,9 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
+/*
 #include <stdarg.h>
+*/
 
 void handle_audio_error_with_tag(const char *tag, const char *msg, ...);
 void handle_audio_error_without_tag(const char *msg, ...);

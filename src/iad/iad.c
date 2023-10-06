@@ -4,13 +4,21 @@
  * This daemon manages audio input and output for the Ingenic Tomahawk class devices.
  */
 
+#include <signal.h>         // for signal, SIG_IGN
+#include <stdio.h>          // for printf, NULL, fprintf, stderr
+#include <stdlib.h>         // for exit
+#include <pthread.h>        // for pthread_join, pthread_cond_destroy, pthre...
 #include "iad.h"
-#include <signal.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "utils/logging.h"
+#include "cJSON.h"          // for cJSON
+#include "audio/input.h"          // for initialize_audio_input_device, DEFAULT_AI...
+#include "audio/audio_common.h"   // for PlayInputAttributes, disable_audio_input
+#include "network/network.h"        // for audio_control_server_thread, audio_input_...
+#include "audio/output.h"         // for disable_audio_output, ao_test_play_thread
+#include "utils/cmdline.h"        // for CmdOptions, parse_cmdline
+#include "utils/config.h"         // for config_cleanup, config_get_ai_enabled
+#include "utils/utils.h"          // for create_thread, audio_buffer_lock, audio_d...
+#include "utils/logging.h"  // for handle_audio_error
+#include "version.h"        // for VERSION
 
 #define TAG "IAD"
 

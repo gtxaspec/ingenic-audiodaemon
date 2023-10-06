@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include "logging.h"
 #include <stdarg.h>
+#include "logging.h"
 
 /**
  * @brief Internal function to handle audio error logging.

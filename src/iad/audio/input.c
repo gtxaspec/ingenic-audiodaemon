@@ -1,81 +1,20 @@
-#include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <imp/imp_audio.h>
-#include <imp/imp_log.h>
+#include <errno.h>          // for errno
+#include <stdio.h>          // for NULL, ssize_t
+#include <stdlib.h>         // for exit, free, EXIT_FAILURE
+#include <unistd.h>         // for write
+#include <pthread.h>        // for pthread_mutex_lock, pthread_mutex_unlock
+#include <bits/errno.h>     // for EPIPE
+#include "imp/imp_audio.h"  // for IMPAudioIOAttr, IMPAudioFrame, IMP_AI_Dis...
+#include "imp/imp_log.h"    // for IMP_LOG_ERR
+#include "audio_common.h"   // for AudioInputAttributes, PlayInputAttributes
+#include "cJSON.h"          // for cJSON
+#include "config.h"         // for is_valid_samplerate
 #include "input.h"
-#include "utils.h"
-#include "config.h"
-#include "logging.h"
+#include "logging.h"        // for handle_audio_error
+#include "utils.h"          // for ClientNode, client_list_head, compute_num...
 
 #define TRUE 1
 #define TAG "AI"
-
-/**
- * Fetches the audio input attributes from the configuration.
- *
- * This function retrieves various audio attributes such as sample rate,
- * bitwidth, soundmode, etc., from the configuration.
- *
- * @return A structure containing the audio input attributes.
- */
-AudioInputAttributes get_audio_input_attributes() {
-    AudioInputAttributes attrs;
-
-    // Fetch each audio attribute from the configuration
-    attrs.samplerateItem = get_audio_attribute(AUDIO_INPUT, "sample_rate");
-    attrs.bitwidthItem = get_audio_attribute(AUDIO_INPUT, "bitwidth");
-    attrs.soundmodeItem = get_audio_attribute(AUDIO_INPUT, "soundmode");
-    attrs.frmNumItem = get_audio_attribute(AUDIO_INPUT, "frmNum");
-    attrs.chnCntItem = get_audio_attribute(AUDIO_INPUT, "chnCnt");
-    attrs.SetVolItem = get_audio_attribute(AUDIO_INPUT, "SetVol");
-    attrs.SetGainItem = get_audio_attribute(AUDIO_INPUT, "SetGain");
-    attrs.usrFrmDepthItem = get_audio_attribute(AUDIO_INPUT, "usrFrmDepth");
-
-    return attrs;
-}
-
-/**
- * Frees the memory allocated for the audio input attributes.
- *
- * This function ensures that the memory allocated for each of the cJSON items
- * in the audio attributes structure is properly released.
- *
- * @param attrs Pointer to the audio input attributes structure.
- */
-void free_audio_input_attributes(AudioInputAttributes *attrs) {
-    cJSON_Delete(attrs->samplerateItem);
-    cJSON_Delete(attrs->bitwidthItem);
-    cJSON_Delete(attrs->soundmodeItem);
-    cJSON_Delete(attrs->frmNumItem);
-    cJSON_Delete(attrs->chnCntItem);
-    cJSON_Delete(attrs->SetVolItem);
-    cJSON_Delete(attrs->SetGainItem);
-    cJSON_Delete(attrs->usrFrmDepthItem);
-}
-
-/**
- * Fetches the play attributes from the configuration.
- * @return A structure containing the play attributes.
- */
-PlayInputAttributes get_audio_input_play_attributes() {
-    PlayInputAttributes attrs;
-
-    // Populate the structure with play attributes from the configuration
-    attrs.device_idItem = get_audio_attribute(AUDIO_INPUT, "device_id");
-    attrs.channel_idItem = get_audio_attribute(AUDIO_INPUT, "channel_id");
-
-    return attrs;
-}
-
-/**
- * Frees the memory allocated for the play attributes.
- * @param attrs Pointer to the play attributes structure.
- */
-void free_audio_input_play_attributes(PlayInputAttributes *attrs) {
-    cJSON_Delete(attrs->device_idItem);
-    cJSON_Delete(attrs->channel_idItem);
-}
 
 /**
  * Initializes the audio input device with the specified attributes.
@@ -185,6 +124,7 @@ int initialize_audio_input_device(int aiDevID, int aiChnID) {
  * @param arg Unused thread argument.
  * @return NULL.
  */
+
 void *ai_record_thread(void *arg) {
     int ret;
 

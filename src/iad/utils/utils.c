@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../audio/output.h"
 #include "utils.h"
 
 ClientNode *client_list_head = NULL;

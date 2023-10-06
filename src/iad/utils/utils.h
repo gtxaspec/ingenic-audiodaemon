@@ -1,10 +1,9 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <pthread.h>
-#include <output.h>
+#include <stdlib.h>         // for pthread_cond_t, pthread_mutex_t, pthread_t
+#include "imp/imp_audio.h"  // for IMPAudioBitWidth, IMPAudioSoundMode
 
 #define PROG_TAG "AO_T31"
 

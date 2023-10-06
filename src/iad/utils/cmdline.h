@@ -1,8 +1,6 @@
 #ifndef CMDLINE_H
 #define CMDLINE_H
 
-#include <getopt.h>
-
 // This structure will hold the command line options
 typedef struct {
     char *config_file_path;

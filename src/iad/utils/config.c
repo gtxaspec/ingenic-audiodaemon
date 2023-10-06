@@ -1,9 +1,11 @@
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <pthread.h>        // for pthread_mutex_unlock, pthread_mutex_lock
+#include <stdio.h>          // for fprintf, stderr, fclose, NULL, fseek, fopen
+#include <stdlib.h>         // for free, calloc
+#include <string.h>         // for strcmp, strdup
+#include "imp/imp_audio.h"  // for AUDIO_SAMPLE_RATE_16000, AUDIO_SAMPLE_RAT...
 #include "config.h"
-#include "utils.h"
+#include "cJSON.h"          // for cJSON_IsNumber, cJSON_IsBool, cJSON_GetOb...
+#include "output.h"         // for DEFAULT_AO_MAX_FRAME_SIZE
 
 // Global pointer for the root of the configuration JSON object
 static cJSON *config_root = NULL;
