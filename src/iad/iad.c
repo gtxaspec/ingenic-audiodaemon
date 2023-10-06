@@ -6,7 +6,6 @@
 
 #include <signal.h>         // for signal, SIG_IGN
 #include <stdio.h>          // for printf, NULL, fprintf, stderr
-#include <stdlib.h>         // for exit
 #include <pthread.h>        // for pthread_join, pthread_cond_destroy, pthre...
 #include "iad.h"
 #include "cJSON.h"          // for cJSON
@@ -23,34 +22,6 @@
 #define TAG "IAD"
 
 /**
- * @brief Clean up resources.
- *
- * This function is responsible for cleaning up any allocated resources
- * and restoring the system to its initial state.
- */
-void perform_cleanup() {
-    pthread_mutex_destroy(&audio_buffer_lock);
-    pthread_cond_destroy(&audio_data_cond);
-    disable_audio_output();
-    disable_audio_input();
-    config_cleanup();
-}
-
-/**
- * @brief Signal handler for SIGINT.
- *
- * This function handles the SIGINT signal (typically sent from the
- * command line via CTRL+C). It ensures that the daemon exits gracefully.
- *
- * @param sig Signal number (expected to be SIGINT).
- */
-void handle_sigint(int sig) {
-    printf("Caught signal %d. Exiting gracefully...\n", sig);
-    perform_cleanup();
-    exit(0);
-}
-
-/**
  * @brief Main function for the Ingenic Audio Daemon.
  *
  * This is the entry point of the daemon. It initializes the audio system,
@@ -65,7 +36,6 @@ int main(int argc, char *argv[]) {
 
     // Set up the signal handler for SIGINT to allow graceful exit
     signal(SIGINT, handle_sigint);
-
     CmdOptions options;
     if (parse_cmdline(argc, argv, &options)) {
         return 1; // Exit on command line parsing error

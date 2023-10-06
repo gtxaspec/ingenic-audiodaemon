@@ -2,7 +2,7 @@
 #define UTILS_H
 
 #include <pthread.h>
-#include <stdlib.h>         // for pthread_cond_t, pthread_mutex_t, pthread_t
+#include <sys/types.h>      // for ssize_t
 #include "imp/imp_audio.h"  // for IMPAudioBitWidth, IMPAudioSoundMode
 
 #define PROG_TAG "AO_T31"
@@ -21,12 +21,13 @@ extern int active_client_sock;
 
 int create_thread(pthread_t *thread_id, void *(*start_routine) (void *), void *arg);
 
-// Sample rates definitions removed as there's a conflicting enum in imp_audio.h
-// they were adjusted to not conflict.
-
 int compute_numPerFrm(int sample_rate);
 
 IMPAudioBitWidth string_to_bitwidth(const char* str);
 IMPAudioSoundMode string_to_soundmode(const char* str);
+
+// Function declarations
+void perform_cleanup(void);
+void handle_sigint(int sig);
 
 #endif // UTILS_H

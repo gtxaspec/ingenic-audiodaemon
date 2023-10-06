@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "utils.h"
+#include "config.h"
+#include "output.h"
+#include "input.h"
 
 ClientNode *client_list_head = NULL;
 pthread_mutex_t audio_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -43,4 +46,32 @@ IMPAudioSoundMode string_to_soundmode(const char* str) {
     // Log a warning if an unexpected value is encountered.
     fprintf(stderr, "[WARNING] Unexpected sound mode string: %s. Defaulting to AUDIO_SOUND_MODE_MONO.\n", str);
     return AUDIO_SOUND_MODE_MONO;  // Default value
+}
+
+/**
+ * @brief Clean up resources.
+ *
+ * This function is responsible for cleaning up any allocated resources
+ * and restoring the system to its initial state.
+ */
+void perform_cleanup() {
+    pthread_mutex_destroy(&audio_buffer_lock);
+    pthread_cond_destroy(&audio_data_cond);
+    disable_audio_input();
+    disable_audio_output();
+    config_cleanup();
+}
+
+/**
+ * @brief Signal handler for SIGINT.
+ *
+ * This function handles the SIGINT signal (typically sent from the
+ * command line via CTRL+C). It ensures that the daemon exits gracefully.
+ *
+ * @param sig Signal number (expected to be SIGINT).
+ */
+void handle_sigint(int sig) {
+    printf("Caught signal %d. Exiting gracefully...\n", sig);
+    perform_cleanup();
+    exit(0);
 }

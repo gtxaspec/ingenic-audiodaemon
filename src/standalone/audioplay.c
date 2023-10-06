@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <imp/imp_audio.h>
 #include <imp/imp_log.h>
-#include "../build/version.h"
+#include "version.h"
 
 const char *TAG = "AO_T31";
 const int AO_TEST_SAMPLE_RATE = 16000;

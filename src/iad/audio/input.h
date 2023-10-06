@@ -1,6 +1,8 @@
 #ifndef INPUT_H
 #define INPUT_H
 
+#include "imp/imp_audio.h"  // for AUDIO_SAMPLE_RATE_48000
+
 #define DEFAULT_AI_SAMPLE_RATE AUDIO_SAMPLE_RATE_48000
 #define DEFAULT_AI_CHN_VOL 100
 #define DEFAULT_AI_GAIN 25
@@ -17,5 +19,6 @@ typedef struct {
 // Functions
 int initialize_audio_input_device(int aiDevID, int aiChnID);
 void *ai_record_thread(void *output_file_path);
+int disable_audio_input(void);
 
 #endif // INPUT_H
