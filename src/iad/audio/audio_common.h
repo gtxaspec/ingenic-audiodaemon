@@ -1,7 +1,7 @@
 #ifndef AUDIO_COMMON_H
 #define AUDIO_COMMON_H
 
-#include "cJSON.h"  // for cJSON
+#include "cJSON.h"
 
 #define DEFAULT_AI_SAMPLE_RATE AUDIO_SAMPLE_RATE_48000
 #define DEFAULT_AI_CHN_VOL 100
@@ -33,41 +33,25 @@ typedef struct {
     cJSON *SetGainItem;
 } AudioOutputAttributes;
 
-typedef struct {
-    cJSON *device_idItem;
-    cJSON *channel_idItem;
-} PlayInputAttributes;
-
-typedef struct {
-    cJSON *aoDevIDItem;
-    cJSON *channel_idItem;
-} PlayAttributes;
-
-// Functions
-
+// Functions for audio input attributes
 AudioInputAttributes get_audio_input_attributes(void);
 void free_audio_input_attributes(AudioInputAttributes *attrs);
-PlayInputAttributes get_audio_input_play_attributes(void);
-void free_audio_play_input_attributes(PlayInputAttributes *attrs);
-int disable_audio_input(void);
 
+// Functions for audio output attributes
+AudioOutputAttributes get_audio_attributes(void);
+void free_audio_output_attributes(AudioOutputAttributes *attrs);
+
+// Functions for device attributes
+void get_audio_input_device_attributes(int *aiDevID, int *aiChnID);
+void free_audio_input_device_attributes(cJSON *aiDevIDItem, cJSON *aiChnIDItem);
+void get_audio_output_device_attributes(int *aoDevID, int *aoChnID);
+void free_audio_output_device_attributes(cJSON *aoDevIDItem, cJSON *aoChnIDItem);
+
+// Functions for controlling audio output
 void pause_audio_output(void);
 void clear_audio_output_buffer(void);
 void resume_audio_output(void);
 void flush_audio_output_buffer(void);
 void mute_audio_output_device(int mute_enable);
 
-AudioOutputAttributes get_audio_attributes(void);
-void free_audio_attributes(AudioOutputAttributes *attrs);
-PlayAttributes get_audio_play_attributes(void);
-void free_audio_play_attributes(PlayAttributes *attrs);
-
-/**
- * Retrieves audio attributes (device and channel IDs) either from PlayAttributes or defaults.
- * @param aoDevID Pointer to store the retrieved Device ID.
- * @param aoChnID Pointer to store the retrieved Channel ID.
- */
-void get_audio_device_attributes(int *aoDevID, int *aoChnID);
-
 #endif // AUDIO_COMMON_H
-

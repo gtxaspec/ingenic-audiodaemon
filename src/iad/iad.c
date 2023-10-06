@@ -61,12 +61,8 @@ int main(int argc, char *argv[]) {
     */
 
     // Fetch audio play attributes
-    PlayInputAttributes get_audio_input_play_attributes(void);
-    PlayInputAttributes attrs = get_audio_input_play_attributes();
-
-    // Determine device and channel IDs, using defaults if not provided
-    int aiDevID = attrs.device_idItem ? attrs.device_idItem->valueint : DEFAULT_AI_DEV_ID;
-    int aiChnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AI_CHN_ID;
+    int aiDevID, aiChnID;
+    get_audio_input_device_attributes(&aiDevID, &aiChnID);
 
     // Initialize audio input device if not disabled
     if (!disable_ai) {

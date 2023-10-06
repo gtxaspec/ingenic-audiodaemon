@@ -128,9 +128,8 @@ int initialize_audio_input_device(int aiDevID, int aiChnID) {
 void *ai_record_thread(void *arg) {
     int ret;
 
-    PlayInputAttributes attrs = get_audio_input_play_attributes();
-    int aiDevID = attrs.device_idItem ? attrs.device_idItem->valueint : DEFAULT_AI_DEV_ID;
-    int aiChnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AI_CHN_ID;
+    int aiDevID, aiChnID;
+    get_audio_input_device_attributes(&aiDevID, &aiChnID);
 
     printf("[INFO] Sending audio data to input client\n");
 
@@ -194,9 +193,8 @@ void *ai_record_thread(void *arg) {
 int disable_audio_input() {
     int ret;
 
-    PlayInputAttributes attrs = get_audio_input_play_attributes();
-    int aiDevID = attrs.device_idItem ? attrs.device_idItem->valueint : DEFAULT_AI_DEV_ID;
-    int aiChnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AI_CHN_ID;
+    int aiDevID, aiChnID;
+    get_audio_input_device_attributes(&aiDevID, &aiChnID);
 
     /* Disable the audio channel. */
     ret = IMP_AI_DisableChn(aiDevID, aiChnID);

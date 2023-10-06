@@ -32,9 +32,9 @@ void set_ao_max_frame_size(int frame_size) {
  * @param aoChnID Channel ID.
  * @param errorMsg Error message to be handled.
  */
-void handle_and_reinitialize(int aoDevID, int aoChnID, const char *errorMsg) {
+void handle_and_reinitialize_output(int aoDevID, int aoChnID, const char *errorMsg) {
     handle_audio_error(errorMsg);
-    reinitialize_audio_device(aoDevID, aoChnID);
+    reinitialize_audio_output_device(aoDevID, aoChnID);
 }
 
 /**
@@ -42,7 +42,7 @@ void handle_and_reinitialize(int aoDevID, int aoChnID, const char *errorMsg) {
  * @param aoDevID Device ID.
  * @param aoChnID Channel ID.
  */
-void initialize_audio_device(int aoDevID, int aoChnID) {
+void initialize_audio_output_device(int aoDevID, int aoChnID) {
     IMPAudioIOAttr attr;
     AudioOutputAttributes attrs = get_audio_attributes();
 
@@ -124,10 +124,10 @@ void cleanup_audio_output() {
  * @param aoDevID Device ID.
  * @param aoChnID Channel ID.
  */
-void reinitialize_audio_device(int aoDevID, int aoChnID) {
+void reinitialize_audio_output_device(int aoDevID, int aoChnID) {
     IMP_AO_DisableChn(aoDevID, aoChnID);
     IMP_AO_Disable(aoDevID);
-    initialize_audio_device(aoDevID, aoChnID);
+    initialize_audio_output_device(aoDevID, aoChnID);
 }
 
 /**
@@ -140,15 +140,18 @@ void *ao_test_play_thread(void *arg) {
     struct sched_param param;
     param.sched_priority = sched_get_priority_max(SCHED_FIFO);
     pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
-
+/*
     PlayAttributes attrs = get_audio_play_attributes();
     int aoDevID = attrs.aoDevIDItem ? attrs.aoDevIDItem->valueint : DEFAULT_AO_DEV_ID;
     int aoChnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AO_CHN_ID;
+*/
+    int aoDevID, aoChnID;
+    get_audio_output_device_attributes(&aoDevID, &aoChnID);
 
     printf("[DEBUG] aoChnID JSON: %d\n", aoChnID);
 
     // Initialize the audio device for playback
-    initialize_audio_device(aoDevID, aoChnID);
+    initialize_audio_output_device(aoDevID, aoChnID);
 
     // Continuous loop to play audio
     while (TRUE) {
@@ -164,7 +167,7 @@ void *ao_test_play_thread(void *arg) {
         // Send the audio frame for playback
         if (IMP_AO_SendFrame(aoDevID, aoChnID, &frm, BLOCK)) {
             pthread_mutex_unlock(&audio_buffer_lock);
-            handle_and_reinitialize(aoDevID, aoChnID, "IMP_AO_SendFrame data error");
+            handle_and_reinitialize_output(aoDevID, aoChnID, "IMP_AO_SendFrame data error");
             continue;
         }
 
@@ -183,7 +186,7 @@ int disable_audio_output() {
     int ret;
 
     int aoDevID, aoChnID;
-    get_audio_device_attributes(&aoDevID, &aoChnID);
+    get_audio_output_device_attributes(&aoDevID, &aoChnID);
 
     /* Disable the audio channel */
     ret = IMP_AO_DisableChn(aoDevID, aoChnID);

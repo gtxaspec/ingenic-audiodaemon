@@ -13,7 +13,7 @@
 #define DEFAULT_AO_CHN_ID 0
 
 // Functions
-void reinitialize_audio_device(int aoDevID, int aoChnID);
+void reinitialize_audio_output_device(int aoDevID, int aoChnID);
 void *ao_test_play_thread(void *arg);
 
 extern int g_ao_max_frame_size;

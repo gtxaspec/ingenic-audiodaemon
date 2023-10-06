@@ -20,12 +20,7 @@ char AUDIO_CONTROL_SOCKET_PATH[32] = "ingenic_audio_control";
 
 #define TAG "NET"
 
-typedef struct {
-    int device_id;
-    int channel_id;
-} AudioAttributes;
-
-// Sample variables for demonstration purposes
+// Sample variables for testing
 int sampleVariableA = 0;
 int sampleVariableB = 1;
 
