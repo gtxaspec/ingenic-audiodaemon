@@ -74,9 +74,6 @@ void initialize_audio_output_device(int aoDevID, int aoChnID) {
         exit(EXIT_FAILURE);
     }
 
-    // Debugging prints
-    printf("[DEBUG] aoChnID: %d\n", aoChnID);
-
     // Set volume and gain for the audio device
     int vol = attrs.SetVolItem ? attrs.SetVolItem->valueint : DEFAULT_AO_CHN_VOL;
     if (vol < -30 || vol > 120) {
@@ -107,6 +104,12 @@ void initialize_audio_output_device(int aoDevID, int aoChnID) {
         handle_audio_error("AO: Failed to allocate memory for audio_buffer");
         exit(EXIT_FAILURE);
     }
+
+    // Debugging prints
+    printf("[INFO] AO samplerate: %d\n", attr.samplerate);
+    printf("[INFO] AO Volume: %d\n", vol);
+    printf("[INFO] AO Gain: %d\n", gain);
+
 }
 
 /**
@@ -144,8 +147,6 @@ void *ao_play_thread(void *arg) {
 
     int aoDevID, aoChnID;
     get_audio_output_device_attributes(&aoDevID, &aoChnID);
-
-    printf("[DEBUG] aoChnID JSON: %d\n", aoChnID);
 
     // Initialize the audio device for playback
     initialize_audio_output_device(aoDevID, aoChnID);

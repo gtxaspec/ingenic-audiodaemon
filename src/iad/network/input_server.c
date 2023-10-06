@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "network.h"
 #include "input_server.h"
+#include "audio_common.h"
 
 #define TAG "NET_INPUT"
 
@@ -33,7 +34,7 @@ void handle_audio_input_client(int client_sock) {
 
     pthread_mutex_unlock(&audio_buffer_lock);
 
-    printf("[INFO] Input client connected\n");
+    printf("[INFO] [AI] Input client connected\n");
 
     AiThreadArg thread_arg;
     thread_arg.sockfd = client_sock;
@@ -49,7 +50,16 @@ void handle_audio_input_client(int client_sock) {
 }
 
 void *audio_input_server_thread(void *arg) {
-    printf("[INFO] Entering audio_input_server_thread\n");
+    printf("[INFO] [AI] Entering audio_input_server_thread\n");
+
+    // Fetch audio play attributes
+    int aiDevID, aiChnID;
+    get_audio_input_device_attributes(&aiDevID, &aiChnID);
+
+    if (initialize_audio_input_device(aiDevID, aiChnID) != 0) {
+        fprintf(stderr, "[ERROR] Failed to initialize audio input device\n");
+        return NULL;
+    }
 
     update_socket_paths_from_config();
 
@@ -65,18 +75,24 @@ void *audio_input_server_thread(void *arg) {
     strncpy(&addr.sun_path[1], AUDIO_INPUT_SOCKET_PATH, sizeof(addr.sun_path) - 2);
     addr.sun_path[sizeof(addr.sun_path) - 1] = '\0';
 
-    printf("[INFO] Attempting to bind socket\n");
+    printf("[INFO] [AI] Attempting to bind socket\n");
     if (bind(sockfd, (struct sockaddr*)&addr, sizeof(sa_family_t) + strlen(AUDIO_INPUT_SOCKET_PATH) + 1) == -1) {
         handle_audio_error(TAG, "bind failed");
         close(sockfd);
         return NULL;
     }
+    else {
+        printf("[INFO] [AI] Bind to input socket succeeded\n");
+    }
 
-    printf("[INFO] Attempting to listen on socket\n");
+    printf("[INFO] [AI] Attempting to listen on socket\n");
     if (listen(sockfd, 5) == -1) {
         handle_audio_error(TAG, "listen");
         close(sockfd);
         return NULL;
+    }
+    else {
+        printf("[INFO] [AI] Listening on input socket\n");
     }
 
     while (1) {
@@ -89,7 +105,7 @@ void *audio_input_server_thread(void *arg) {
             break;
         }
 
-        printf("[INFO] Waiting for input client connection\n");
+        printf("[INFO] [AI] Waiting for input client connection\n");
         int client_sock = accept(sockfd, NULL, NULL);
         if (client_sock == -1) {
             handle_audio_error(TAG, "accept");

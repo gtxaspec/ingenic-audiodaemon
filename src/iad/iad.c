@@ -40,10 +40,16 @@ int main(int argc, char *argv[]) {
 
     // Set up the signal handler for SIGINT to allow graceful exit
     signal(SIGINT, handle_sigint);
+
+    // Ignore SIGPIPE to prevent unexpected exits when writing to a closed socket
+    signal(SIGPIPE, SIG_IGN);
+
     CmdOptions options;
     if (parse_cmdline(argc, argv, &options)) {
         return 1; // Exit on command line parsing error
     }
+
+    printf("[INFO] Starting audio daemon\n");
 
     char *config_file_path = options.config_file_path;
     int disable_ai = options.disable_ai;
@@ -64,18 +70,6 @@ int main(int argc, char *argv[]) {
     printf("Loaded JSON: %s\n", cJSON_Print(loaded_config));
     */
 
-    // Fetch audio play attributes
-    int aiDevID, aiChnID;
-    get_audio_input_device_attributes(&aiDevID, &aiChnID);
-
-    // Initialize audio input device if not disabled
-    if (!disable_ai) {
-        if (initialize_audio_input_device(aiDevID, aiChnID) != 0) {
-            fprintf(stderr, "[ERROR] Failed to initialize audio input device\n");
-            return 1;
-        }
-    }
-
     // Update audio input/output enable status based on configuration
     if (!disable_ai) {
         disable_ai = !config_get_ai_enabled();
@@ -84,11 +78,12 @@ int main(int argc, char *argv[]) {
         disable_ao = !config_get_ao_enabled();
     }
 
-    // Ignore SIGPIPE to prevent unexpected exits when writing to a closed socket
-    signal(SIGPIPE, SIG_IGN);
-    printf("[INFO] Starting audio daemon\n");
+    pthread_t control_server_thread, play_thread_id, input_server_thread, output_server_thread;
 
-    pthread_t play_thread_id, input_server_thread, output_server_thread, control_server_thread;
+    // Start the control server thread
+    if (create_thread(&control_server_thread, audio_control_server_thread, NULL)) {
+        return 1;
+    }
 
     // Start audio play thread if output is not disabled
     if (!disable_ao) {
@@ -111,12 +106,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Start the control server thread
-    if (create_thread(&control_server_thread, audio_control_server_thread, NULL)) {
-        return 1;
-    }
-
     // Wait for threads to complete
+    pthread_join(control_server_thread, NULL);
+
     if (!disable_ai) {
         pthread_join(input_server_thread, NULL);
     }
@@ -124,7 +116,6 @@ int main(int argc, char *argv[]) {
         pthread_join(output_server_thread, NULL);
         pthread_join(play_thread_id, NULL);
     }
-    pthread_join(control_server_thread, NULL);
 
     return 0;
 }

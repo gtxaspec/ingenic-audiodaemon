@@ -51,14 +51,6 @@ int initialize_audio_input_device(int aiDevID, int aiChnID) {
     }
     attr.chnCnt = chnCnt;
 
-    // Debugging prints
-    printf("[DEBUG] AI samplerate: %d\n", attr.samplerate);
-    printf("[DEBUG] AI bitwidth: %d\n", attr.bitwidth);
-    printf("[DEBUG] AI soundmode: %d\n", attr.soundmode);
-    printf("[DEBUG] AI frmNum: %d\n", attr.frmNum);
-    printf("[DEBUG] AI numPerFrm: %d\n", attr.numPerFrm);
-    printf("[DEBUG] AI chnCnt: %d\n", attr.chnCnt);
-
     // Set public attribute of AI device
     ret = IMP_AI_SetPubAttr(aiDevID, &attr);
     if (ret != 0) {
@@ -110,6 +102,11 @@ int initialize_audio_input_device(int aiDevID, int aiChnID) {
     if (IMP_AI_SetGain(aiDevID, aiChnID, gain)) {
         handle_audio_error("Failed to set gain attribute");
     }
+
+    // Debugging prints
+    printf("[INFO] AI samplerate: %d\n", attr.samplerate);
+    printf("[INFO] AI Volume: %d\n", vol);
+    printf("[INFO] AI Gain: %d\n", gain);
 
     return 0;
 }

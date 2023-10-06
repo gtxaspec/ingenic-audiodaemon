@@ -14,7 +14,7 @@
 #define TAG "NET_OUTPUT"
 
 void *audio_output_server_thread(void *arg) {
-    printf("[INFO] Entering audio_output_server_thread\n");
+    printf("[INFO] [AO] Entering audio_output_server_thread\n");
 
     update_socket_paths_from_config();
 
@@ -30,18 +30,24 @@ void *audio_output_server_thread(void *arg) {
     strncpy(&addr.sun_path[1], AUDIO_OUTPUT_SOCKET_PATH, sizeof(addr.sun_path) - 2);
     addr.sun_path[sizeof(addr.sun_path) - 1] = '\0';
 
-    printf("[INFO] Attempting to bind socket\n");
+    printf("[INFO] [AO] Attempting to bind socket\n");
     if (bind(sockfd, (struct sockaddr*)&addr, sizeof(sa_family_t) + strlen(AUDIO_OUTPUT_SOCKET_PATH) + 1) == -1) {
         handle_audio_error(TAG, "bind failed");
         close(sockfd);
         return NULL;
     }
+    else {
+        printf("[INFO] [AO] Bind to output socket succeeded\n");
+    }
 
-    printf("[INFO] Attempting to listen on socket\n");
+    printf("[INFO] [AO] Attempting to listen on socket\n");
     if (listen(sockfd, 5) == -1) {
         handle_audio_error(TAG, "listen");
         close(sockfd);
         return NULL;
+    }
+    else {
+        printf("[INFO] [AO] Listening on output socket\n");
     }
 
     while (1) {
@@ -54,7 +60,7 @@ void *audio_output_server_thread(void *arg) {
             break;
         }
 
-        printf("[INFO] Waiting for output client connection\n");
+        printf("[INFO] [AO] Waiting for output client connection\n");
         int client_sock = accept(sockfd, NULL, NULL);
         if (client_sock == -1) {
             handle_audio_error(TAG, "accept");
@@ -72,7 +78,7 @@ void *audio_output_server_thread(void *arg) {
         // old audio will play on each subsequent client connect... unknown why.
         enable_output_channel();
 
-        printf("[INFO] Client connected\n");
+        printf("[INFO] [AO] Client connected\n");
 
         memset(audio_buffer, 0, g_ao_max_frame_size);
         audio_buffer_size = 0;
@@ -81,7 +87,7 @@ void *audio_output_server_thread(void *arg) {
         unsigned char buf[g_ao_max_frame_size];
         ssize_t read_size;
 
-        printf("[INFO] Receiving audio data from client\n");
+        printf("[INFO] [AO] Receiving audio data from client\n");
         while ((read_size = read(client_sock, buf, sizeof(buf))) > 0) {
             pthread_mutex_lock(&audio_buffer_lock);
             memcpy(audio_buffer, buf, read_size);
@@ -100,7 +106,7 @@ void *audio_output_server_thread(void *arg) {
         pthread_mutex_unlock(&audio_buffer_lock);
 
         close(client_sock);
-        printf("[INFO] Client Disconnected\n");
+        printf("[INFO] [AO] Client Disconnected\n");
 
         clear_audio_output_buffer();
     }

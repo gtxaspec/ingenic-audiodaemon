@@ -81,7 +81,7 @@ void handle_control_client(int client_sock) {
 }
 
 void *audio_control_server_thread(void *arg) {
-    printf("[INFO] Entering audio_control_server_thread\n");
+    printf("[INFO] [CTRL] Entering audio_control_server_thread\n");
 
     update_socket_paths_from_config();
 
@@ -97,18 +97,24 @@ void *audio_control_server_thread(void *arg) {
     strncpy(&addr.sun_path[1], AUDIO_CONTROL_SOCKET_PATH, sizeof(addr.sun_path) - 2);
     addr.sun_path[sizeof(addr.sun_path) - 1] = '\0';
 
-    printf("[INFO] Attempting to bind control socket\n");
+    printf("[INFO] [CTRL] Attempting to bind control socket\n");
     if (bind(sockfd, (struct sockaddr*)&addr, sizeof(sa_family_t) + strlen(AUDIO_CONTROL_SOCKET_PATH) + 1) == -1) {
         handle_audio_error(TAG, "bind failed");
         close(sockfd);
         return NULL;
     }
+    else {
+        printf("[INFO] [CTRL] Bind to control socket succeeded\n");
+    }
 
-    printf("[INFO] Attempting to listen on control socket\n");
+    printf("[INFO] [CTRL] Attempting to listen on control socket\n");
     if (listen(sockfd, 5) == -1) {
         handle_audio_error(TAG, "listen");
         close(sockfd);
         return NULL;
+    }
+    else {
+        printf("[INFO] [CTRL] Listening on control socket\n");
     }
 
     while (1) {
@@ -121,7 +127,7 @@ void *audio_control_server_thread(void *arg) {
             break;
         }
 
-        printf("[INFO] Waiting for control client connection\n");
+        printf("[INFO] [CTRL] Waiting for a control client connection\n");
         int client_sock = accept(sockfd, NULL, NULL);
         if (client_sock == -1) {
             handle_audio_error(TAG, "accept");
