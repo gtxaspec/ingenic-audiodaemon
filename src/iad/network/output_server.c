@@ -1,15 +1,14 @@
-#include <bits/socket.h>       // for SOCK_STREAM
-#include <string.h>            // for NULL, strncpy, memset, strcmp, strncmp
-#include <sys/socket.h>        // for sa_family_t, ssize_t, __pthread, pthre...
-#include <pthread.h>           // for pthread_mutex_unlock, pthread_mutex_lock
-#include <stdio.h>             // for printf, snprintf, sscanf
-#include <sys/un.h>            // for strlen, sockaddr_un
-#include <unistd.h>            // for close, write, read
-#include "audio_common.h"    // for audio common
-#include "logging.h"  // for handle_audio_error
-#include "utils.h"    // for audio_buffer_lock, ClientNode, active_...
+#include <string.h>
+#include <sys/socket.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include "audio_common.h"
+#include "logging.h"
+#include "utils.h"
 #include "network.h"
-#include "output.h"            // for g_ao_max_frame_size
+#include "output.h"
 #include "output_server.h"
 
 #define TAG "NET_OUTPUT"
@@ -46,6 +45,15 @@ void *audio_output_server_thread(void *arg) {
     }
 
     while (1) {
+        int should_stop = 0;
+        pthread_mutex_lock(&g_stop_thread_mutex);
+        should_stop = g_stop_thread;
+        pthread_mutex_unlock(&g_stop_thread_mutex);
+
+        if (should_stop) {
+            break;
+        }
+
         printf("[INFO] Waiting for output client connection\n");
         int client_sock = accept(sockfd, NULL, NULL);
         if (client_sock == -1) {
@@ -54,28 +62,24 @@ void *audio_output_server_thread(void *arg) {
         }
 
         pthread_mutex_lock(&audio_buffer_lock);
-
         while (active_client_sock != -1) {
             pthread_cond_wait(&audio_data_cond, &audio_buffer_lock);
         }
 
-        pause_audio_output();
-
         active_client_sock = client_sock;
+
+        // Enabling the channel, after its already enabled, clears all buffers for some reason... otherwise
+        // old audio will play on each subsequent client connect... unknown why.
+        enable_output_channel();
+
         printf("[INFO] Client connected\n");
 
         memset(audio_buffer, 0, g_ao_max_frame_size);
         audio_buffer_size = 0;
-        clear_audio_output_buffer();
-
         pthread_mutex_unlock(&audio_buffer_lock);
 
-        unsigned char buf[g_ao_max_frame_size];  // Use the global variable instead of DEFAULT_AO_MAX_FRAME_SIZE
+        unsigned char buf[g_ao_max_frame_size];
         ssize_t read_size;
-
-        resume_audio_output();
-        int mute_status = 0;
-        mute_audio_output_device(mute_status);
 
         printf("[INFO] Receiving audio data from client\n");
         while ((read_size = read(client_sock, buf, sizeof(buf))) > 0) {
@@ -86,11 +90,10 @@ void *audio_output_server_thread(void *arg) {
             pthread_mutex_unlock(&audio_buffer_lock);
         }
 
-        mute_status = 1;  // or some value
-        mute_audio_output_device(mute_status);
+        // Clear audio buffer after reading ends
+        memset(audio_buffer, 0, g_ao_max_frame_size);
+        audio_buffer_size = 0;
 
-        // Flush audio buffer so audio doesn't get stuck in the buffer and playback next time a client connects.
-        flush_audio_output_buffer();
         pthread_mutex_lock(&audio_buffer_lock);
         active_client_sock = -1;
         pthread_cond_broadcast(&audio_data_cond);
@@ -98,6 +101,8 @@ void *audio_output_server_thread(void *arg) {
 
         close(client_sock);
         printf("[INFO] Client Disconnected\n");
+
+        clear_audio_output_buffer();
     }
 
     close(sockfd);

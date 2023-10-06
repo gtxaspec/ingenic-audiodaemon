@@ -64,14 +64,14 @@ int initialize_audio_input_device(int aiDevID, int aiChnID) {
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetPubAttr failed");
         handle_audio_error(TAG, "Failed to initialize audio attributes");
-	exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
     // Enable AI device
     ret = IMP_AI_Enable(aiDevID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_Enable failed");
-	exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
     // Set audio frame depth attribute
@@ -82,14 +82,14 @@ int initialize_audio_input_device(int aiDevID, int aiChnID) {
     ret = IMP_AI_SetChnParam(aiDevID, aiChnID, &chnParam);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetChnParam failed");
-	exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
     // Enable AI channel
     ret = IMP_AI_EnableChn(aiDevID, aiChnID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_EnableChn failed");
-	exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
     // Set volume and gain for the audio device
@@ -124,7 +124,6 @@ int initialize_audio_input_device(int aiDevID, int aiChnID) {
  * @param arg Unused thread argument.
  * @return NULL.
  */
-
 void *ai_record_thread(void *arg) {
     int ret;
 
@@ -159,10 +158,9 @@ void *ai_record_thread(void *arg) {
                 if (errno == EPIPE) {
                     printf("[INFO] Client disconnected\n");
                 } else {
-		    handle_audio_error("AI: write to sockfd");
+                    handle_audio_error("AI: write to sockfd");
                 }
 
-                // Remove the client from the list
                 if (current == client_list_head) {
                     client_list_head = current->next;
                     free(current);
@@ -196,17 +194,15 @@ int disable_audio_input() {
     int aiDevID, aiChnID;
     get_audio_input_device_attributes(&aiDevID, &aiChnID);
 
-    /* Disable the audio channel. */
     ret = IMP_AI_DisableChn(aiDevID, aiChnID);
     if(ret != 0) {
         IMP_LOG_ERR(TAG, "Audio channel disable error\n");
-	return -1;
+        return -1;
     }
-    /* Disable the audio devices. */
     ret = IMP_AI_Disable(aiDevID);
     if(ret != 0) {
         IMP_LOG_ERR(TAG, "Audio device disable error\n");
-	return -1;
+        return -1;
     }
     return 0;
 }

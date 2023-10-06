@@ -1,16 +1,16 @@
-#include <pthread.h>        // for pthread_mutex_unlock, pthread_cond_wait
-#include <sched.h>          // for sched_get_priority_max, SCHED_FIFO, sched...
-#include <stdint.h>         // for uint32_t
-#include <stdlib.h>         // for free, malloc, NULL
-#include <stdio.h>          // for printf
-#include "imp/imp_audio.h"  // for IMPAudioIOAttr, IMP_AO_Disable, IMP_AO_Di...
-#include "imp/imp_log.h"    // for IMP_LOG_ERR
-#include "audio_common.h"   // for AudioOutputAttributes, PlayAttributes
-#include "config.h"         // for config_get_ao_frame_size, is_valid_sample...
-#include "cJSON.h"          // for cJSON
+#include <pthread.h>
+#include <sched.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "imp/imp_audio.h"
+#include "imp/imp_log.h"
+#include "audio_common.h"
+#include "config.h"
+#include "cJSON.h"
 #include "output.h"
-#include "logging.h"        // for handle_audio_error
-#include "utils.h"          // for audio_buffer, audio_buffer_lock, audio_bu...
+#include "logging.h"
+#include "utils.h"
 
 #define TRUE 1
 #define TAG "AO"
@@ -70,7 +70,7 @@ void initialize_audio_output_device(int aoDevID, int aoChnID) {
     // Initialize the audio device
     if (IMP_AO_SetPubAttr(aoDevID, &attr) || IMP_AO_GetPubAttr(aoDevID, &attr) ||
         IMP_AO_Enable(aoDevID) || IMP_AO_EnableChn(aoDevID, aoChnID)) {
-	handle_audio_error("AO: Failed to initialize audio attributes");
+        handle_audio_error("AO: Failed to initialize audio attributes");
         exit(EXIT_FAILURE);
     }
 
@@ -95,6 +95,7 @@ void initialize_audio_output_device(int aoDevID, int aoChnID) {
     if (IMP_AO_SetGain(aoDevID, aoChnID, gain)) {
         handle_audio_error("Failed to set gain attribute");
     }
+
     // Get frame size from config and set it
     int frame_size_from_config = config_get_ao_frame_size();
     set_ao_max_frame_size(frame_size_from_config);
@@ -135,16 +136,12 @@ void reinitialize_audio_output_device(int aoDevID, int aoChnID) {
  * @param arg Thread arguments.
  * @return NULL.
  */
-void *ao_test_play_thread(void *arg) {
+void *ao_play_thread(void *arg) {
     // Boost the thread priority for real-time audio playback
     struct sched_param param;
     param.sched_priority = sched_get_priority_max(SCHED_FIFO);
     pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
-/*
-    PlayAttributes attrs = get_audio_play_attributes();
-    int aoDevID = attrs.aoDevIDItem ? attrs.aoDevIDItem->valueint : DEFAULT_AO_DEV_ID;
-    int aoChnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AO_CHN_ID;
-*/
+
     int aoDevID, aoChnID;
     get_audio_output_device_attributes(&aoDevID, &aoChnID);
 
@@ -159,6 +156,15 @@ void *ao_test_play_thread(void *arg) {
 
         // Wait until there's audio data in the buffer
         while (audio_buffer_size == 0) {
+            // Add thread termination check here
+            pthread_mutex_lock(&g_stop_thread_mutex);
+            if (g_stop_thread) {
+                pthread_mutex_unlock(&audio_buffer_lock);
+                pthread_mutex_unlock(&g_stop_thread_mutex);
+                return NULL;
+            }
+            pthread_mutex_unlock(&g_stop_thread_mutex);
+
             pthread_cond_wait(&audio_data_cond, &audio_buffer_lock);
         }
 
@@ -188,14 +194,16 @@ int disable_audio_output() {
     int aoDevID, aoChnID;
     get_audio_output_device_attributes(&aoDevID, &aoChnID);
 
-    /* Disable the audio channel */
+    // Mute the channel before we disable it
+    int mute_status = 0;
+    mute_audio_output_device(mute_status);
+
     ret = IMP_AO_DisableChn(aoDevID, aoChnID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "Audio channel disable error\n");
         return -1;
     }
 
-    /* Disable the audio device */
     ret = IMP_AO_Disable(aoDevID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "Audio device disable error\n");

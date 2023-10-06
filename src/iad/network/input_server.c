@@ -1,18 +1,21 @@
-#include <bits/socket.h>       // for SOCK_STREAM
-#include <stdlib.h>            // for free, malloc
-#include <string.h>            // for NULL, strncpy, memset, strcmp, strncmp
-#include <sys/socket.h>        // for sa_family_t, ssize_t, __pthread, pthre...
-#include <pthread.h>           // for pthread_mutex_unlock, pthread_mutex_lock
-#include <stdio.h>             // for printf, snprintf, sscanf
-#include <sys/un.h>            // for strlen, sockaddr_un
-#include <unistd.h>            // for close, write, read
-#include "input.h"    // for AiThreadArg, ai_record_thread
-#include "logging.h"  // for handle_audio_error
-#include "utils.h"    // for audio_buffer_lock, ClientNode, active_...
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include "input.h"
+#include "logging.h"
+#include "utils.h"
 #include "network.h"
 #include "input_server.h"
 
 #define TAG "NET_INPUT"
+
+// Global flag and mutex to control thread termination
+extern volatile int g_stop_thread;
+extern pthread_mutex_t g_stop_thread_mutex;
 
 void handle_audio_input_client(int client_sock) {
     pthread_mutex_lock(&audio_buffer_lock);
@@ -77,6 +80,15 @@ void *audio_input_server_thread(void *arg) {
     }
 
     while (1) {
+        int should_stop = 0;
+        pthread_mutex_lock(&g_stop_thread_mutex);
+        should_stop = g_stop_thread;
+        pthread_mutex_unlock(&g_stop_thread_mutex);
+
+        if (should_stop) {
+            break;
+        }
+
         printf("[INFO] Waiting for input client connection\n");
         int client_sock = accept(sockfd, NULL, NULL);
         if (client_sock == -1) {

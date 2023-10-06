@@ -165,3 +165,11 @@ void mute_audio_output_device(int mute_enable) {
         handle_audio_error("AO: Failed to mute audio output device");
     }
 }
+
+void enable_output_channel() {
+    int aoDevID, aoChnID;
+    get_audio_output_device_attributes(&aoDevID, &aoChnID);
+    if (IMP_AO_EnableChn(aoDevID, aoChnID)) {
+        handle_audio_error("AO: Failed to enable output channel");
+    }
+}

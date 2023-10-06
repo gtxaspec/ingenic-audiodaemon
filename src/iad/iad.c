@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 
     // Start audio play thread if output is not disabled
     if (!disable_ao) {
-        if (create_thread(&play_thread_id, ao_test_play_thread, NULL)) {
+        if (create_thread(&play_thread_id, ao_play_thread, NULL)) {
             return 1;
         }
     }
@@ -126,7 +126,5 @@ int main(int argc, char *argv[]) {
     }
     pthread_join(control_server_thread, NULL);
 
-    // Clean up resources before exiting
-    perform_cleanup();
     return 0;
 }

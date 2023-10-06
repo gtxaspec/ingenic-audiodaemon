@@ -6,6 +6,7 @@
 #include "imp/imp_audio.h"  // for IMPAudioBitWidth, IMPAudioSoundMode
 
 #define PROG_TAG "AO_T31"
+#define FRAME_DURATION 0.040
 
 typedef struct ClientNode {
     int sockfd;  // Socket descriptor for the client
@@ -29,5 +30,8 @@ IMPAudioSoundMode string_to_soundmode(const char* str);
 // Function declarations
 void perform_cleanup(void);
 void handle_sigint(int sig);
+
+extern volatile int g_stop_thread;
+extern pthread_mutex_t g_stop_thread_mutex;
 
 #endif // UTILS_H

@@ -52,6 +52,7 @@ void pause_audio_output(void);
 void clear_audio_output_buffer(void);
 void resume_audio_output(void);
 void flush_audio_output_buffer(void);
+void enable_output_channel(void);
 void mute_audio_output_device(int mute_enable);
 
 #endif // AUDIO_COMMON_H

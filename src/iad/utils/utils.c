@@ -14,8 +14,9 @@ unsigned char *audio_buffer = NULL;
 ssize_t audio_buffer_size = 0;
 int active_client_sock = -1;
 
-// Define frame duration as a constant instead of a magic number.
-#define FRAME_DURATION 0.040
+// Flag and associated mutex for thread termination
+volatile int g_stop_thread = 0;
+pthread_mutex_t g_stop_thread_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int create_thread(pthread_t *thread_id, void *(*start_routine) (void *), void *arg) {
     int ret = pthread_create(thread_id, NULL, start_routine, arg);
@@ -57,8 +58,17 @@ IMPAudioSoundMode string_to_soundmode(const char* str) {
 void perform_cleanup() {
     pthread_mutex_destroy(&audio_buffer_lock);
     pthread_cond_destroy(&audio_data_cond);
+
+    pthread_mutex_lock(&g_stop_thread_mutex);
+    g_stop_thread = 1;
+    pthread_mutex_unlock(&g_stop_thread_mutex);
+
+    // Signal the condition variable to wake up any waiting threads
+    pthread_cond_signal(&audio_data_cond);
+
     disable_audio_input();
     disable_audio_output();
+
     config_cleanup();
 }
 
