@@ -85,7 +85,26 @@ void handle_control_client(int client_sock) {
 
     buffer[bytes_received] = '\0';  // Null-terminate the received string
 
-    if (strncmp(buffer, "GET ", 4) == 0) {
+    // Try interpreting buffer as an integer for legacy clients
+    int client_request_type = *(int *)buffer;
+
+    if (client_request_type == AUDIO_OUTPUT_REQUEST) {
+        pthread_mutex_lock(&audio_buffer_lock);
+
+        if (active_client_sock != -1) {
+            if (write(client_sock, "queued", strlen("queued")) == -1) {
+                handle_audio_error(TAG, "write");
+            }
+        } else {
+            if (write(client_sock, "not_queued", strlen("not_queued")) == -1) {
+                handle_audio_error(TAG, "write");
+            }
+        }
+
+        pthread_mutex_unlock(&audio_buffer_lock);
+    }
+    // Check for the new protocol
+    else if (strncmp(buffer, "GET ", 4) == 0) {
         char variable_name[100];
         sscanf(buffer + 4, "%s", variable_name);
 
@@ -97,8 +116,8 @@ void handle_control_client(int client_sock) {
         } else {
             write(client_sock, "RESPONSE_UNKNOWN_VARIABLE", strlen("RESPONSE_UNKNOWN_VARIABLE"));
         }
-
-    } else if (strncmp(buffer, "SET ", 4) == 0) {
+    }
+    else if (strncmp(buffer, "SET ", 4) == 0) {
         char variable_name[100];
         char value[100];
         sscanf(buffer + 4, "%s %s", variable_name, value);
@@ -110,8 +129,8 @@ void handle_control_client(int client_sock) {
         } else {
             write(client_sock, "RESPONSE_ERROR", strlen("RESPONSE_ERROR"));
         }
-
-    } else {
+    }
+    else {
         write(client_sock, "RESPONSE_ERROR", strlen("RESPONSE_ERROR"));
     }
 
