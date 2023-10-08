@@ -41,6 +41,8 @@ int __fgetc_unlocked(FILE *__stream) {
     return fgetc(__stream);
 }
 
+// mmap function only used with video, crashed libimp.so on audio initialization
+#if 0
 extern void *mmap64(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
 
 #ifndef MMAP_SHIM_DEFINED
@@ -133,4 +135,5 @@ void *mmap(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t 
     return result;
 }
 
+#endif
 #endif

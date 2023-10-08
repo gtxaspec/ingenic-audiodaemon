@@ -14,7 +14,7 @@ INCLUDES = -I$(SDK_INC_DIR) \
            -I./build \
 	   -I$(SDK_INC_DIR)/libwebsockets
 
-CFLAGS = $(INCLUDES) -O2 -Wall -march=mips32r2
+CFLAGS = $(INCLUDES) -Wall -march=mips32r2
 LDFLAGS += -Wl,-gc-sections
 LDLIBS = -lpthread -lm -lrt -ldl
 
