@@ -14,23 +14,29 @@ INCLUDES = -I$(SDK_INC_DIR) \
            -I./build \
 	   -I$(SDK_INC_DIR)/libwebsockets
 
-CFLAGS = $(INCLUDES) -Wall -march=mips32r2
+CFLAGS = $(INCLUDES) -O2 -Wall -march=mips32r2
 LDFLAGS += -Wl,-gc-sections
 LDLIBS = -lpthread -lm -lrt -ldl
 
 # Configuration
-# uClibc + Static is broken... compiler 'TLS_DTPREL_VALUE' error.
+# uClibc & GCC + Static is broken... compiler 'TLS_DTPREL_VALUE' error.
 CONFIG_UCLIBC_BUILD=n
+CONFIG_GCC_BUILD=n
 CONFIG_MUSL_BUILD=y
-CONFIG_STATIC_BUILD=y
-DEBUG=n
+CONFIG_STATIC_BUILD=n
+DEBUG=y
 
 ifeq ($(DEBUG), y)
-CFLAGS += -g -O0  # Add -g for debugging symbols and -O0 to disable optimizations
+CFLAGS += -g # Add -g for debugging symbols
 STRIPCMD = @echo "Not stripping binary due to DEBUG mode."
 else
-CFLAGS += -O2  # Use -O2 optimization level when not in DEBUG mode
 STRIPCMD = $(STRIP)
+endif
+
+ifeq ($(CONFIG_GCC_BUILD), y)
+CROSS_COMPILE?= mips-linux-gnu-
+LDFLAGS += -Wl,--no-as-needed -Wl,--allow-shlib-undefined
+SDK_LIB_DIR = lib
 endif
 
 ifeq ($(CONFIG_UCLIBC_BUILD), y)
@@ -58,13 +64,13 @@ endif
 
 # Targets and Object Files
 AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac build/bin/wc-console build/bin/web_client
-
 iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/audio/audio_common.o \
+build/obj/audio/audio_imp.o \
 build/obj/network/network.o build/obj/network/control_server.o build/obj/network/input_server.o build/obj/network/output_server.o \
 build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o \
 build/cJSON-build/cJSON/cJSON.o $(SHIM)
-iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o $(SHIM)
-web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o $(SHIM)
+iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o
+web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o
 audioplay_OBJS = build/obj/standalone/audioplay.o $(SHIM)
 wc_console_OBJS = build/obj/wc-console/wc-console.o
 
