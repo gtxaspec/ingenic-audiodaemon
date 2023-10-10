@@ -23,7 +23,7 @@ LDLIBS = -lpthread -lm -lrt -ldl
 CONFIG_UCLIBC_BUILD=n
 CONFIG_GCC_BUILD=n
 CONFIG_MUSL_BUILD=y
-CONFIG_STATIC_BUILD=n
+CONFIG_STATIC_BUILD=y
 DEBUG=y
 
 ifeq ($(DEBUG), y)
@@ -119,9 +119,9 @@ build/obj/wc-console/%.o: src/wc-console/%.c
 	@mkdir -p $(@D)
 	$(CC) -c $(CFLAGS) $< -o $@
 
-#As libimp is based on C++ libraries, so mips-linux-gnu-g++ is used for linking process.
-#API linking order: [IVS libraries] [mxu libraries] [libimp/libsysutils] [libalog]
-#(2022). T31 Development resource compilation (Rev 1.0). [Ingenic]. Section 4.1, Page 9.
+# As libimp is based on C++ libraries, so g++ is used for the linking process.
+# API linking order: [IVS libraries] [mxu libraries] [libimp/libsysutils] [libalog]
+# (2022). T31 Development resource compilation (Rev 1.0). [Ingenic]. Section 4.1, Page 9.
 
 iad: build/bin/iad
 
