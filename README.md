@@ -76,16 +76,13 @@ To run the audio daemon:
 
 ```
 ./iad [-c] [-d <AI|AO>] [-h]
-
 ```
 
 #### Options:
 
-```
-  -c <path>   Path to configuration file (default: ./daemon.json)
-  -d <AI|AO>  Disable AI (Audio Input) or AO (Audio Output)
-  -h          Display this help message
-```
+- `-c`: <path> - Path to configuration file specified by <config_file_path> (default: ./iad.json)
+- `-d`: <AI|AO>  Disable AI (Audio Input) or AO (Audio Output)
+- `-h`:          Display this help message
 
 ---
 
@@ -112,26 +109,50 @@ For example, if you want to play a specific audio file, you can use:
 ./iac -f path_to_your_audio_file.wav
 ```
 
-#### stdin examples:
+---
+
+### stdin examples:
 
 ```
-ffmpeg -re -i https://wpr-ice.streamguys1.com/wpr-ideas-mp3-64 -af volume=-15dB  -acodec pcm_s16le -f s16le -ac 1 -ar 48000 - | ./iac -s
+ffmpeg -re -i https://wpr-ice.streamguys1.com/wpr-ideas-mp3-64 -af volume=-15dB -f s16le -ac 1 -ar 48000 - | ./iac -s
 ffmpeg -f s16le -ar 16000 -ac 1 -i test_file.pcm -acodec pcm_s16le -f s16le -ac 1 -ar 48000 - | ./iac -s
 ```
 
-#### send audio from laptop to device:
+#### Play or send audio to the device over the network:
 
-on device:
-
-```
-nc -l -p 8081 | ffmpeg -f s16le -ar 48000 -ac 1 -i - -af volume=-15dB -f s16le -ar 48000 -ac 1 - | ./iac -s
-```
-on laptop:
+#### On device ( using `nc`, listen persistently on device ip, port 8081 )
 
 ```
-ffmpeg -f alsa -ac 1 -i default -f s16le -ar 48000 -ac 1 - | ffmpeg -f s16le -i - -f s16le - | nc 192.168.2.2 8081
+nc -ll -p 8081 -e ./iac -s
 ```
 
-Latency is decent!
+#### On PC:
+
+1. Capture microphone:
+```
+ffmpeg -f alsa -ac 1 -i default -f s16le -ar 48000 -ac 1 tcp://192.168.2.2:8081
+```
+
+2. Play live audio stream:
+```
+ffmpeg -re -i https://wpr-ice.streamguys1.com/wpr-ideas-mp3-64 -af volume=-5dB -f s16le -ac 1 -ar 48000 tcp://192.168.2.2:8081
+```
+
+3. Play computer audio output:  
+
+Find your output source:
+`pactl list short sources`:
+```
+$ pactl list short sources
+49	alsa_output.pci-0000_00_1f.3.analog-stereo.monitor	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+50	alsa_input.pci-0000_00_1f.3.analog-stereo	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+```
+
+Set your source on the ffmpeg commandline:
+```
+ffmpeg -f pulse -ac 1 -i alsa_output.pci-0000_00_1f.3.analog-stereo.monitor -f s16le -ar 48000 -ac 1 tcp://192.168.2.2:8081
+```
+
+Latency is very decent!
 
 Note: Set the sample rate on the ffmpeg command line to match your settings.

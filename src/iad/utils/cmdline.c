@@ -8,7 +8,7 @@
 void print_usage(const char *prog_name) {
     printf("Usage: %s [options]\n\n", prog_name);
     printf("Options:\n");
-    printf("  -c <path>   Path to configuration file (default: ./daemon.json)\n");
+    printf("  -c <path>   Path to configuration file (default: ./iad.json)\n");
     printf("  -d <AI|AO>  Disable AI (Audio Input) or AO (Audio Output)\n");
     printf("  -h          Display this help message\n");
 }
@@ -19,7 +19,7 @@ int parse_cmdline(int argc, char *argv[], CmdOptions *options) {
     int opt;
 
     // Set default values
-    options->config_file_path = "./daemon.json";  // Default configuration file path
+    options->config_file_path = "./iad.json";  // Default configuration file path
     options->disable_ai = 0;
     options->disable_ao = 0;
 
