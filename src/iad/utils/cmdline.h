@@ -6,6 +6,7 @@ typedef struct {
     char *config_file_path;
     int disable_ai;
     int disable_ao;
+    int daemonize;
 } CmdOptions;
 
 // Function to parse command line arguments

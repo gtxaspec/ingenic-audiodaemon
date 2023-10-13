@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
+#include <unistd.h>
+#include <libgen.h>
 #include "cmdline.h"
 #include "utils.h"
 
@@ -20,10 +22,26 @@ void print_usage(const char *prog_name) {
 int parse_cmdline(int argc, char *argv[], CmdOptions *options) {
     int opt;
 
+    char exePath[4096];
+    static char configFile[4096];  // Make this static so its address remains valid after the function returns
+
+    // Read the symlink to get the path of the currently running executable
+    ssize_t len = readlink("/proc/self/exe", exePath, sizeof(exePath)-1);
+    if (len != -1) {
+        exePath[len] = '\0';  // Null-terminate read string
+        // Extract directory
+        char* dir = dirname(exePath);
+        // Construct path to iad.json
+        snprintf(configFile, sizeof(configFile), "%s/iad.json", dir);
+    } else {
+        strncpy(configFile, "./iad.json", sizeof(configFile)-1); // Default to current directory if path cannot be determined
+    }
+
     // Set default values
-    options->config_file_path = "./iad.json";  // Default configuration file path
+    options->config_file_path = configFile;  // Updated configuration file path
     options->disable_ai = 0;
     options->disable_ao = 0;
+    options->daemonize = 0;
 
     // Use getopt to parse the command line arguments
     while ((opt = getopt(argc, argv, "d:c:rh")) != -1) {
@@ -49,7 +67,7 @@ int parse_cmdline(int argc, char *argv[], CmdOptions *options) {
                 }
                 break;
             case 'r':
-                daemonize();
+                options->daemonize = 1;
 		break;
             case 'h':
                 print_usage(argv[0]);

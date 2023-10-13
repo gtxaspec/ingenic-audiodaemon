@@ -41,6 +41,10 @@ int main(int argc, char *argv[]) {
         return 1; // Exit on command line parsing error
     }
 
+    if (options.daemonize) {
+        daemonize();
+    }
+
     // Ensure only one instance of the daemon is running
     if (is_already_running()) {
         exit(1);

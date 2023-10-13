@@ -54,7 +54,7 @@ int initialize_audio_input_device(int aiDevID, int aiChnID) {
     ret = IMP_AI_SetPubAttr(aiDevID, &attr);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_SetPubAttr failed");
-        handle_audio_error(TAG, "Failed to initialize audio attributes");
+        handle_audio_error(TAG, "Fatal Error: Failed to initialize audio attributes");
         exit(EXIT_FAILURE);
     }
 
@@ -62,6 +62,7 @@ int initialize_audio_input_device(int aiDevID, int aiChnID) {
     ret = IMP_AI_Enable(aiDevID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_Enable failed");
+        handle_audio_error(TAG, "Fatal Error: Failed to enable AI device");
         exit(EXIT_FAILURE);
     }
 
@@ -80,6 +81,7 @@ int initialize_audio_input_device(int aiDevID, int aiChnID) {
     ret = IMP_AI_EnableChn(aiDevID, aiChnID);
     if (ret != 0) {
         IMP_LOG_ERR(TAG, "IMP_AI_EnableChn failed");
+        handle_audio_error(TAG, "Fatal Error: Failed to enable AI channel");
         exit(EXIT_FAILURE);
     }
 
