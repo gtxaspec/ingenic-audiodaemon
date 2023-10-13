@@ -140,6 +140,8 @@ void reinitialize_audio_output_device(int aoDevID, int aoChnID) {
  * @return NULL.
  */
 void *ao_play_thread(void *arg) {
+    printf("[INFO] [AO] Entering ao_play_thread\n");
+
     // Boost the thread priority for real-time audio playback
     struct sched_param param;
     param.sched_priority = sched_get_priority_max(SCHED_FIFO);

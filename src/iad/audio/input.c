@@ -3,7 +3,6 @@
 #include <stdlib.h>         // for exit, free, EXIT_FAILURE
 #include <unistd.h>         // for write
 #include <pthread.h>        // for pthread_mutex_lock, pthread_mutex_unlock
-#include <bits/errno.h>     // for EPIPE
 #include "imp/imp_audio.h"  // for IMPAudioIOAttr, IMPAudioFrame, IMP_AI_Dis...
 #include "imp/imp_log.h"    // for IMP_LOG_ERR
 #include "audio_common.h"   // for AudioInputAttributes, PlayInputAttributes
@@ -122,6 +121,8 @@ int initialize_audio_input_device(int aiDevID, int aiChnID) {
  * @return NULL.
  */
 void *ai_record_thread(void *arg) {
+    printf("[INFO] [AI] Entering ai_record_thread\n");
+
     int ret;
 
     int aiDevID, aiChnID;

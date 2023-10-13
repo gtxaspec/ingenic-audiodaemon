@@ -3,6 +3,7 @@
 #include <getopt.h>
 #include <string.h>
 #include "cmdline.h"
+#include "utils.h"
 
 // Function to print the usage of the program.
 void print_usage(const char *prog_name) {
@@ -10,6 +11,7 @@ void print_usage(const char *prog_name) {
     printf("Options:\n");
     printf("  -c <path>   Path to configuration file (default: ./iad.json)\n");
     printf("  -d <AI|AO>  Disable AI (Audio Input) or AO (Audio Output)\n");
+    printf("  -r          Start the program as a daemon\n");
     printf("  -h          Display this help message\n");
 }
 
@@ -24,7 +26,7 @@ int parse_cmdline(int argc, char *argv[], CmdOptions *options) {
     options->disable_ao = 0;
 
     // Use getopt to parse the command line arguments
-    while ((opt = getopt(argc, argv, "d:c:h")) != -1) {
+    while ((opt = getopt(argc, argv, "d:c:rh")) != -1) {
         switch (opt) {
             case 'c':
                 if (optarg) {  // Check if optarg is not NULL before assigning
@@ -46,6 +48,9 @@ int parse_cmdline(int argc, char *argv[], CmdOptions *options) {
                     return 1;
                 }
                 break;
+            case 'r':
+                daemonize();
+		break;
             case 'h':
                 print_usage(argv[0]);
                 exit(0);

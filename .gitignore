@@ -16,4 +16,5 @@ build/cJSON-build/
 include/cJSON.h
 lib/libcjson.a
 scripts/echo_core_files.sh
+scripts/check_headers.sh
 .vscode

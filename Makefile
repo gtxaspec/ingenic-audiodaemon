@@ -5,6 +5,14 @@ CC = ccache $(CROSS_COMPILE)gcc
 CXX = ccache $(CROSS_COMPILE)g++
 STRIP = $(CROSS_COMPILE)strip
 
+# Configuration
+# uClibc & GCC + Static is broken... compiler 'TLS_DTPREL_VALUE' error.
+CONFIG_UCLIBC_BUILD=n
+CONFIG_GCC_BUILD=n
+CONFIG_MUSL_BUILD=y
+CONFIG_STATIC_BUILD=y
+DEBUG=n
+
 SDK_INC_DIR = include
 INCLUDES = -I$(SDK_INC_DIR) \
            -I./src/iad/network \
@@ -17,14 +25,6 @@ INCLUDES = -I$(SDK_INC_DIR) \
 CFLAGS = $(INCLUDES) -O2 -Wall -march=mips32r2
 LDFLAGS += -Wl,-gc-sections
 LDLIBS = -lpthread -lm -lrt -ldl
-
-# Configuration
-# uClibc & GCC + Static is broken... compiler 'TLS_DTPREL_VALUE' error.
-CONFIG_UCLIBC_BUILD=n
-CONFIG_GCC_BUILD=n
-CONFIG_MUSL_BUILD=y
-CONFIG_STATIC_BUILD=y
-DEBUG=y
 
 ifeq ($(DEBUG), y)
 CFLAGS += -g # Add -g for debugging symbols
@@ -127,35 +127,35 @@ iad: build/bin/iad
 
 build/bin/iad: version $(iad_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(LDLIBS)
+	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(LDLIBS) -static-libstdc++
 	$(STRIPCMD) $@
 
 iac: build/bin/iac
 
 build/bin/iac: version $(iac_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(iac_OBJS) $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(iac_OBJS) $(LDLIBS)
 	$(STRIPCMD) $@
 
 audioplay: build/bin/audioplay
 
 build/bin/audioplay: version $(audioplay_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(audioplay_OBJS) $(LIBS) $(LDLIBS)
+	$(CXX) $(LDFLAGS) -o $@ $(audioplay_OBJS) $(LIBS) $(LDLIBS) -static-libstdc++
 	$(STRIPCMD) $@
 
 wc-console: build/bin/wc-console
 
 build/bin/wc-console: version $(wc_console_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(wc_console_OBJS) ${LWS} $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(wc_console_OBJS) ${LWS} $(LDLIBS)
 	$(STRIPCMD) $@
 
 web_client: build/bin/web_client
 
 build/bin/web_client: version $(web_client_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(web_client_OBJS) ${LWS} $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(web_client_OBJS) ${LWS} $(LDLIBS)
 	$(STRIPCMD) $@
 
 clean:

@@ -5,7 +5,8 @@ The **Ingenic Audio Daemon** (iad) serves as an intermediary between the audio k
 - **iad (Ingenic Audio Daemon)**: A background process for handling audio on Ingenic devices.
   - **iac (Ingenic Audio Client)**: A client-side utility to interact with the audio daemon.
   - **audioplay**: A standalone audio player for Ingenic devices.
-  - **wc-console**: A client utility that establishes a WebSocket server, enabling the capture and streaming of audio data from web browsers.
+  - **web_client**: A client utility that establishes a WebSocket server, enabling the capture and streaming of audio data from web browsers.
+  - **wc-console**: A client tool that establishes a WebSocket server, used for audio debugging, outputting the audio stream to stdout.
 
 ---
 
@@ -58,8 +59,9 @@ If you only need to compile one of the tools, you can do so individually:
 make iad        # For the audio daemon
 make iac        # For the audio client
 make audioplay  # For the standalone audio player
-make wc-console # For the websocket server, run `make deps` to build dependencies, 
-                # then `make wc-console`.
+make deps       # Build dependencies for websocket servers
+make web_client # For the websocket server
+make wc-console # For the websocket debugging server
 ```
 
 5. **Clean the Build**:
