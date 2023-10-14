@@ -17,20 +17,24 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/../build/lws-build"
 LWS_REPO="https://github.com/warmcat/libwebsockets"
 LWS_DIR="${BUILD_DIR}/libwebsockets"
+LWS_VER="b0a749c8e7a8294b68581ce4feac0e55045eb00"
 MAKEFILE="$SCRIPT_DIR/../Makefile"
 
 # Set compiler prefix here
 if grep -q "CONFIG_UCLIBC_BUILD=y" "$MAKEFILE"; then
-	echo "uclibc"
+	echo "Build type: uClibc"
 	CROSS_COMPILE="mips-linux-uclibc-gnu-"
 elif grep -q "CONFIG_MUSL_BUILD=y" "$MAKEFILE"; then
-	echo "musl"
+	echo "Build type: musl"
 	CROSS_COMPILE="mipsel-openipc-linux-musl-"
+elif grep -q "CONFIG_GCC_BUILD=y" "$MAKEFILE"; then
+	echo "Build type: GCC"
+	CROSS_COMPILE="mips-linux-gnu-"
 fi
 
 CC="${CROSS_COMPILE}gcc"
 CXX="${CROSS_COMPILE}g++"
-STRIP="${CROSS_COMPILE}strip"
+STRIP="${CROSS_COMPILE}strip --strip-debug"
 
 # Ensure CC and CXX are set
 if [ -z "$CC" ] || [ -z "$CXX" ]; then
@@ -50,6 +54,13 @@ if [ ! -d "$LWS_DIR" ]; then
 fi
 
 cd "$LWS_DIR"
+
+# Checkout desired version
+if [[ -n "$LWS_VER" ]]; then
+    git checkout $LWS_VER
+else
+    echo "Pulling libwebsockets master"
+fi
 
 # Create and navigate to cmake build dir
 mkdir -p build
@@ -102,6 +113,7 @@ cmake \
 -DLWS_WITH_FILE_OPS=ON \
 -DLWS_WITH_CONMON=OFF \
 -DLWS_WITH_CACHE_NSCOOKIEJAR=OFF \
+-DLWS_WITHOUT_TESTAPPS=ON \
 ..
 
 elif grep -q "CONFIG_STATIC_BUILD=y" "$MAKEFILE"; then
@@ -149,6 +161,7 @@ cmake \
 -DLWS_WITH_FILE_OPS=OFF \
 -DLWS_WITH_CONMON=OFF \
 -DLWS_WITH_CACHE_NSCOOKIEJAR=OFF \
+-DLWS_WITHOUT_TESTAPPS=ON \
 ..
 else
 echo "CONFIG_STATIC_BUILD setting not found or is set to an unexpected value."
@@ -159,7 +172,7 @@ make
 
 # Copy libwebsockets library and headers
 echo "Copying libwebsockets library and headers..."
-$STRIP ./lib/libwebsockets.so.19
+#$STRIP ./lib/libwebsockets.so.*
 cp ./lib/libwebsockets.a ../../../../lib/
 cp ./lib/libwebsockets.so.19 ../../../../lib/libwebsockets.so
 cp -R ../include/libwebsockets ../../../../include/
