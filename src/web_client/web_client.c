@@ -2,6 +2,7 @@
  * INGENIC WEBSOCKET AUDIO CLIENT
  */
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +11,8 @@
 #include "web_client_src/cmdline.h"
 #include "web_client_src/client_network.h"
 #include "web_client_src/playback.h"
+#include "web_client_src/utils.h"
+
 #include "version.h"
 
 // Global constants and variables
@@ -120,12 +123,33 @@ static struct lws_protocols protocols[] = {
 
 // Main function
 int main(int argc, char *argv[]) {
-    char *ip_address = NULL;
-    int port = 8089;
-    int debug = 0;
-    int silent = 0;
+    // Parse and store command-line arguments
+    CmdOptions options;
 
-    parse_cmdline_args(argc, argv, &ip_address, &port, &debug, &silent);
+    if (parse_cmdline(argc, argv, &options)) {
+        return 1; // Exit on command line parsing error
+    }
+
+    char *ip_address = options.ip_address;
+    int port = options.port;
+    int debug = options.debug;
+    int silent = options.silent;
+
+    // Check to see if daemonize was requested
+    if (options.daemonize) {
+        daemonize();
+    }
+
+    // Ensure only one instance of the daemon is running
+    if (is_already_running()) {
+        exit(1);
+    }
+
+    // Set up signal handling for graceful termination
+    setup_signal_handling();
+
+    // Ignore the SIGPIPE signal to prevent unexpected program termination
+    signal(SIGPIPE, SIG_IGN);
 
     if (!silent) {
         printf("INGENIC WEB AUDIO CLIENT Version: %s\n", VERSION);

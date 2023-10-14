@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
         return 1; // Exit on command line parsing error
     }
 
+    // Check to see if daemonize was requested
     if (options.daemonize) {
         daemonize();
     }
