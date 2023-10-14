@@ -29,7 +29,8 @@ function resample(data, sourceSampleRate, targetSampleRate) {
 
 function startWebSocket() {
     // WebSocket initialization
-    ws = new WebSocket(`ws://${SERVER_IP}:8089`);
+    ws = new WebSocket(`ws://${SERVER_IP}:8089`, "audio-protocol");
+
     ws.onopen = function() {
         console.log("WebSocket connection opened");
     };
@@ -113,17 +114,33 @@ function stopRecording() {
     console.log("Recording stopped.");
 }
 
-//Prevent context menu on mobile from appearing on button hold
+// Prevent context menu on mobile from appearing on button hold
 recordButton.addEventListener("contextmenu", function(event) {
     event.preventDefault();
 });
 
+// Desktop
 recordButton.addEventListener("mousedown", startRecording);
+
+/* Add 30ms delay on mousedown before sending audio
+recordButton.addEventListener("mousedown", function() {
+    setTimeout(startRecording, 30);
+}); */
+
+// Wait 300ms before stopping recording after mouseup
 recordButton.addEventListener("mouseup", function() {
     setTimeout(stopRecording, 300);
 });
 
+// Mobile
 recordButton.addEventListener("touchstart", startRecording);
+
+/* Add 30ms delay on touchstart before sending audio
+recordButton.addEventListener("touchstart", function() {
+    setTimeout(startRecording, 30);
+}); */
+
+// Wait 300ms before stopping recording after touchend
 recordButton.addEventListener("touchend", function() {
     setTimeout(stopRecording, 300);
 });
