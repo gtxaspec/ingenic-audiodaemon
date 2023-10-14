@@ -70,7 +70,7 @@ build/obj/network/network.o build/obj/network/control_server.o build/obj/network
 build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o \
 build/cJSON-build/cJSON/cJSON.o $(SHIM)
 iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o
-web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o
+web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o build/obj/web_client_src/utils.o
 audioplay_OBJS = build/obj/standalone/audioplay.o $(SHIM)
 wc_console_OBJS = build/obj/wc-console/wc-console.o
 
