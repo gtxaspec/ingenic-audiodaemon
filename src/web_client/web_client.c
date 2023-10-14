@@ -62,15 +62,31 @@ static int ws_callback(struct lws *wsi, enum lws_callback_reasons reason, void *
 // HTTP callback for handling streamed audio data via POST
 static int http_callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
     switch (reason) {
-        case LWS_CALLBACK_HTTP:
-            if (lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI)) {
-                if (daemon_sockfd == -1) {
-                    daemon_sockfd = setup_client_connection(AUDIO_OUTPUT_REQUEST);
-                }
-            } else {
-                return -1;
+
+    case LWS_CALLBACK_HTTP:
+    {
+        char uri_buffer[256];
+        memset(uri_buffer, 0, sizeof(uri_buffer));
+
+        int uri_length = lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI);
+        if (uri_length > 0) {
+            if (uri_length >= sizeof(uri_buffer)) {
+                uri_length = sizeof(uri_buffer) - 1;  // Ensure we don't overflow the buffer
             }
-            break;
+            lws_hdr_copy_fragment(wsi, uri_buffer, sizeof(uri_buffer), WSI_TOKEN_POST_URI, 0);
+        } else {
+            return -1;  // Exit if we can't get the POST URI length
+        }
+
+        if (strncmp(uri_buffer, "/audio", 6) == 0) {
+            if (daemon_sockfd == -1) {
+                daemon_sockfd = setup_client_connection(AUDIO_OUTPUT_REQUEST);
+            }
+        } else {
+            return -1;
+        }
+        break;
+    }
 
         case LWS_CALLBACK_HTTP_BODY:
             if (daemon_sockfd != -1) {
