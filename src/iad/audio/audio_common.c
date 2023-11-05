@@ -1,8 +1,11 @@
-#include <imp/imp_audio.h>
+#include "imp/imp_audio.h"
+#include "imp/imp_log.h"
 #include "audio_common.h"
 #include "config.h"
 #include "logging.h"
 #include "output.h"
+
+#define TAG "AUDIO_COMMON"
 
 /**
  * Helper function to get a specific audio attribute from the configuration.
@@ -166,10 +169,23 @@ void mute_audio_output_device(int mute_enable) {
     }
 }
 
+//todo
 void enable_output_channel() {
     int aoDevID, aoChnID;
     get_audio_output_device_attributes(&aoDevID, &aoChnID);
+    AudioOutputAttributes attrs = get_audio_attributes();
+
     if (IMP_AO_EnableChn(aoDevID, aoChnID)) {
         handle_audio_error("AO: Failed to enable output channel");
+    }
+
+    // Set volume and gain for the audio device
+    int vol = attrs.SetVolItem ? attrs.SetVolItem->valueint : DEFAULT_AO_CHN_VOL;
+    if (vol < -30 || vol > 120) {
+        IMP_LOG_ERR(TAG, "SetVol value out of range: %d. Using default value: %d.\n", vol, DEFAULT_AO_CHN_VOL);
+        vol = DEFAULT_AO_CHN_VOL;
+    }
+    if (IMP_AO_SetVol(aoDevID, aoChnID, vol)) {
+        handle_audio_error("Failed to set volume attribute");
     }
 }

@@ -77,6 +77,7 @@ void *audio_output_server_thread(void *arg) {
         // Enabling the channel, after its already enabled, clears all buffers for some reason... otherwise
         // old audio will play on each subsequent client connect... unknown why.
         enable_output_channel();
+        //There has to be a better way than to do this.
 
         printf("[INFO] [AO] Client connected\n");
 

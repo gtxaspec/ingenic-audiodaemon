@@ -1,12 +1,12 @@
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
-#include <imp/imp_audio.h>  // for AUDIO_SAMPLE_RATE_48000
 #include <pthread.h>
+#include "imp/imp_audio.h"  // for AUDIO_SAMPLE_RATE_48000
 
 #define DEFAULT_AO_SAMPLE_RATE AUDIO_SAMPLE_RATE_48000
 #define DEFAULT_AO_MAX_FRAME_SIZE 1280
-#define DEFAULT_AO_CHN_VOL 100
+#define DEFAULT_AO_CHN_VOL 90
 #define DEFAULT_AO_GAIN 25
 #define DEFAULT_AO_CHN_CNT 1
 #define DEFAULT_AO_FRM_NUM 20
