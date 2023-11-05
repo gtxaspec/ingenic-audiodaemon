@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "libwebsockets.h"
+#include "version.h"
 
 int silent = 0;  // Global flag to check if the program should run silently
 
@@ -72,6 +73,10 @@ int main(int argc, char **argv) {
     // If silent flag is set, silence the libwebsockets debug output
     if (silent) {
         lws_set_log_level(0, NULL); // Set log level to 0
+    }
+
+    if (!silent) {
+        printf("INGENIC WC-CONSOLE Version: %s\n", VERSION);
     }
 
     // Disable buffering for stdout

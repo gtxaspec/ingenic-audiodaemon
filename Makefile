@@ -5,6 +5,14 @@ CC = ccache $(CROSS_COMPILE)gcc
 CXX = ccache $(CROSS_COMPILE)g++
 STRIP = $(CROSS_COMPILE)strip
 
+# Configuration
+# uClibc & GCC + Static is broken... compiler 'TLS_DTPREL_VALUE' error.
+CONFIG_UCLIBC_BUILD=n
+CONFIG_GCC_BUILD=n
+CONFIG_MUSL_BUILD=y
+CONFIG_STATIC_BUILD=y
+DEBUG=n
+
 SDK_INC_DIR = include
 INCLUDES = -I$(SDK_INC_DIR) \
            -I./src/iad/network \
@@ -18,19 +26,17 @@ CFLAGS = $(INCLUDES) -O2 -Wall -march=mips32r2
 LDFLAGS += -Wl,-gc-sections
 LDLIBS = -lpthread -lm -lrt -ldl
 
-# Configuration
-# uClibc + Static is broken... compiler 'TLS_DTPREL_VALUE' error.
-CONFIG_UCLIBC_BUILD=n
-CONFIG_MUSL_BUILD=y
-CONFIG_STATIC_BUILD=y
-DEBUG=n
-
 ifeq ($(DEBUG), y)
-CFLAGS += -g -O0  # Add -g for debugging symbols and -O0 to disable optimizations
+CFLAGS += -g # Add -g for debugging symbols
 STRIPCMD = @echo "Not stripping binary due to DEBUG mode."
 else
-CFLAGS += -O2  # Use -O2 optimization level when not in DEBUG mode
 STRIPCMD = $(STRIP)
+endif
+
+ifeq ($(CONFIG_GCC_BUILD), y)
+CROSS_COMPILE?= mips-linux-gnu-
+LDFLAGS += -Wl,--no-as-needed -Wl,--allow-shlib-undefined
+SDK_LIB_DIR = lib
 endif
 
 ifeq ($(CONFIG_UCLIBC_BUILD), y)
@@ -58,10 +64,13 @@ endif
 
 # Targets and Object Files
 AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac build/bin/wc-console build/bin/web_client
-
-iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/network/network.o build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o build/cJSON-build/cJSON/cJSON.o $(SHIM)
-iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o $(SHIM)
-web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o $(SHIM)
+iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/audio/audio_common.o \
+build/obj/audio/audio_imp.o \
+build/obj/network/network.o build/obj/network/control_server.o build/obj/network/input_server.o build/obj/network/output_server.o \
+build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o \
+build/cJSON-build/cJSON/cJSON.o $(SHIM)
+iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o
+web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o build/obj/web_client_src/utils.o
 audioplay_OBJS = build/obj/standalone/audioplay.o $(SHIM)
 wc_console_OBJS = build/obj/wc-console/wc-console.o
 
@@ -110,43 +119,43 @@ build/obj/wc-console/%.o: src/wc-console/%.c
 	@mkdir -p $(@D)
 	$(CC) -c $(CFLAGS) $< -o $@
 
-#As libimp is based on C++ libraries, so mips-linux-gnu-g++ is used for linking process.
-#API linking order: [IVS libraries] [mxu libraries] [libimp/libsysutils] [libalog]
-#(2022). T31 Development resource compilation (Rev 1.0). [Ingenic]. Section 4.1, Page 9.
+# As libimp is based on C++ libraries, so g++ is used for the linking process.
+# API linking order: [IVS libraries] [mxu libraries] [libimp/libsysutils] [libalog]
+# (2022). T31 Development resource compilation (Rev 1.0). [Ingenic]. Section 4.1, Page 9.
 
 iad: build/bin/iad
 
 build/bin/iad: version $(iad_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(LDLIBS)
+	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(LDLIBS) -static-libstdc++
 	$(STRIPCMD) $@
 
 iac: build/bin/iac
 
 build/bin/iac: version $(iac_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(iac_OBJS) $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(iac_OBJS) $(LDLIBS)
 	$(STRIPCMD) $@
 
 audioplay: build/bin/audioplay
 
 build/bin/audioplay: version $(audioplay_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(audioplay_OBJS) $(LIBS) $(LDLIBS)
+	$(CXX) $(LDFLAGS) -o $@ $(audioplay_OBJS) $(LIBS) $(LDLIBS) -static-libstdc++
 	$(STRIPCMD) $@
 
 wc-console: build/bin/wc-console
 
 build/bin/wc-console: version $(wc_console_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(wc_console_OBJS) ${LWS} $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(wc_console_OBJS) ${LWS} $(LDLIBS)
 	$(STRIPCMD) $@
 
 web_client: build/bin/web_client
 
 build/bin/web_client: version $(web_client_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(web_client_OBJS) ${LWS} $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(web_client_OBJS) ${LWS} $(LDLIBS)
 	$(STRIPCMD) $@
 
 clean:

@@ -1,5 +1,7 @@
-#ifndef NETWORK_H
-#define NETWORK_H
+#ifndef OUTPUT_SERVER_H
+#define OUTPUT_SERVER_H
+
+extern char AUDIO_OUTPUT_SOCKET_PATH[];
 
 #define CLIENT_QUEUED 1
 #define CLIENT_NOT_QUEUED 0
@@ -17,8 +19,6 @@
 #define RESPONSE_UNKNOWN_VARIABLE 404
 
 // Functions
-void update_socket_paths_from_config();
-char* get_variable_value(const char* variable_name);
-int set_variable_value(const char* variable_name, const char* value);
+void *audio_output_server_thread(void *arg);
 
-#endif // NETWORK_H
+#endif // OUTPUT_SERVER_H

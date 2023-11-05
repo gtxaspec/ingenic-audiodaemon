@@ -4,43 +4,23 @@
  * This daemon manages audio input and output for the Ingenic Tomahawk class devices.
  */
 
-#include "iad.h"
-#include <signal.h>
-#include <unistd.h>
-#include <stdio.h>
+#include <bits/signal.h>             // Signal definitions
+#include <signal.h>                  // Signal handling functions
+#include <stdio.h>                   // Standard I/O functions
 #include <stdlib.h>
-#include <string.h>
-#include "utils/logging.h"
+#include <pthread.h>                 // Multithreading functions
+#include "iad.h"
+#include "network/input_server.h"    // Audio input server functions
+#include "network/output_server.h"   // Audio output server functions
+#include "network/control_server.h"  // Audio control server functions
+#include "audio/output.h"            // Audio output functions
+#include "utils/cmdline.h"           // Command-line argument parsing
+#include "utils/config.h"            // Configuration file handling
+#include "utils/utils.h"             // Utility functions
+#include "utils/logging.h"           // Logging functions
+#include "version.h"                 // Version information
 
 #define TAG "IAD"
-
-/**
- * @brief Clean up resources.
- *
- * This function is responsible for cleaning up any allocated resources
- * and restoring the system to its initial state.
- */
-void perform_cleanup() {
-    pthread_mutex_destroy(&audio_buffer_lock);
-    pthread_cond_destroy(&audio_data_cond);
-    disable_audio_output();
-    disable_audio_input();
-    config_cleanup();
-}
-
-/**
- * @brief Signal handler for SIGINT.
- *
- * This function handles the SIGINT signal (typically sent from the
- * command line via CTRL+C). It ensures that the daemon exits gracefully.
- *
- * @param sig Signal number (expected to be SIGINT).
- */
-void handle_sigint(int sig) {
-    printf("Caught signal %d. Exiting gracefully...\n", sig);
-    perform_cleanup();
-    exit(0);
-}
 
 /**
  * @brief Main function for the Ingenic Audio Daemon.
@@ -55,21 +35,36 @@ void handle_sigint(int sig) {
 int main(int argc, char *argv[]) {
     printf("INGENIC AUDIO DAEMON Version: %s\n", VERSION);
 
-    // Set up the signal handler for SIGINT to allow graceful exit
-    signal(SIGINT, handle_sigint);
-
+    // Parse and store command-line arguments
     CmdOptions options;
     if (parse_cmdline(argc, argv, &options)) {
         return 1; // Exit on command line parsing error
     }
 
+    // Check to see if daemonize was requested
+    if (options.daemonize) {
+        daemonize();
+    }
+
+    // Ensure only one instance of the daemon is running
+    if (is_already_running()) {
+        exit(1);
+    }
+
+    // Set up signal handling for graceful termination
+    setup_signal_handling();
+
+    // Ignore the SIGPIPE signal to prevent unexpected program termination
+    signal(SIGPIPE, SIG_IGN);
+
+    printf("[INFO] Starting audio daemon\n");
+
     char *config_file_path = options.config_file_path;
     int disable_ai = options.disable_ai;
     int disable_ao = options.disable_ao;
 
-    // Load configuration settings from the provided file
+    // Load and validate the audio configuration from the specified file
     if (config_load_from_file(config_file_path) == 0) {
-        // Successfully loaded the configuration, now validate its format
         if (!validate_json(get_audio_config())) {
             handle_audio_error("Invalid configuration format. Continuing with default settings.", config_file_path);
         }
@@ -82,73 +77,54 @@ int main(int argc, char *argv[]) {
     printf("Loaded JSON: %s\n", cJSON_Print(loaded_config));
     */
 
-    // Fetch audio play attributes
-    PlayInputAttributes get_audio_input_play_attributes(void);
-    PlayInputAttributes attrs = get_audio_input_play_attributes();
-
-    // Determine device and channel IDs, using defaults if not provided
-    int devID = attrs.device_idItem ? attrs.device_idItem->valueint : DEFAULT_AI_DEV_ID;
-    int chnID = attrs.channel_idItem ? attrs.channel_idItem->valueint : DEFAULT_AI_CHN_ID;
-
-    // Initialize audio input device if not disabled
-    if (!disable_ai) {
-        if (initialize_audio_input_device(devID, chnID) != 0) {
-            fprintf(stderr, "[ERROR] Failed to initialize audio input device\n");
-            return 1;
-        }
-    }
-
-    // Update audio input/output enable status based on configuration
+    // Determine whether to enable audio input/output based on configuration
     if (!disable_ai) {
         disable_ai = !config_get_ai_enabled();
     }
+
     if (!disable_ao) {
         disable_ao = !config_get_ao_enabled();
     }
 
-    // Ignore SIGPIPE to prevent unexpected exits when writing to a closed socket
-    signal(SIGPIPE, SIG_IGN);
-    printf("[INFO] Starting audio daemon\n");
+    pthread_t control_server_thread, input_server_thread, output_server_thread, play_thread_id;
 
-    pthread_t play_thread_id, input_server_thread, output_server_thread, control_server_thread;
-
-    // Start audio play thread if output is not disabled
-    if (!disable_ao) {
-        if (create_thread(&play_thread_id, ao_test_play_thread, NULL)) {
-            return 1;
-        }
+    // Launch the control server thread
+    if (create_thread(&control_server_thread, audio_control_server_thread, NULL)) {
+        return 1;
     }
 
-    // Start audio input server thread if input is not disabled
+    // Launch the audio input server thread (if audio input is enabled)
     if (!disable_ai) {
         if (create_thread(&input_server_thread, audio_input_server_thread, NULL)) {
             return 1;
         }
     }
 
-    // Start audio output server thread if output is not disabled
+    // Launch the audio output server thread (if audio output is enabled)
     if (!disable_ao) {
         if (create_thread(&output_server_thread, audio_output_server_thread, NULL)) {
             return 1;
         }
     }
 
-    // Start the control server thread
-    if (create_thread(&control_server_thread, audio_control_server_thread, NULL)) {
-        return 1;
+    // Launch the audio playback thread (if audio output is enabled)
+    if (!disable_ao) {
+        if (create_thread(&play_thread_id, ao_play_thread, NULL)) {
+            return 1;
+        }
     }
 
-    // Wait for threads to complete
+    // Wait for all launched threads to complete their execution
+    pthread_join(control_server_thread, NULL);
+
     if (!disable_ai) {
         pthread_join(input_server_thread, NULL);
     }
+
     if (!disable_ao) {
         pthread_join(output_server_thread, NULL);
         pthread_join(play_thread_id, NULL);
     }
-    pthread_join(control_server_thread, NULL);
 
-    // Clean up resources before exiting
-    perform_cleanup();
-    return 0;
+    return 0; // Successful termination
 }

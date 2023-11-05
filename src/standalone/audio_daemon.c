@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <imp/imp_audio.h>
-#include <imp/imp_log.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include "imp/imp_audio.h"
+#include "imp/imp_log.h"
 
 #define TAG "AO_T31"
 #define AO_TEST_SAMPLE_RATE 16000

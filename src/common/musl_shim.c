@@ -1,19 +1,12 @@
-#include <stdio.h>
-#include <string.h>
-#include <signal.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <sys/stat.h>
-
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <unistd.h>     // for sysconf
-#include <fcntl.h>      // for fcntl
-#include <stdio.h>      // for perror
+#include <fcntl.h>       // for off_t, fcntl
+#include <stdio.h>       // for fprintf, fgetc, stderr, size_t, FILE
+#include <stdlib.h>      // for abort
+#include <sys/mman.h>    // for mmap
+#include <sys/stat.h>    // for fstat, stat
+#include "bits/fcntl.h"  // for F_GETFL
 
 /**
- * shim to create missing function call in ingenic library
+ * Shim to create missing function calls in the ingenic libimp library
  */
 
 #define DEBUG 0  // Set this to 1 to enable debug output or 0 to disable
@@ -41,96 +34,44 @@ int __fgetc_unlocked(FILE *__stream) {
     return fgetc(__stream);
 }
 
-extern void *mmap64(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+extern void *mmap64(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t __offset_high, off_t __offset_low);
 
-#ifndef MMAP_SHIM_DEFINED
-#define MMAP_SHIM_DEFINED
+void * mmap(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t __offset) {
+    void* ret_val;
+    struct stat file_stat;
 
-void *mmap(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t __offset) {
-    void *result;
-
-    DEBUG_PRINT("mmap called with arguments:\n");
-    DEBUG_PRINT("__addr: %p\n", __addr);
-    DEBUG_PRINT("__len: %zu\n", __len);
-    DEBUG_PRINT("__prot: %d\n", __prot);
-    DEBUG_PRINT("__flags: %d\n", __flags);
-    DEBUG_PRINT("__fd: %d\n", __fd);
-    DEBUG_PRINT("__offset: %lld\n", (long long)__offset);
-
-    // Identify what the file descriptor points to
-    char path[256], target[256];
-    snprintf(path, sizeof(path), "/proc/self/fd/%d", __fd);
-    ssize_t len = readlink(path, target, sizeof(target)-1);
-    if (len != -1) {
-        target[len] = '\0';
-        DEBUG_PRINT("File descriptor %d points to: %s\n", __fd, target);
+    // Fetching file status
+    if (fstat(__fd, &file_stat) == 0) {
+        DEBUG_PRINT("File descriptor %d has size %lld bytes.\n", __fd, (long long)file_stat.st_size);
     } else {
-        perror("readlink");
+        DEBUG_PRINT("Failed to get file size for descriptor %d. Error: %s\n", __fd, strerror(errno));
     }
 
-    // Ensure the offset is page-aligned.
-    off_t aligned_offset = __offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
-    if (aligned_offset != __offset) {
-        DEBUG_PRINT("Adjusted offset from %lld to %lld for page alignment.\n", (long long)__offset, (long long)aligned_offset);
-        __offset = aligned_offset;
+    // Fetching file mode
+    int file_flags = fcntl(__fd, F_GETFL);
+    if (file_flags != -1) {
+        DEBUG_PRINT("File descriptor %d opened with flags: %d\n", __fd, file_flags);
+    } else {
+        DEBUG_PRINT("Failed to get open flags for descriptor %d. Error: %s\n", __fd, strerror(errno));
     }
 
-    // Check if the file descriptor is valid and open for the necessary mode.
-    int fd_flags = fcntl(__fd, F_GETFL);
-    if (fd_flags == -1) {
-        perror("fd is not valid");
-        return MAP_FAILED;
-    }
-    if ((__prot & PROT_WRITE) && !(fd_flags & O_RDWR) && !(fd_flags & O_WRONLY)) {
-        DEBUG_PRINT(stderr, "fd is not opened for writing but PROT_WRITE is requested.\n");
-        return MAP_FAILED;
+    // Adjustments based on identified conditions
+    if (file_stat.st_size == 1 && __len == 20480 && __offset > 1024*1024*1024) {
+        DEBUG_PRINT("Adjusting mmap call based on identified conditions.\n");
+        __offset = 0;  // Resetting the offset to 0
     }
 
-    // Check the size of the file associated with the file descriptor.
-    struct stat st;
-    if (fstat(__fd, &st) == -1) {
-        perror("Error getting file size");
-        return MAP_FAILED;
+    // Logging mmap call details
+    DEBUG_PRINT("mmap called with: addr=%p, len=%zu, prot=%d, flags=%d, fd=%d, offset=%lld\n", __addr, __len, __prot, __flags, __fd, __offset);
+
+    // Calling mmap64
+    ret_val = mmap64(__addr, __len, __prot, __flags, __fd, (off_t)0, __offset);
+
+    if (ret_val == (void *)-1) {
+        DEBUG_PRINT("mmap64 failed with error: %s\n", strerror(errno));
+    } else {
+        DEBUG_PRINT("mmap64 returned: %p\n", ret_val);
     }
 
-    if (__offset + __len > st.st_size) {
-        DEBUG_PRINT(stderr, "Trying to map beyond the end of the file. File size: %lld\n", (long long)st.st_size);
-        return MAP_FAILED;
-    }
-
-    asm volatile(
-        "addiu $sp, $sp, -32\n\t"
-        "sw $ra, 28($sp)\n\t"
-        "sw $gp, 24($sp)\n\t"
-        "sw $a0, 16($sp)\n\t"
-        "sw $a1, 20($sp)\n\t"
-
-        "lw $a0, 16($sp)\n\t"
-        "lw $a1, 20($sp)\n\t"
-        "sw %6, 0($sp)\n\t"
-
-        "lw $t9, %%got(mmap64)($gp)\n\t"
-        "jalr $t9\n\t"
-        "move %0, $v0\n\t"
-
-        "lw $ra, 28($sp)\n\t"
-        "lw $gp, 24($sp)\n\t"
-        "addiu $sp, $sp, 32\n\t"
-        : "=r"(result)
-        : "r"(__addr), "r"(__len), "r"(__prot), "r"(__flags), "r"(__fd), "r"(__offset)
-        : "$t9"
-    );
-
-    // Add error handling.
-    if (result == MAP_FAILED) {
-        perror("mmap64 error");
-        fprintf(stderr, "Detailed error: %s\n", strerror(errno));
-    }
-
-    // Print the return value
-    DEBUG_PRINT("mmap64 returned: %p\n", result);
-
-    return result;
+    return ret_val;
 }
-
-#endif

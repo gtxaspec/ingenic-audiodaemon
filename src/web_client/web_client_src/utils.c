@@ -13,100 +13,7 @@
 #include "output.h"
 #include "input.h"
 
-#define PID_FILE "/var/run/iad.pid"
-
-ClientNode *client_list_head = NULL;
-pthread_mutex_t audio_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t audio_data_cond = PTHREAD_COND_INITIALIZER;
-unsigned char *audio_buffer = NULL;
-ssize_t audio_buffer_size = 0;
-int active_client_sock = -1;
-
-volatile int g_stop_thread = 0;
-pthread_mutex_t g_stop_thread_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-/**
- * @brief Create a new thread.
- *
- * This function creates a new thread and starts it.
- *
- * @param thread_id Pointer to the thread identifier.
- * @param start_routine Pointer to the function to be executed by the thread.
- * @param arg Arguments to be passed to the start_routine.
- * @return int Returns 0 on success, error code on failure.
- */
-int create_thread(pthread_t *thread_id, void *(*start_routine)(void *), void *arg) {
-    int ret = pthread_create(thread_id, NULL, start_routine, arg);
-    if (ret) {
-        fprintf(stderr, "[ERROR] pthread_create for thread failed with error code: %d\n", ret);
-    }
-    return ret;
-}
-
-/**
- * @brief Compute number of samples per frame.
- *
- * This function computes the number of samples per frame based on the sample rate.
- *
- * @param sample_rate The sample rate in Hz.
- * @return int Number of samples per frame.
- */
-int compute_numPerFrm(int sample_rate) {
-    return sample_rate * FRAME_DURATION;
-}
-
-/**
- * @brief Convert string to audio bit width.
- *
- * This function converts a string representation of audio bit width to its corresponding enumeration value.
- *
- * @param str String representation of the audio bit width.
- * @return IMPAudioBitWidth Enumeration value of the audio bit width.
- */
-IMPAudioBitWidth string_to_bitwidth(const char* str) {
-    if (strcmp(str, "AUDIO_BIT_WIDTH_16") == 0) {
-        return AUDIO_BIT_WIDTH_16;
-    }
-    fprintf(stderr, "[WARNING] Unexpected bitwidth string: %s. Defaulting to AUDIO_BIT_WIDTH_16.\n", str);
-    return AUDIO_BIT_WIDTH_16;
-}
-
-/**
- * @brief Convert string to audio sound mode.
- *
- * This function converts a string representation of audio sound mode to its corresponding enumeration value.
- *
- * @param str String representation of the audio sound mode.
- * @return IMPAudioSoundMode Enumeration value of the audio sound mode.
- */
-IMPAudioSoundMode string_to_soundmode(const char* str) {
-    if (strcmp(str, "AUDIO_SOUND_MODE_MONO") == 0) {
-        return AUDIO_SOUND_MODE_MONO;
-    }
-    fprintf(stderr, "[WARNING] Unexpected sound mode string: %s. Defaulting to AUDIO_SOUND_MODE_MONO.\n", str);
-    return AUDIO_SOUND_MODE_MONO;
-}
-
-/**
- * @brief Clean up resources.
- *
- * This function cleans up allocated resources and restores the system to its initial state.
- */
-void perform_cleanup() {
-    pthread_mutex_destroy(&audio_buffer_lock);
-    pthread_cond_destroy(&audio_data_cond);
-
-    pthread_mutex_lock(&g_stop_thread_mutex);
-    g_stop_thread = 1;
-    pthread_mutex_unlock(&g_stop_thread_mutex);
-
-    pthread_cond_signal(&audio_data_cond);
-
-    disable_audio_input();
-    disable_audio_output();
-
-    config_cleanup();
-}
+#define PID_FILE "/var/run/web_client.pid"
 
 /**
  * @brief Remove PID file.
@@ -127,7 +34,6 @@ void remove_pid_file() {
  */
 void handle_sigint(int sig) {
     printf("Caught signal %d. Exiting gracefully...\n", sig);
-    perform_cleanup();
     remove_pid_file();
     signal(sig, SIG_DFL);
     raise(sig);

@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <imp/imp_audio.h>
-#include <imp/imp_log.h>
-#include "../build/version.h"
+#include "imp/imp_audio.h"
+#include "imp/imp_log.h"
+#include "version.h"
 
 const char *TAG = "AO_T31";
 const int AO_TEST_SAMPLE_RATE = 16000;
@@ -104,7 +104,6 @@ void *ao_test_play_thread(void *arg) {
         return NULL;
     }
 
-    fclose(play_file);
     free(buf);
     pthread_exit(0);
 }
