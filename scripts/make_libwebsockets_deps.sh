@@ -21,6 +21,10 @@ LWS_VER="b0a749c8e7a8294b68581ce4feac0e55045eb00"
 MAKEFILE="$SCRIPT_DIR/../Makefile"
 
 # Set compiler prefix here
+if [ -n "$BR2_CONFIG" ]; then
+    echo "Running within Buildroot build process."
+else
+
 if grep -q "CONFIG_UCLIBC_BUILD=y" "$MAKEFILE"; then
 	echo "Build type: uClibc"
 	CROSS_COMPILE="mips-linux-uclibc-gnu-"
@@ -30,6 +34,8 @@ elif grep -q "CONFIG_MUSL_BUILD=y" "$MAKEFILE"; then
 elif grep -q "CONFIG_GCC_BUILD=y" "$MAKEFILE"; then
 	echo "Build type: GCC"
 	CROSS_COMPILE="mips-linux-gnu-"
+fi
+
 fi
 
 CC="${CROSS_COMPILE}gcc"

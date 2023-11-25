@@ -38,7 +38,13 @@ exit 0
 fi
 
 # Set compiler prefix here
+if [ -n "$BR2_CONFIG" ]; then
+    echo "Running within Buildroot build process."
+else
+
 CROSS_COMPILE="mipsel-openipc-linux-musl-"
+
+fi
 
 CC="${CROSS_COMPILE}gcc"
 
