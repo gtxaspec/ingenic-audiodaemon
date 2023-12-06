@@ -10,6 +10,17 @@ recorderScript.onload = () => {
         constructor() {
             super();
             this.attachShadow({ mode: 'open' });
+            this.isRecording = false;
+            this.toggleCheckbox = null;
+        }
+
+        toggleRecording() {
+            if (this.isRecording) {
+                this.stopRecording();
+            } else {
+                this.startRecording();
+            }
+            this.isRecording = !this.isRecording;
         }
 
         set hass(hass) {
@@ -21,13 +32,24 @@ recorderScript.onload = () => {
                 style.textContent = `
                     ha-card {
                         --ha-card-header-font-size: 20px;
+                        align-items: center;    /* Center items horizontally */
+                        justify-content: center; /* Center items vertically */
+                        text-align: center;     /* Center text */
                     }
 
                     #recordButton {
                         font-size: 22px;
-                        padding: 15px 15px;
                         margin-bottom: 10px;
+                        width: 350px;
                         cursor: pointer;
+                        height: 75px;         /* Explicit height */
+                        line-height: 20px;    /* Adjust line height if necessary */
+                        border: 1px solid transparent; /* Prevents button resizing due to border changes */
+                        box-sizing: border-box; /* Ensures padding is included in the total height */
+                    }
+
+                    #recordButton:active {
+                        padding: 15px 15px;   /* Keep padding the same on active state */
                     }
 
                     #sampleRateSelector {
@@ -36,6 +58,11 @@ recorderScript.onload = () => {
                         margin-bottom: 10px;
                         margin-right: 20px;
                         cursor: pointer;
+                    }
+
+                    .checkboxContainer {
+                        align-items: center;
+                        margin-bottom: 10px;
                     }
                 `;
                 card.appendChild(style);
@@ -56,6 +83,21 @@ recorderScript.onload = () => {
                 `;
                 this.content.appendChild(sampleRateSelector);
 
+                const toggleModeCheckbox = document.createElement('input');
+                toggleModeCheckbox.setAttribute('type', 'checkbox');
+                toggleModeCheckbox.id = 'toggleModeCheckbox';
+                toggleModeCheckbox.style.marginRight = '5px';
+
+                const toggleModeLabel = document.createElement('label');
+                toggleModeLabel.setAttribute('for', 'toggleModeCheckbox');
+                toggleModeLabel.textContent = 'Toggle Mode';
+
+                const checkboxContainer = document.createElement('div');
+                checkboxContainer.className = 'checkboxContainer';
+                checkboxContainer.appendChild(toggleModeCheckbox);
+                checkboxContainer.appendChild(toggleModeLabel);
+                this.content.appendChild(checkboxContainer);
+
                 const button = document.createElement('button');
                 button.id = 'recordButton';
                 button.innerText = 'Push and Hold to Talk';
@@ -65,11 +107,40 @@ recorderScript.onload = () => {
                 this.shadowRoot.appendChild(card);
 
                 const recordButton = this.content.querySelector("#recordButton");
+                this.toggleCheckbox = toggleModeCheckbox; // Assign the checkbox to the class property
 
-                recordButton.addEventListener("pointerdown", this.startRecording.bind(this));
-                recordButton.addEventListener("pointerup", () => setTimeout(this.stopRecording.bind(this), 300));
-                recordButton.addEventListener("touchend", () => setTimeout(this.stopRecording.bind(this), 300));
-                recordButton.addEventListener("touchmove", this.stopRecording.bind(this));  // Handling unintentional drags
+                // Handling push-to-talk mode
+                const startRecordingHandler = this.startRecording.bind(this);
+                const stopRecordingHandler = this.stopRecording.bind(this);
+
+                // Handling toggle mode
+                const toggleRecordingHandler = this.toggleRecording.bind(this);
+
+                const stopRecordingWithTimeout = (event) => {
+                    setTimeout(() => this.stopRecording(event), 300);
+                };
+
+                this.toggleCheckbox.addEventListener('change', (event) => {
+                    if (event.target.checked) {
+                        // Toggle mode: Click to start/stop
+                        recordButton.onclick = toggleRecordingHandler;
+                        // Remove event listeners for push-to-talk mode
+                        recordButton.removeEventListener("pointerdown", startRecordingHandler);
+                        recordButton.removeEventListener("pointerup", stopRecordingHandler);
+                    } else {
+                        // Push-to-talk mode: Press and hold to talk
+                        recordButton.onclick = null;
+                        // Add pointer and touch event listeners for push-to-talk mode
+                        recordButton.removeEventListener("pointerdown", startRecordingHandler);
+                        recordButton.removeEventListener("pointerup", stopRecordingHandler);
+                        recordButton.addEventListener("pointerdown", startRecordingHandler);
+                        recordButton.addEventListener("pointerup", stopRecordingWithTimeout);
+                    }
+                });
+
+                // Initialize with default push-to-talk mode
+                recordButton.addEventListener("pointerdown", startRecordingHandler);
+                recordButton.addEventListener("pointerup", stopRecordingWithTimeout);
             }
         }
 
@@ -95,7 +166,9 @@ recorderScript.onload = () => {
         }
 
         async startRecording(event) {
-            event.preventDefault();
+            if (event) {
+                event.preventDefault();
+            }
 
             // Open WebSocket connection
             this.startWebSocket();
