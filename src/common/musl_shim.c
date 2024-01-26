@@ -34,7 +34,14 @@ int __fgetc_unlocked(FILE *__stream) {
     return fgetc(__stream);
 }
 
+// GCC version check for version 13
+#if defined(__GNUC__) && (__GNUC__ == 13)
+// Use mmap for GCC 13
+extern void *mmap64(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t __offset); // Adjusted prototype
+#else
+// Use mmap64 for other GCC versions or compilers
 extern void *mmap64(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t __offset_high, off_t __offset_low);
+#endif
 
 void * mmap(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t __offset) {
     void* ret_val;
@@ -64,8 +71,14 @@ void * mmap(void *__addr, size_t __len, int __prot, int __flags, int __fd, off_t
     // Logging mmap call details
     DEBUG_PRINT("mmap called with: addr=%p, len=%zu, prot=%d, flags=%d, fd=%d, offset=%lld\n", __addr, __len, __prot, __flags, __fd, __offset);
 
-    // Calling mmap64
-    ret_val = mmap64(__addr, __len, __prot, __flags, __fd, (off_t)0, __offset);
+    // GCC version check for version 13
+    #if defined(__GNUC__) && (__GNUC__ == 13)
+    // Use mmap for GCC 13
+    ret_val = mmap(__addr, __len, __prot, __flags, __fd, __offset);
+    #else
+    // Use mmap64 for other GCC versions or compilers
+    ret_val = mmap64(__addr, __len, __prot, __flags, __fd, __offset, 0); // Adjust according to your original mmap64 call
+    #endif
 
     if (ret_val == (void *)-1) {
         DEBUG_PRINT("mmap64 failed with error: %s\n", strerror(errno));
