@@ -30,17 +30,17 @@ if grep -q "CONFIG_UCLIBC_BUILD=y" "$MAKEFILE"; then
 	CROSS_COMPILE="mips-linux-uclibc-gnu-"
 elif grep -q "CONFIG_MUSL_BUILD=y" "$MAKEFILE"; then
 	echo "Build type: musl"
-	CROSS_COMPILE="mipsel-openipc-linux-musl-"
+	CROSS_COMPILE="mipsel-linux-"
 elif grep -q "CONFIG_GCC_BUILD=y" "$MAKEFILE"; then
 	echo "Build type: GCC"
-	CROSS_COMPILE="mips-linux-gnu-"
+	CROSS_COMPILE="mipsel-linux-gnu-"
 fi
 
 fi
 
 CC="${CROSS_COMPILE}gcc"
 CXX="${CROSS_COMPILE}g++"
-STRIP="${CROSS_COMPILE}strip --strip-debug"
+STRIP="${CROSS_COMPILE}strip --strip-unneeded"
 
 # Ensure CC and CXX are set
 if [ -z "$CC" ] || [ -z "$CXX" ]; then
@@ -85,6 +85,8 @@ cmake \
 -DCMAKE_C_COMPILER=${CC} \
 -DCMAKE_CXX_COMPILER=${CXX} \
 -DCMAKE_BUILD_TYPE=RELEASE \
+-DCMAKE_C_FLAGS="${CMAKE_C_FLAGS} -Os" \
+-DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} -Os" \
 -DDISABLE_WERROR=ON \
 -DLWS_WITH_DIR=OFF \
 -DLWS_WITH_LEJP_CONF=OFF \
@@ -178,7 +180,7 @@ make
 
 # Copy libwebsockets library and headers
 echo "Copying libwebsockets library and headers..."
-#$STRIP ./lib/libwebsockets.so.*
+$STRIP ./lib/libwebsockets.so.19
 cp ./lib/libwebsockets.a ../../../../lib/
 cp ./lib/libwebsockets.so.19 ../../../../lib/libwebsockets.so
 cp -R ../include/libwebsockets ../../../../include/

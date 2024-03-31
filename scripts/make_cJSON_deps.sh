@@ -42,7 +42,7 @@ if [ -n "$BR2_CONFIG" ]; then
     echo "Running within Buildroot build process."
 else
 
-CROSS_COMPILE="mipsel-openipc-linux-musl-"
+CROSS_COMPILE="mipsel-linux-"
 
 fi
 
