@@ -48,7 +48,7 @@ SDK_LIB_DIR = lib
 endif
 
 ifeq ($(CONFIG_MUSL_BUILD), y)
-CROSS_COMPILE?= mipsel-openipc-linux-musl-
+CROSS_COMPILE?= mipsel-linux-
 SDK_LIB_DIR = lib
 SHIM = build/obj/musl_shim.o
 endif
@@ -94,6 +94,9 @@ deps:
 	./scripts/make_cJSON_deps.sh download_only
 
 dependancies: deps
+
+build/obj/%.o: ingenic_musl/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 build/obj/%.o: src/common/%.c
 	@mkdir -p $(@D)
