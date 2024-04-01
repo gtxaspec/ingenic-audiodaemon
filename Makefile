@@ -54,6 +54,7 @@ SHIM = build/obj/musl_shim.o
 endif
 
 ifeq ($(CONFIG_STATIC_BUILD), y)
+CFLAGS += -DINGENIC_MMAP_STATIC
 LDFLAGS += -static
 LIBS = $(SDK_LIB_DIR)/libimp.a $(SDK_LIB_DIR)/libalog.a
 LWS = $(SDK_LIB_DIR)/libwebsockets.a
