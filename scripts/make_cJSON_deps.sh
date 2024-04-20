@@ -30,8 +30,6 @@ if [ ! -d "$CJSON_DIR" ]; then
     echo "Cloning cJSON..."
     git clone "$CJSON_REPO"
 fi
-pwd
-cp -R cJSON/cJSON.h ../../include/
 
 exit 0
 
@@ -74,7 +72,7 @@ cmake \
 -DCMAKE_C_COMPILER_LAUNCHER=$(which ccache) \
 -DCMAKE_C_COMPILER=${CC} \
 -DCMAKE_BUILD_TYPE=RELEASE \
--DBUILD_SHARED_AND_STATIC_LIBS=ON \
+-DBUILD_SHARED_AND_STATIC_LIBS=OFF \
 ..
 
 echo "Building cJSON library..."
@@ -82,6 +80,5 @@ make
 
 # Copy cJSON library and headers
 echo "Copying cJSON library and headers..."
-cp ./libcjson.a ../../../../lib/
-cp -R ../cJSON.h ../../../../include/
+cp ./libcjson.so ../../../../lib/
 echo "cJSON build complete!"
