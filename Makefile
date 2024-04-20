@@ -60,9 +60,11 @@ CFLAGS += -DINGENIC_MMAP_STATIC
 LDFLAGS += -static
 LIBS = $(SDK_LIB_DIR)/libimp.a $(SDK_LIB_DIR)/libalog.a
 LWS = $(SDK_LIB_DIR)/libwebsockets.a
+CJSON = $(SDK_LIB_DIR)/libcjson.a
 else
 LIBS = $(SDK_LIB_DIR)/libimp.so $(SDK_LIB_DIR)/libalog.so
 LWS = $(SDK_LIB_DIR)/libwebsockets.so
+CJSON = $(SDK_LIB_DIR)/libcjson.so
 endif
 
 # Targets and Object Files
@@ -70,8 +72,7 @@ AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac build/bin/wc-conso
 iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/audio/audio_common.o \
 build/obj/audio/audio_imp.o \
 build/obj/network/network.o build/obj/network/control_server.o build/obj/network/input_server.o build/obj/network/output_server.o \
-build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o \
-build/cJSON-build/cJSON/cJSON.o $(SHIM)
+build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o $(SHIM)
 iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o
 web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o build/obj/web_client_src/utils.o
 audioplay_OBJS = build/obj/standalone/audioplay.o $(SHIM)
@@ -94,7 +95,7 @@ version: $(BUILD_DIR)
 
 deps:
 	./scripts/make_libwebsockets_deps.sh
-	./scripts/make_cJSON_deps.sh download_only
+	./scripts/make_cJSON_deps.sh
 
 dependancies: deps
 
@@ -129,7 +130,7 @@ iad: build/bin/iad
 
 build/bin/iad: version $(iad_OBJS)
 	@mkdir -p $(@D)
-	$(CC) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) ${CJSON} $(LDLIBS)
 	$(STRIPCMD) $@
 
 iac: build/bin/iac
@@ -167,5 +168,5 @@ clean:
 distclean: clean
 	-rm -f $(AUDIO_PROGS)
 	-rm -rf build/*
-	-rm -f lib/libwebsockets.* include/lws_config.h include/libwebsockets.h lib/libcjson.a include/cJSON.h
+	-rm -f lib/libwebsockets.* include/lws_config.h include/libwebsockets.h lib/libcjson.so
 	-rm -rf include/libwebsockets
