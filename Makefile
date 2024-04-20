@@ -2,7 +2,6 @@
 commit_tag=$(shell git rev-parse --short HEAD)
 
 CC = ccache $(CROSS_COMPILE)gcc
-CXX = ccache $(CROSS_COMPILE)g++
 STRIP = $(CROSS_COMPILE)strip
 
 # Configuration
@@ -14,7 +13,7 @@ CONFIG_STATIC_BUILD=n
 DEBUG=n
 
 SDK_INC_DIR = include
-INCLUDES = -I$(SDK_INC_DIR) \
+INCLUDES += -I$(SDK_INC_DIR) \
            -I./src/iad/network \
            -I./src/iad/audio \
            -I./src/iac/client \
@@ -22,12 +21,13 @@ INCLUDES = -I$(SDK_INC_DIR) \
            -I./build \
 	   -I$(SDK_INC_DIR)/libwebsockets
 
-CFLAGS = $(INCLUDES) -O2 -Wall -march=mips32r2
-LDFLAGS += -Wl,-gc-sections
-LDLIBS = -lpthread -lm -lrt -ldl
+CFLAGS ?= -O2 -Wall -march=mips32r2
+CFLAGS += $(INCLUDES)
+
+LDFLAGS ?= -Wl,-gc-sections
 
 ifeq ($(DEBUG), y)
-CFLAGS += -g # Add -g for debugging symbols
+CFLAGS += -g
 STRIPCMD = @echo "Not stripping binary due to DEBUG mode."
 else
 STRIPCMD = $(STRIP)
@@ -37,6 +37,7 @@ ifeq ($(CONFIG_GCC_BUILD), y)
 CROSS_COMPILE?= mips-linux-gnu-
 LDFLAGS += -Wl,--no-as-needed -Wl,--allow-shlib-undefined
 SDK_LIB_DIR = lib
+LDLIBS = -lpthread -lm -lrt -ldl
 endif
 
 ifeq ($(CONFIG_UCLIBC_BUILD), y)
@@ -45,6 +46,7 @@ CFLAGS += -muclibc
 # Set interpreter directory to ./libs
 LDFLAGS += -muclibc -Wl,-dynamic-linker,libs/ld-uClibc.so.0
 SDK_LIB_DIR = lib
+LDLIBS = -lpthread -lm -lrt -ldl
 endif
 
 ifeq ($(CONFIG_MUSL_BUILD), y)
@@ -123,15 +125,11 @@ build/obj/wc-console/%.o: src/wc-console/%.c
 	@mkdir -p $(@D)
 	$(CC) -c $(CFLAGS) $< -o $@
 
-# As libimp is based on C++ libraries, so g++ is used for the linking process.
-# API linking order: [IVS libraries] [mxu libraries] [libimp/libsysutils] [libalog]
-# (2022). T31 Development resource compilation (Rev 1.0). [Ingenic]. Section 4.1, Page 9.
-
 iad: build/bin/iad
 
 build/bin/iad: version $(iad_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(LDLIBS) -static-libstdc++
+	$(CC) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) $(LDLIBS)
 	$(STRIPCMD) $@
 
 iac: build/bin/iac
@@ -145,7 +143,7 @@ audioplay: build/bin/audioplay
 
 build/bin/audioplay: version $(audioplay_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) -o $@ $(audioplay_OBJS) $(LIBS) $(LDLIBS) -static-libstdc++
+	$(CC) $(LDFLAGS) -o $@ $(audioplay_OBJS) $(LIBS) $(LDLIBS)
 	$(STRIPCMD) $@
 
 wc-console: build/bin/wc-console
