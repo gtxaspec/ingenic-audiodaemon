@@ -24,7 +24,7 @@ INCLUDES += -I$(SDK_INC_DIR) \
 CFLAGS ?= -O2 -Wall -march=mips32r2
 CFLAGS += $(INCLUDES)
 
-LDFLAGS ?= -Wl,-gc-sections
+LDFLAGS ?= -Wl,-gc-sections -L./lib
 
 ifeq ($(DEBUG), y)
 CFLAGS += -g
@@ -36,7 +36,6 @@ endif
 ifeq ($(CONFIG_GCC_BUILD), y)
 CROSS_COMPILE?= mips-linux-gnu-
 LDFLAGS += -Wl,--no-as-needed -Wl,--allow-shlib-undefined
-SDK_LIB_DIR = lib
 LDLIBS = -lpthread -lm -lrt -ldl
 endif
 
@@ -45,26 +44,18 @@ CROSS_COMPILE?= mips-linux-uclibc-gnu-
 CFLAGS += -muclibc
 # Set interpreter directory to ./libs
 LDFLAGS += -muclibc -Wl,-dynamic-linker,libs/ld-uClibc.so.0
-SDK_LIB_DIR = lib
 LDLIBS = -lpthread -lm -lrt -ldl
 endif
 
 ifeq ($(CONFIG_MUSL_BUILD), y)
 CROSS_COMPILE?= mipsel-linux-
-SDK_LIB_DIR = lib
-SHIM = build/obj/musl_shim.o
+IMPLDLIBS = -lcjson -limp -lalog -lmuslshim
+LDLIBS = -lwebsockets
 endif
 
 ifeq ($(CONFIG_STATIC_BUILD), y)
 CFLAGS += -DINGENIC_MMAP_STATIC
 LDFLAGS += -static
-LIBS = $(SDK_LIB_DIR)/libimp.a $(SDK_LIB_DIR)/libalog.a
-LWS = $(SDK_LIB_DIR)/libwebsockets.a
-CJSON = $(SDK_LIB_DIR)/libcjson.a
-else
-LIBS = $(SDK_LIB_DIR)/libimp.so $(SDK_LIB_DIR)/libalog.so
-LWS = $(SDK_LIB_DIR)/libwebsockets.so
-CJSON = $(SDK_LIB_DIR)/libcjson.so
 endif
 
 # Targets and Object Files
@@ -72,10 +63,10 @@ AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac build/bin/wc-conso
 iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/audio/audio_common.o \
 build/obj/audio/audio_imp.o \
 build/obj/network/network.o build/obj/network/control_server.o build/obj/network/input_server.o build/obj/network/output_server.o \
-build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o $(SHIM)
+build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o
 iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o
 web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o build/obj/web_client_src/utils.o
-audioplay_OBJS = build/obj/standalone/audioplay.o $(SHIM)
+audioplay_OBJS = build/obj/standalone/audioplay.o
 wc_console_OBJS = build/obj/wc-console/wc-console.o
 
 .PHONY: all version clean distclean audioplay wc-console web_client
@@ -130,7 +121,7 @@ iad: build/bin/iad
 
 build/bin/iad: version $(iad_OBJS)
 	@mkdir -p $(@D)
-	$(CC) $(LDFLAGS) -o $@ $(iad_OBJS) $(LIBS) ${CJSON} $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(iad_OBJS) $(IMPLDLIBS) $(LDLIBS)
 	$(STRIPCMD) $@
 
 iac: build/bin/iac
@@ -144,21 +135,21 @@ audioplay: build/bin/audioplay
 
 build/bin/audioplay: version $(audioplay_OBJS)
 	@mkdir -p $(@D)
-	$(CC) $(LDFLAGS) -o $@ $(audioplay_OBJS) $(LIBS) $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(audioplay_OBJS) ${IMPLDLIBS} $(LDLIBS)
 	$(STRIPCMD) $@
 
 wc-console: build/bin/wc-console
 
 build/bin/wc-console: version $(wc_console_OBJS)
 	@mkdir -p $(@D)
-	$(CC) $(LDFLAGS) -o $@ $(wc_console_OBJS) ${LWS} $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(wc_console_OBJS) $(LDLIBS)
 	$(STRIPCMD) $@
 
 web_client: build/bin/web_client
 
 build/bin/web_client: version $(web_client_OBJS)
 	@mkdir -p $(@D)
-	$(CC) $(LDFLAGS) -o $@ $(web_client_OBJS) ${LWS} $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(web_client_OBJS) $(LDLIBS)
 	$(STRIPCMD) $@
 
 clean:
