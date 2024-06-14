@@ -1,7 +1,7 @@
 # Variables
 commit_tag=$(shell git rev-parse --short HEAD)
 
-CC = ccache $(CROSS_COMPILE)gcc
+CC = $(CROSS_COMPILE)gcc
 STRIP = $(CROSS_COMPILE)strip
 
 # Configuration
