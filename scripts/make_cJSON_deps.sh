@@ -28,8 +28,11 @@ if [[ "$1" == "download_only" ]]; then
 # Clone cJSON if not already present
 if [ ! -d "$CJSON_DIR" ]; then
     echo "Cloning cJSON..."
-    git clone "$CJSON_REPO"
+    git clone --depth 1 "$CJSON_REPO"
 fi
+
+pwd
+cp -R cJSON/cJSON.h ../../include/
 
 exit 0
 
@@ -80,5 +83,5 @@ make
 
 # Copy cJSON library and headers
 echo "Copying cJSON library and headers..."
-cp ./libcjson.so ../../../../lib/
+cp ./libcjson.so ../../../3rdparty/install/lib/
 echo "cJSON build complete!"

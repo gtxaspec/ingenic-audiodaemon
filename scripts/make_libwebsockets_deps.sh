@@ -181,8 +181,8 @@ make
 # Copy libwebsockets library and headers
 echo "Copying libwebsockets library and headers..."
 $STRIP ./lib/libwebsockets.so.19
-cp ./lib/libwebsockets.a ../../../../lib/
-cp ./lib/libwebsockets.so.19 ../../../../lib/libwebsockets.so
+cp ./lib/libwebsockets.a ../../../3rdparty/install/lib/
+cp ./lib/libwebsockets.so.19 ../../../3rdparty/install/lib/libwebsockets.so
 cp -R ../include/libwebsockets ../../../../include/
 cp -R include/*.h ../../../../include/
 

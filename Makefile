@@ -11,6 +11,7 @@ CONFIG_GCC_BUILD=n
 CONFIG_MUSL_BUILD=y
 CONFIG_STATIC_BUILD=n
 DEBUG=n
+PLATFORM ?= T31
 
 SDK_INC_DIR = include
 INCLUDES += -I$(SDK_INC_DIR) \
@@ -22,9 +23,9 @@ INCLUDES += -I$(SDK_INC_DIR) \
 	   -I$(SDK_INC_DIR)/libwebsockets
 
 CFLAGS ?= -O2 -Wall -march=mips32r2
-CFLAGS += $(INCLUDES)
+CFLAGS += $(INCLUDES) -DCONFIG_$(PLATFORM)
 
-LDFLAGS ?= -Wl,-gc-sections -L./lib
+LDFLAGS ?= -Wl,-gc-sections -Lbuild/3rdparty/install/lib
 
 ifeq ($(DEBUG), y)
 CFLAGS += -g
@@ -85,6 +86,7 @@ version: $(BUILD_DIR)
 	fi
 
 deps:
+	./scripts/deps.sh deps $(PLATFORM)
 	./scripts/make_libwebsockets_deps.sh
 	./scripts/make_cJSON_deps.sh
 
