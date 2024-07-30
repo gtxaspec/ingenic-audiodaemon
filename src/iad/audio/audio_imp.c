@@ -145,7 +145,7 @@ int ai_set_mute(int enable) {
 }
 
 int ai_set_alc_gain(int aiPgaGain) {
-#ifndef CONFIG_T23
+#ifdef CONFIG_T31
     int ret = IMP_AI_SetAlcGain(aiDevID, aiChnID, aiPgaGain);
 #else
     int ret = 0;
@@ -159,7 +159,7 @@ int ai_set_alc_gain(int aiPgaGain) {
 
 int ai_get_alc_gain(void) {
     int aiPgaGain;
-#ifndef CONFIG_T23
+#ifdef CONFIG_T31
     int ret = IMP_AI_GetAlcGain(aiDevID, aiChnID, &aiPgaGain);
 #else
     int ret = 0;
