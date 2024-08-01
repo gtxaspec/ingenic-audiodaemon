@@ -109,7 +109,8 @@ void *audio_output_server_thread(void *arg) {
         close(client_sock);
         printf("[INFO] [AO] Client Disconnected\n");
 
-        clear_audio_output_buffer();
+        // Causes small files to cut off too soon, disable for now.
+	//clear_audio_output_buffer();
     }
 
     close(sockfd);
