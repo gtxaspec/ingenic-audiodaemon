@@ -48,6 +48,12 @@ ffmpeg -i "$INPUT_FILE" \
     -ar 48000 \
     -ac 1 \
     -map_metadata -1 \
+    -metadata title="" \
+    -metadata encoder="" \
+    -metadata creation_time=0 \
+    -fflags +bitexact \
+    -flags:v +bitexact \
+    -flags:a +bitexact \
     -f webm \
     -strict experimental \
     "$OUTPUT_FILE"

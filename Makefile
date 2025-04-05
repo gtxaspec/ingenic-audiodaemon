@@ -66,7 +66,7 @@ iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o buil
 build/obj/audio/audio_imp.o \
 build/obj/network/network.o build/obj/network/control_server.o build/obj/network/input_server.o build/obj/network/output_server.o \
 build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o
-iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o build/obj/client/webm_opus.o
+iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o build/obj/client/webm_opus_simple.o
 web_client_OBJS = build/obj/web_client.o build/obj/web_client_src/cmdline.o build/obj/web_client_src/client_network.o build/obj/web_client_src/playback.o build/obj/web_client_src/utils.o
 audioplay_OBJS = build/obj/standalone/audioplay.o
 wc_console_OBJS = build/obj/wc-console/wc-console.o
