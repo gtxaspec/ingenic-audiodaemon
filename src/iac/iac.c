@@ -8,6 +8,7 @@
 #include "client/client_network.h"
 #include "client/playback.h"
 #include "client/record.h"
+#include "client/webm_opus.h"
 #include "version.h"
 
 int main(int argc, char *argv[]) {
@@ -15,11 +16,12 @@ int main(int argc, char *argv[]) {
     char *audio_file_path = NULL;
     int record_audio = 0;
     int output_to_stdout = 0;
+    int use_webm = 0;
     int request_type;
 
     printf("INGENIC AUDIO CLIENT Version: %s\n", VERSION);
 
-    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio, &output_to_stdout) != 0) {
+    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio, &output_to_stdout, &use_webm) != 0) {
         exit(1);
     }
 
@@ -67,21 +69,36 @@ int main(int argc, char *argv[]) {
             record_from_server(sockfd, audio_file_path);
         }
     } else {
-        FILE *audio_file = use_stdin ? stdin : fopen(audio_file_path, "rb");
-        if (!audio_file) {
-            perror("fopen");
-            close(sockfd);
-            exit(1);
-        }
-
         // Send audio output request to the server
         int request_type = AUDIO_OUTPUT_REQUEST;
         write(sockfd, &request_type, sizeof(int));
 
-        playback_audio(sockfd, audio_file);
+        if (use_webm) {
+            // Handle WebM/Opus file
+            printf("[INFO] Processing WebM/Opus file: %s\n", audio_file_path);
+            OpusContext opus_ctx = {0};
+            if (open_webm_file(&opus_ctx, audio_file_path) == 0) {
+                decode_webm_to_pcm(&opus_ctx, sockfd);
+                cleanup_opus_context(&opus_ctx);
+            } else {
+                fprintf(stderr, "Failed to open or process WebM file: %s\n", audio_file_path);
+                close(sockfd);
+                exit(1);
+            }
+        } else {
+            // Handle regular PCM audio
+            FILE *audio_file = use_stdin ? stdin : fopen(audio_file_path, "rb");
+            if (!audio_file) {
+                perror("fopen");
+                close(sockfd);
+                exit(1);
+            }
 
-        if (!use_stdin) {
-            fclose(audio_file);
+            playback_audio(sockfd, audio_file);
+
+            if (!use_stdin) {
+                fclose(audio_file);
+            }
         }
     }
 
