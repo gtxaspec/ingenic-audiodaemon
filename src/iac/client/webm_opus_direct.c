@@ -106,8 +106,19 @@ static uint32_t read_id(FILE *f) {
     if (fread(bytes, 1, 4, f) != 4) {
         return 0;
     }
-    
-    return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+
+    // Handle endianness correctly - WebM uses big-endian format
+    uint32_t id = ((uint32_t)bytes[0] << 24) |
+                  ((uint32_t)bytes[1] << 16) |
+                  ((uint32_t)bytes[2] << 8) |
+                  (uint32_t)bytes[3];
+
+    if (DEBUG_WEBM) {
+        printf("read_id: Read 4-byte ID: 0x%08X [%02X %02X %02X %02X]\n",
+               id, bytes[0], bytes[1], bytes[2], bytes[3]);
+    }
+
+    return id;
 }
 
 // Direct approach to read a 2-byte ID
@@ -116,8 +127,16 @@ static uint16_t read_short_id(FILE *f) {
     if (fread(bytes, 1, 2, f) != 2) {
         return 0;
     }
-    
-    return (bytes[0] << 8) | bytes[1];
+
+    // Handle endianness correctly - WebM uses big-endian format
+    uint16_t id = ((uint16_t)bytes[0] << 8) | (uint16_t)bytes[1];
+
+    if (DEBUG_WEBM) {
+        printf("read_short_id: Read 2-byte ID: 0x%04X [%02X %02X]\n",
+               id, bytes[0], bytes[1]);
+    }
+
+    return id;
 }
 
 // Direct approach to read a 1-byte ID
@@ -137,25 +156,33 @@ static uint64_t read_size(FILE *f, int *bytes_read) {
         *bytes_read = 0;
         return 0;
     }
-    
+
     int length = 1;
     uint8_t mask = 0x80;
-    
+
     // Count leading zeros
     while (!(first_byte & mask) && mask) {
         length++;
         mask >>= 1;
     }
-    
+
     if (length > 8) {
         // Invalid length
+        if (DEBUG_WEBM) {
+            printf("read_size: Invalid length: %d (first byte: 0x%02X)\n", length, first_byte);
+        }
         *bytes_read = 0;
         return 0;
     }
-    
+
     // First byte with mask bit cleared
     uint64_t size = first_byte & (0xFF >> length);
-    
+
+    if (DEBUG_WEBM) {
+        printf("read_size: First byte: 0x%02X, length: %d, initial value: 0x%lX\n",
+               first_byte, length, size);
+    }
+
     // Read remaining bytes
     for (int i = 1; i < length; i++) {
         uint8_t next_byte;
@@ -164,9 +191,18 @@ static uint64_t read_size(FILE *f, int *bytes_read) {
             return 0;
         }
         size = (size << 8) | next_byte;
+
+        if (DEBUG_WEBM) {
+            printf("read_size: After byte %d (0x%02X): 0x%lX\n", i, next_byte, size);
+        }
     }
-    
+
     *bytes_read = length;
+
+    if (DEBUG_WEBM) {
+        printf("read_size: Final size: %lu (0x%lX) in %d bytes\n", size, size, length);
+    }
+
     return size;
 }
 
@@ -193,12 +229,21 @@ static char* read_string(FILE *f, uint64_t size) {
 static uint64_t read_uint(FILE *f, int size) {
     uint64_t value = 0;
     uint8_t byte;
+    uint8_t bytes[8];  // Maximum 8 bytes for uint64_t
 
+    // Read all bytes at once
+    if (size > 8) size = 8;  // Limit to 8 bytes
+    if (fread(bytes, 1, size, f) != size) {
+        return 0;
+    }
+
+    // Convert from big-endian
     for (int i = 0; i < size; i++) {
-        if (fread(&byte, 1, 1, f) != 1) {
-            return 0;
-        }
-        value = (value << 8) | byte;
+        value = (value << 8) | bytes[i];
+    }
+
+    if (DEBUG_WEBM) {
+        printf("read_uint: Read %d-byte integer: %lu (0x%lX)\n", size, value, value);
     }
 
     return value;
@@ -259,9 +304,35 @@ int open_webm_file(OpusContext *ctx, const char *filename) {
     uint32_t id = read_id(ctx->webm_file);
     if (id != EBML_ID_HEADER) {
         fprintf(stderr, "Not a valid WebM file (EBML header not found, ID: 0x%X)\n", id);
-        fclose(ctx->webm_file);
-        ctx->webm_file = NULL;
-        return -1;
+
+        // Try a direct approach - reset and read the EBML ID directly
+        fseek(ctx->webm_file, 0, SEEK_SET);
+
+        // Read the first 4 bytes directly
+        unsigned char signature[4];
+        if (fread(signature, 1, 4, ctx->webm_file) == 4) {
+            printf("First 4 bytes: %02X %02X %02X %02X\n",
+                   signature[0], signature[1], signature[2], signature[3]);
+
+            // Check if it matches the EBML header start (0x1A 0x45 0xDF 0xA3)
+            if (signature[0] == 0x1A && signature[1] == 0x45 &&
+                signature[2] == 0xDF && signature[3] == 0xA3) {
+                printf("Found EBML signature manually\n");
+                // We've read the ID, now continue with the size
+                id = EBML_ID_HEADER;
+            } else {
+                // Not a WebM file
+                fprintf(stderr, "File does not have a valid EBML signature\n");
+                fclose(ctx->webm_file);
+                ctx->webm_file = NULL;
+                return -1;
+            }
+        } else {
+            fprintf(stderr, "File too small to be a valid WebM file\n");
+            fclose(ctx->webm_file);
+            ctx->webm_file = NULL;
+            return -1;
+        }
     }
     
     if (DEBUG_WEBM) {
@@ -609,8 +680,32 @@ int decode_webm_to_pcm(OpusContext *ctx, int sockfd) {
     int size_bytes;
     uint32_t id = read_id(ctx->webm_file);
     if (id != EBML_ID_HEADER) {
-        fprintf(stderr, "Not a valid EBML file (no EBML header)\n");
-        return -1;
+        fprintf(stderr, "Not a valid EBML file (no EBML header, ID: 0x%X)\n", id);
+
+        // Try a direct approach - reset and read the EBML ID directly
+        fseek(ctx->webm_file, 0, SEEK_SET);
+
+        // Read the first 4 bytes directly
+        unsigned char signature[4];
+        if (fread(signature, 1, 4, ctx->webm_file) == 4) {
+            printf("First 4 bytes: %02X %02X %02X %02X\n",
+                   signature[0], signature[1], signature[2], signature[3]);
+
+            // Check if it matches the EBML header start (0x1A 0x45 0xDF 0xA3)
+            if (signature[0] == 0x1A && signature[1] == 0x45 &&
+                signature[2] == 0xDF && signature[3] == 0xA3) {
+                printf("Found EBML signature manually\n");
+                // We've read the ID, now continue with the size
+                id = EBML_ID_HEADER;
+            } else {
+                // Not a WebM file
+                fprintf(stderr, "File does not have a valid EBML signature\n");
+                return -1;
+            }
+        } else {
+            fprintf(stderr, "File too small to be a valid WebM file\n");
+            return -1;
+        }
     }
     
     uint64_t header_size = read_size(ctx->webm_file, &size_bytes);
