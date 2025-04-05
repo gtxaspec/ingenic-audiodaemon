@@ -17,6 +17,7 @@ typedef struct {
     FILE *webm_file;
     int channels;
     int sample_rate;
+    int track_number;  // Track number for the Opus audio track
 } OpusContext;
 
 // Function prototypes
