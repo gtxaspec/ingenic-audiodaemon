@@ -42,7 +42,7 @@
 #define TRACK_TYPE_AUDIO       0x02
 
 // Debug flag - set to 1 to enable verbose debugging
-#define DEBUG_WEBM 1
+#define DEBUG_WEBM 0
 
 // Helper function to print element ID for debugging
 static void print_element_id(uint64_t id) {
@@ -71,8 +71,49 @@ static void print_element_id(uint64_t id) {
     printf("\n");
 }
 
+// Special function to read the EBML header ID (fixed 4 bytes)
+static uint64_t read_ebml_id(FILE *f, int *size) {
+    uint8_t id_bytes[4];
+    if (fread(id_bytes, 1, 4, f) != 4) {
+        if (DEBUG_WEBM) {
+            printf("read_ebml_id: Failed to read EBML ID\n");
+        }
+        *size = 0;
+        return 0;
+    }
+
+    uint64_t id = ((uint64_t)id_bytes[0] << 24) |
+                  ((uint64_t)id_bytes[1] << 16) |
+                  ((uint64_t)id_bytes[2] << 8) |
+                  id_bytes[3];
+
+    if (DEBUG_WEBM) {
+        printf("read_ebml_id: Read ID: 0x%lX\n", id);
+    }
+
+    *size = 4;
+    return id;
+}
+
 // Helper function to read a variable-length integer (EBML format)
 static uint64_t read_vint(FILE *f, int *size) {
+    // Special case for EBML header ID
+    long pos = ftell(f);
+    uint8_t peek;
+    if (fread(&peek, 1, 1, f) == 1) {
+        fseek(f, pos, SEEK_SET);  // Go back to original position
+
+        // If we're at the beginning of the file and the first byte is 0x1A,
+        // this is likely the EBML header ID (0x1A45DFA3)
+        if (pos == 0 && peek == 0x1A) {
+            if (DEBUG_WEBM) {
+                printf("read_vint: Detected EBML header ID at start of file\n");
+            }
+            return read_ebml_id(f, size);
+        }
+    }
+
+    // Normal variable-length integer parsing
     uint8_t first_byte;
     if (fread(&first_byte, 1, 1, f) != 1) {
         if (DEBUG_WEBM) {
@@ -275,13 +316,10 @@ int open_webm_file(OpusContext *ctx, const char *filename) {
     printf("First element ID: 0x%lX (expected EBML header: 0x1A45DFA3)\n", id);
 
     if (id != EBML_ID_HEADER) {
-        fprintf(stderr, "Not a valid EBML file (no EBML header, found ID: 0x%lX)\n", id);
-
-        // Try a different approach - some files might have a different format
-        // Reset to beginning of file
+        // Try a direct approach - reset and read the EBML ID directly
         fseek(ctx->webm_file, 0, SEEK_SET);
 
-        // Check for WebM signature manually
+        // Read the first 4 bytes directly
         unsigned char signature[4];
         if (fread(signature, 1, 4, ctx->webm_file) == 4) {
             printf("First 4 bytes: %02X %02X %02X %02X\n",
@@ -291,16 +329,8 @@ int open_webm_file(OpusContext *ctx, const char *filename) {
             if (signature[0] == 0x1A && signature[1] == 0x45 &&
                 signature[2] == 0xDF && signature[3] == 0xA3) {
                 printf("Found EBML signature manually\n");
-                // Reset to beginning of file for normal parsing
-                fseek(ctx->webm_file, 0, SEEK_SET);
-                // Try reading the ID again
-                id = read_vint(ctx->webm_file, &size);
-                if (size == 0 || id != EBML_ID_HEADER) {
-                    fprintf(stderr, "Still not a valid EBML file after manual check\n");
-                    fclose(ctx->webm_file);
-                    ctx->webm_file = NULL;
-                    return -1;
-                }
+                // We've read the ID, now continue with the size
+                id = EBML_ID_HEADER;
             } else {
                 // Not a WebM file
                 fprintf(stderr, "File does not have a valid EBML signature\n");
@@ -571,8 +601,18 @@ int decode_webm_to_pcm(OpusContext *ctx, int sockfd) {
     // Find EBML header
     id = read_vint(ctx->webm_file, &size);
     if (size == 0 || id != EBML_ID_HEADER) {
-        fprintf(stderr, "Not a valid EBML file (no EBML header)\n");
-        return -1;
+        // Try direct approach
+        fseek(ctx->webm_file, 0, SEEK_SET);
+        unsigned char signature[4];
+        if (fread(signature, 1, 4, ctx->webm_file) == 4 &&
+            signature[0] == 0x1A && signature[1] == 0x45 &&
+            signature[2] == 0xDF && signature[3] == 0xA3) {
+            // Found EBML header manually
+            id = EBML_ID_HEADER;
+        } else {
+            fprintf(stderr, "Not a valid EBML file (no EBML header)\n");
+            return -1;
+        }
     }
 
     length = read_vint(ctx->webm_file, &size);

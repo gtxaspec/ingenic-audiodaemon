@@ -47,6 +47,7 @@ ffmpeg -i "$INPUT_FILE" \
     -application audio \
     -ar 48000 \
     -ac 1 \
+    -map_metadata -1 \
     -f webm \
     -strict experimental \
     "$OUTPUT_FILE"
