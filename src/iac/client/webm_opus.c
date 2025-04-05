@@ -42,7 +42,7 @@
 #define TRACK_TYPE_AUDIO       0x02
 
 // Debug flag - set to 1 to enable verbose debugging
-#define DEBUG_WEBM 0
+#define DEBUG_WEBM 1
 
 // Helper function to print element ID for debugging
 static void print_element_id(uint64_t id) {
@@ -75,8 +75,15 @@ static void print_element_id(uint64_t id) {
 static uint64_t read_vint(FILE *f, int *size) {
     uint8_t first_byte;
     if (fread(&first_byte, 1, 1, f) != 1) {
+        if (DEBUG_WEBM) {
+            printf("read_vint: Failed to read first byte\n");
+        }
         *size = 0;
         return 0;
+    }
+
+    if (DEBUG_WEBM) {
+        printf("read_vint: First byte: 0x%02X\n", first_byte);
     }
 
     int length = 0;
@@ -87,7 +94,14 @@ static uint64_t read_vint(FILE *f, int *size) {
         mask >>= 1;
     }
 
+    if (DEBUG_WEBM) {
+        printf("read_vint: Detected length: %d\n", length + 1);
+    }
+
     if (length > 7) {
+        if (DEBUG_WEBM) {
+            printf("read_vint: Invalid length: %d\n", length);
+        }
         *size = 0;
         return 0;
     }
@@ -95,13 +109,24 @@ static uint64_t read_vint(FILE *f, int *size) {
     uint64_t value = first_byte & (0xFF >> (length + 1));
     length++;
 
+    if (DEBUG_WEBM) {
+        printf("read_vint: Initial value: 0x%lX\n", value);
+    }
+
     for (int i = 1; i < length; i++) {
         uint8_t next_byte;
         if (fread(&next_byte, 1, 1, f) != 1) {
+            if (DEBUG_WEBM) {
+                printf("read_vint: Failed to read byte %d\n", i);
+            }
             *size = 0;
             return 0;
         }
         value = (value << 8) | next_byte;
+
+        if (DEBUG_WEBM) {
+            printf("read_vint: After byte %d: 0x%lX\n", i, value);
+        }
     }
 
     *size = length;
@@ -187,6 +212,37 @@ void cleanup_opus_context(OpusContext *ctx) {
     }
 }
 
+// Helper function to dump file header for debugging
+static void dump_file_header(FILE *f) {
+    if (!DEBUG_WEBM) return;
+
+    // Save current position
+    long current_pos = ftell(f);
+
+    // Go to beginning of file
+    fseek(f, 0, SEEK_SET);
+
+    // Read and print first 32 bytes
+    printf("File header (first 32 bytes):\n");
+    unsigned char header[32];
+    size_t bytes_read = fread(header, 1, sizeof(header), f);
+
+    printf("Hex: ");
+    for (size_t i = 0; i < bytes_read; i++) {
+        printf("%02X ", header[i]);
+    }
+    printf("\n");
+
+    printf("ASCII: ");
+    for (size_t i = 0; i < bytes_read; i++) {
+        printf("%c", isprint(header[i]) ? header[i] : '.');
+    }
+    printf("\n");
+
+    // Restore position
+    fseek(f, current_pos, SEEK_SET);
+}
+
 // Open and parse WebM file
 int open_webm_file(OpusContext *ctx, const char *filename) {
     ctx->webm_file = fopen(filename, "rb");
@@ -197,6 +253,9 @@ int open_webm_file(OpusContext *ctx, const char *filename) {
 
     printf("Parsing WebM file: %s\n", filename);
 
+    // Dump file header for debugging
+    dump_file_header(ctx->webm_file);
+
     // Parse EBML header and WebM structure
     int size;
     uint64_t id, length;
@@ -206,11 +265,55 @@ int open_webm_file(OpusContext *ctx, const char *filename) {
 
     // First, look for the EBML header
     id = read_vint(ctx->webm_file, &size);
-    if (size == 0 || id != EBML_ID_HEADER) {
-        fprintf(stderr, "Not a valid EBML file (no EBML header)\n");
+    if (size == 0) {
+        fprintf(stderr, "Failed to read EBML header ID (size=0)\n");
         fclose(ctx->webm_file);
         ctx->webm_file = NULL;
         return -1;
+    }
+
+    printf("First element ID: 0x%lX (expected EBML header: 0x1A45DFA3)\n", id);
+
+    if (id != EBML_ID_HEADER) {
+        fprintf(stderr, "Not a valid EBML file (no EBML header, found ID: 0x%lX)\n", id);
+
+        // Try a different approach - some files might have a different format
+        // Reset to beginning of file
+        fseek(ctx->webm_file, 0, SEEK_SET);
+
+        // Check for WebM signature manually
+        unsigned char signature[4];
+        if (fread(signature, 1, 4, ctx->webm_file) == 4) {
+            printf("First 4 bytes: %02X %02X %02X %02X\n",
+                   signature[0], signature[1], signature[2], signature[3]);
+
+            // Check if it matches the EBML header start (0x1A 0x45 0xDF 0xA3)
+            if (signature[0] == 0x1A && signature[1] == 0x45 &&
+                signature[2] == 0xDF && signature[3] == 0xA3) {
+                printf("Found EBML signature manually\n");
+                // Reset to beginning of file for normal parsing
+                fseek(ctx->webm_file, 0, SEEK_SET);
+                // Try reading the ID again
+                id = read_vint(ctx->webm_file, &size);
+                if (size == 0 || id != EBML_ID_HEADER) {
+                    fprintf(stderr, "Still not a valid EBML file after manual check\n");
+                    fclose(ctx->webm_file);
+                    ctx->webm_file = NULL;
+                    return -1;
+                }
+            } else {
+                // Not a WebM file
+                fprintf(stderr, "File does not have a valid EBML signature\n");
+                fclose(ctx->webm_file);
+                ctx->webm_file = NULL;
+                return -1;
+            }
+        } else {
+            fprintf(stderr, "File too small to be a valid WebM file\n");
+            fclose(ctx->webm_file);
+            ctx->webm_file = NULL;
+            return -1;
+        }
     }
 
     print_element_id(id);
@@ -389,6 +492,53 @@ int open_webm_file(OpusContext *ctx, const char *filename) {
             // Skip unknown elements
             fseek(ctx->webm_file, length, SEEK_CUR);
         }
+    }
+
+    // Last resort: try to scan the file for Opus signature
+    printf("Trying fallback method: scanning for Opus signature...\n");
+
+    // Reset to beginning of file
+    fseek(ctx->webm_file, 0, SEEK_SET);
+
+    // Buffer for scanning
+    unsigned char buffer[4096];
+    size_t bytes_read;
+    int found_opus_signature = 0;
+
+    // Look for "OpusHead" or "OpusTags" markers
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), ctx->webm_file)) > 0) {
+        for (size_t i = 0; i < bytes_read - 8; i++) {
+            if ((memcmp(buffer + i, "OpusHead", 8) == 0) ||
+                (memcmp(buffer + i, "OpusTags", 8) == 0)) {
+                printf("Found Opus signature at offset %ld\n", ftell(ctx->webm_file) - bytes_read + i);
+                found_opus_signature = 1;
+                break;
+            }
+        }
+
+        if (found_opus_signature) {
+            break;
+        }
+    }
+
+    if (found_opus_signature) {
+        printf("File contains Opus data but WebM structure is not standard\n");
+        printf("Attempting to initialize decoder with default parameters\n");
+
+        // Initialize with default parameters
+        if (init_opus_decoder(ctx, 1) != 0) {
+            fprintf(stderr, "Failed to initialize Opus decoder\n");
+            fclose(ctx->webm_file);
+            ctx->webm_file = NULL;
+            return -1;
+        }
+
+        // Set a dummy track number
+        ctx->track_number = 1;
+
+        // Seek to beginning of file for decoding
+        fseek(ctx->webm_file, 0, SEEK_SET);
+        return 0;
     }
 
     fprintf(stderr, "No Opus audio track found in WebM file\n");
