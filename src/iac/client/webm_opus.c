@@ -42,7 +42,7 @@
 #define TRACK_TYPE_AUDIO       0x02
 
 // Debug flag - set to 1 to enable verbose debugging
-#define DEBUG_WEBM 0
+#define DEBUG_WEBM 1
 
 // Helper function to print element ID for debugging
 static void print_element_id(uint64_t id) {
