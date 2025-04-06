@@ -79,9 +79,25 @@ void *audio_output_server_thread(void *arg) {
         }
         IMP_LOG_INFO(TAG, "Client connected (socket %d)\n", client_sock);
 
-        // --- Check stream type ---
+        // --- Read the initial request type from the client ---
+        int request_type = 0;
+        ssize_t type_read_size = read(client_sock, &request_type, sizeof(int));
+        if (type_read_size != sizeof(int)) {
+             IMP_LOG_ERR(TAG, "Failed to read request type from client %d (ret=%zd, errno=%d)\n", client_sock, type_read_size, errno);
+             close(client_sock);
+             continue; // Skip this client
+        }
+
+        // Optional: Verify request type if needed, though this thread only handles output
+        if (request_type != AUDIO_OUTPUT_REQUEST) {
+             IMP_LOG_ERR(TAG, "Received unexpected request type %d on output socket from client %d\n", request_type, client_sock);
+             close(client_sock);
+             continue; 
+        }
+        
+        // --- Now check stream type ---
         unsigned char header_buf[4];
-        // Use blocking peek to wait for the first 4 bytes
+        // Use blocking peek to wait for the *actual* start of the data stream
         ssize_t peek_size = recv(client_sock, header_buf, 4, MSG_PEEK); 
         int is_webm = 0;
 
