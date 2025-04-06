@@ -16,13 +16,13 @@ int main(int argc, char *argv[]) {
     char *audio_file_path = NULL;
     int record_audio = 0;
     int output_to_stdout = 0;
-    // int use_webm = 0; // Removed
+    int dummy_use_webm = 0; // Dummy variable for removed option
     int request_type;
 
     printf("INGENIC AUDIO CLIENT Version: %s\n", VERSION);
 
-    // Pass 0 or NULL for use_webm argument in parse_arguments call
-    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio, &output_to_stdout, NULL) != 0) { 
+    // Pass address of dummy variable for the removed use_webm argument
+    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio, &output_to_stdout, &dummy_use_webm) != 0) { 
         exit(1);
     }
 
