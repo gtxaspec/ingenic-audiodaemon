@@ -34,8 +34,8 @@
 // Buffer size for reading from file
 #define READ_BUFFER_SIZE 4096
 
-// Maximum number of Opus packets to store in memory
-#define MAX_OPUS_PACKETS 1024
+// Initial capacity for dynamic packet buffer
+#define INITIAL_PACKET_CAPACITY 256 
 
 // Structure to hold an Opus packet
 typedef struct {
@@ -43,11 +43,12 @@ typedef struct {
     int size;
 } OpusPacket;
 
-// Structure to hold Opus packets in memory
+// Structure to hold Opus packets in memory (dynamically sized)
 typedef struct {
-    OpusPacket packets[MAX_OPUS_PACKETS];
-    int count;
-    int current;
+    OpusPacket *packets; // Pointer to dynamically allocated array
+    int count;           // Number of packets currently stored
+    int capacity;        // Current allocated capacity of the array
+    int current;         // Index for playback
 } OpusPacketBuffer;
 
 // Helper function to dump file header for debugging
@@ -115,19 +116,23 @@ void cleanup_opus_context(OpusContext *ctx) {
         ctx->webm_file = NULL;
     }
     
-    // Free any other resources
+    // Free packet buffer resources
     if (ctx->user_data) {
         OpusPacketBuffer *buffer = (OpusPacketBuffer *)ctx->user_data;
         
-        // Free all packet data
+        // Free all individual packet data
         for (int i = 0; i < buffer->count; i++) {
             if (buffer->packets[i].data) {
                 free(buffer->packets[i].data);
-                buffer->packets[i].data = NULL;
+                // No need to set to NULL here as the whole array is freed next
             }
         }
+        // Free the packets array itself
+        if (buffer->packets) {
+             free(buffer->packets);
+        }
         
-        free(buffer);
+        free(buffer); // Free the buffer struct itself
         ctx->user_data = NULL;
     }
 }
@@ -233,14 +238,22 @@ static void skip_element(FILE *f, uint64_t size) {
     fseek(f, size, SEEK_CUR);
 }
 
-// Add an Opus packet to the buffer
+// Add an Opus packet to the dynamic buffer, resizing if necessary
 static int add_opus_packet(OpusPacketBuffer *buffer, const unsigned char *data, int size) {
-    if (buffer->count >= MAX_OPUS_PACKETS) {
-        fprintf(stderr, "Too many Opus packets (max %d)\n", MAX_OPUS_PACKETS);
-        return -1;
+    // Check if we need to resize the buffer
+    if (buffer->count >= buffer->capacity) {
+        int new_capacity = buffer->capacity == 0 ? INITIAL_PACKET_CAPACITY : buffer->capacity * 2;
+        OpusPacket *new_packets = realloc(buffer->packets, new_capacity * sizeof(OpusPacket));
+        if (!new_packets) {
+            fprintf(stderr, "Failed to reallocate packet buffer to capacity %d\n", new_capacity);
+            return -1; // Keep existing buffer, but report error
+        }
+        buffer->packets = new_packets;
+        buffer->capacity = new_capacity;
+        if (DEBUG_WEBM && buffer->capacity % 1000 == 0) printf("Resized packet buffer capacity to %d\n", new_capacity); // Print less often
     }
     
-    // Allocate memory for the packet data
+    // Allocate memory for the new packet data
     buffer->packets[buffer->count].data = (unsigned char *)malloc(size);
     if (!buffer->packets[buffer->count].data) {
         fprintf(stderr, "Failed to allocate memory for Opus packet\n");
@@ -851,23 +864,26 @@ int open_webm_file(OpusContext *ctx, const char *filename) {
     // Dump file header for debugging
     dump_file_header(ctx->webm_file);
     
-    // Allocate packet buffer
-    OpusPacketBuffer *buffer = (OpusPacketBuffer *)malloc(sizeof(OpusPacketBuffer));
+    // Allocate packet buffer struct
+    OpusPacketBuffer *buffer = (OpusPacketBuffer *)calloc(1, sizeof(OpusPacketBuffer)); // Use calloc for zero-init
     if (!buffer) {
-        fprintf(stderr, "Failed to allocate packet buffer\n");
+        fprintf(stderr, "Failed to allocate packet buffer struct\n");
         fclose(ctx->webm_file);
         ctx->webm_file = NULL;
         return -1;
     }
     
-    // Initialize packet buffer
-    memset(buffer, 0, sizeof(OpusPacketBuffer));
+    // Initialize dynamic buffer fields
+    buffer->packets = NULL; // Start with NULL pointer
+    buffer->count = 0;
+    buffer->capacity = 0; // Start with 0 capacity
+    buffer->current = 0;
     ctx->user_data = buffer;
     
     // Parse WebM file and extract Opus packets
     if (parse_webm_file(ctx) != 0) {
         fprintf(stderr, "Failed to parse WebM file or no Opus track found\n");
-        cleanup_opus_context(ctx);
+        cleanup_opus_context(ctx); // This will free the buffer struct
         return -1;
     }
     
