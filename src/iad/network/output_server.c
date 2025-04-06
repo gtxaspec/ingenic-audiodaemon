@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <stdlib.h> // For mkstemp
+#include "imp/imp_log.h" // For IMP_LOG_* macros
 #include "audio_common.h"
 #include "logging.h"
 #include "utils.h"
@@ -16,10 +18,11 @@
 #include "webm_opus_parser.h" // Include the parser header
 
 #define TAG "NET_OUTPUT"
+#define READ_BUFFER_SIZE 4096 // Define locally for reading socket data
 
 // Global state for WebM playback request (protected by audio_buffer_lock)
-char g_pending_webm_path[PATH_MAX] = {0}; 
-volatile int g_webm_playback_requested = 0;
+extern char g_pending_webm_path[PATH_MAX]; // Declare as extern
+extern volatile int g_webm_playback_requested; // Declare as extern
 
 void *audio_output_server_thread(void *arg) {
     IMP_LOG_INFO(TAG, "Entering audio_output_server_thread\n");

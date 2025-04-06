@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h> // For strncpy
+#include <unistd.h> // For unlink
+#include <limits.h> // For PATH_MAX
 #include "imp/imp_audio.h"
 #include "imp/imp_log.h"
 #include "audio_common.h"
@@ -18,6 +21,10 @@
 
 // Global variable to hold the maximum frame size for audio output.
 int g_ao_max_frame_size = DEFAULT_AO_MAX_FRAME_SIZE;
+
+// Global state for WebM playback request (defined here, protected by audio_buffer_lock)
+static char g_pending_webm_path[PATH_MAX] = {0}; 
+static volatile int g_webm_playback_requested = 0;
 
 /**
  * Set the global maximum frame size for audio output.
