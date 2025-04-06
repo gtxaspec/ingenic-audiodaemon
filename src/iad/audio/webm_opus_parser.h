@@ -38,7 +38,8 @@ typedef struct {
 // Function Prototypes for parser/decoder functions to be moved here
 // (These will be filled in later)
 
-int iad_parse_and_decode_webm(const char *filename, int aoDevID, int aoChnID); // Example high-level function
+// Main function called by output thread to handle WebM playback
+int iad_play_webm_file(const char *filename, int aoDevID, int aoChnID); 
 
 
 #endif // WEBM_OPUS_PARSER_H
