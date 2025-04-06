@@ -28,8 +28,8 @@
 
 #define TRACK_TYPE_AUDIO       0x02
 
-// Debug flag - set to 1 to enable verbose debugging
-#define DEBUG_WEBM 1
+// Debug flag - set to 0 to disable verbose debugging
+#define DEBUG_WEBM 0
 
 // Buffer size for reading from file
 #define READ_BUFFER_SIZE 4096
@@ -50,37 +50,6 @@ typedef struct {
     int capacity;        // Current allocated capacity of the array
     int current;         // Index for playback
 } OpusPacketBuffer;
-
-// Helper function to dump file header for debugging
-static void dump_file_header(FILE *f) {
-    if (!DEBUG_WEBM) return;
-    
-    // Save current position
-    long current_pos = ftell(f);
-    
-    // Go to beginning of file
-    fseek(f, 0, SEEK_SET);
-    
-    // Read and print first 32 bytes
-    printf("File header (first 32 bytes):\n");
-    unsigned char header[32];
-    size_t bytes_read = fread(header, 1, sizeof(header), f);
-    
-    printf("Hex: ");
-    for (size_t i = 0; i < bytes_read; i++) {
-        printf("%02X ", header[i]);
-    }
-    printf("\n");
-    
-    printf("ASCII: ");
-    for (size_t i = 0; i < bytes_read; i++) {
-        printf("%c", isprint(header[i]) ? header[i] : '.');
-    }
-    printf("\n");
-    
-    // Restore position
-    fseek(f, current_pos, SEEK_SET);
-}
 
 // Initialize Opus decoder
 int init_opus_decoder(OpusContext *ctx, int channels) {
@@ -719,128 +688,8 @@ static int parse_webm_file(OpusContext *ctx) {
 
     } // End while Segment elements
 
-    // --- Fallback pattern matching section ---
-    if (!found_opus_track || buffer->count == 0) {
-        // If we didn't find an Opus track through normal parsing,
-        // try a more aggressive approach by scanning for Opus data patterns
-        printf("No Opus track found through normal parsing or no packets extracted, trying pattern matching...\n");
+    // Fallback pattern matching section removed for size optimization
 
-        // Seek to beginning of file
-        fseek(f, 0, SEEK_SET);
-
-        // Reset packet count if we had any
-        buffer->count = 0;
-
-        // Buffer for scanning
-        unsigned char scan_buffer[READ_BUFFER_SIZE];
-        size_t bytes_read;
-        int found_opus_head = 0;
-
-        // First, try to find "OpusHead" marker
-        while ((bytes_read = fread(scan_buffer, 1, sizeof(scan_buffer), f)) > 0) {
-            for (size_t i = 0; i < bytes_read - 8; i++) {
-                // Look for "OpusHead" marker
-                if (memcmp(scan_buffer + i, "OpusHead", 8) == 0) {
-                    printf("Found OpusHead marker at offset %ld\n", ftell(f) - bytes_read + i);
-
-                    // Try to read channel count from OpusHead
-                    if (i + 10 < bytes_read) {
-                        // Channel count is typically at offset 9 in OpusHead
-                        ctx->channels = scan_buffer[i + 9];
-                        printf("Detected %d channels from OpusHead\n", ctx->channels);
-                    } else {
-                        // Default to mono
-                        ctx->channels = 1;
-                    }
-
-                    // Set a default track number
-                    opus_track_number = 1;
-                    found_opus_track = 1;
-                    found_opus_head = 1;
-                    break;
-                }
-            }
-
-            if (found_opus_head) break;
-        }
-
-        // Now look for "OpusTags" which often comes after OpusHead
-        if (found_opus_head) {
-            while ((bytes_read = fread(scan_buffer, 1, sizeof(scan_buffer), f)) > 0) {
-                for (size_t i = 0; i < bytes_read - 8; i++) {
-                    if (memcmp(scan_buffer + i, "OpusTags", 8) == 0) {
-                        printf("Found OpusTags marker at offset %ld\n", ftell(f) - bytes_read + i);
-                        break;
-                    }
-                }
-
-                // After OpusTags, we should find actual Opus data
-                break;
-            }
-        }
-
-        // Now scan for actual Opus packets
-        // Seek to beginning of file if we didn't find OpusHead
-        if (!found_opus_head) {
-            fseek(f, 0, SEEK_SET);
-        }
-
-        // Scan for Opus packets
-        int packet_count = 0;
-        while ((bytes_read = fread(scan_buffer, 1, sizeof(scan_buffer), f)) > 0) {
-            for (size_t i = 0; i < bytes_read - 4; i++) {
-                // Look for potential Opus packet patterns
-                // Opus packets typically start with a TOC byte
-                uint8_t toc = scan_buffer[i];
-
-                // Check if this looks like a valid TOC byte
-                // TOC byte format: [config (3 bits)][stereo (1 bit)][frame count (2 bits)]
-                uint8_t config = (toc >> 3) & 0x1F;
-                uint8_t stereo = (toc >> 2) & 0x01;
-                uint8_t frame_count = toc & 0x03;
-
-                // Simple heuristic: if the next byte is a reasonable packet size
-                if (i + 1 < bytes_read) {
-                    uint8_t packet_size = scan_buffer[i+1];
-
-                    if (packet_size > 0 && packet_size < 250 && i + 2 + packet_size <= bytes_read) {
-                        // This might be an Opus packet, add it to our buffer
-                        add_opus_packet(buffer, scan_buffer + i, packet_size + 2);
-                        packet_count++;
-
-                        if (packet_count % 10 == 0) {
-                            printf("Extracted %d potential Opus packets\n", packet_count);
-                        }
-
-                        // Skip to the end of this packet
-                        i += packet_size + 1;
-
-                        // Set a default track number if we haven't found one yet
-                        if (!found_opus_track) {
-                            opus_track_number = 1;
-                            found_opus_track = 1;
-
-                            // Use stereo bit from TOC to determine channels
-                            ctx->channels = stereo ? 2 : 1;
-                            printf("Detected %d channels from Opus TOC\n", ctx->channels);
-                        }
-                    }
-                }
-            }
-
-            // If we've found a good number of packets, we can stop
-            if (buffer->count >= 100) {
-                printf("Found sufficient number of Opus packets (%d)\n", buffer->count);
-                break;
-            }
-        }
-
-        if (buffer->count > 0) {
-            printf("Extracted %d potential Opus packets using pattern matching\n", buffer->count);
-            found_opus_track = 1;
-        }
-    }
-    
     // Set the track number in the context
     ctx->track_number = opus_track_number;
     
@@ -861,8 +710,7 @@ int open_webm_file(OpusContext *ctx, const char *filename) {
     
     printf("Parsing WebM file: %s\n", filename);
     
-    // Dump file header for debugging
-    dump_file_header(ctx->webm_file);
+    // dump_file_header call removed
     
     // Allocate packet buffer struct
     OpusPacketBuffer *buffer = (OpusPacketBuffer *)calloc(1, sizeof(OpusPacketBuffer)); // Use calloc for zero-init
