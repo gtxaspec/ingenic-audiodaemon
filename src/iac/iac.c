@@ -86,14 +86,18 @@ int main(int argc, char *argv[]) {
                 close(sockfd);
                 exit(1);
             }
-
-            playback_audio(sockfd, audio_file);
-
-            if (!use_stdin) {
-                fclose(audio_file);
-            }
+            // If audio_file_path was NULL and use_stdin is false, fopen returns NULL, 
+            // but we should have already exited via parse_arguments check.
+            // If we reach here with audio_file == NULL, it implies use_stdin is true.
         }
-    }
+
+        // This should be outside the if block to execute when fopen succeeds or stdin is used
+        playback_audio(sockfd, audio_file);
+
+        if (!use_stdin && audio_file) { // Also check if audio_file is not NULL before closing
+            fclose(audio_file);
+        }
+    } // End else block for playback/streaming
 
     close(sockfd);
     return 0;
