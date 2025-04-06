@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <sched.h>
 #include <stdint.h>
+#include "webm_opus_parser.h" // Ensure parser header is included
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h> // For strncpy
@@ -10,11 +11,11 @@
 #include "imp/imp_log.h"
 #include "audio_common.h"
 #include "config.h"
-#include "cJSON.h"
+#include "cJSON.h" // Assuming this is needed by included headers
 #include "output.h"
 #include "logging.h"
 #include "utils.h"
-#include "webm_opus_parser.h" // Include parser header
+#include "webm_opus_parser.h" // Ensure this include is present
 
 #define TRUE 1
 #define TAG "AO"
@@ -210,7 +211,8 @@ void *ao_play_thread(void *arg) {
         // Check if a WebM playback was requested
         if (g_webm_playback_requested) {
             char webm_path[PATH_MAX];
-            strncpy(webm_path, g_pending_webm_path, PATH_MAX);
+            strncpy(webm_path, g_pending_webm_path, PATH_MAX - 1); // Ensure space for null terminator
+            webm_path[PATH_MAX - 1] = '\0'; // Explicitly null-terminate
             g_webm_playback_requested = 0; // Reset the flag
             g_pending_webm_path[0] = '\0'; 
             
@@ -218,7 +220,7 @@ void *ao_play_thread(void *arg) {
             pthread_mutex_unlock(&audio_buffer_lock); 
 
             IMP_LOG_INFO(TAG, "Starting WebM playback from path: %s\n", webm_path);
-            int play_ret = iad_play_webm_file(webm_path, aoDevID, aoChnID);
+            int play_ret = iad_play_webm_file(webm_path, aoDevID, aoChnID); // Now declared via header
             if (play_ret != 0) {
                  IMP_LOG_ERR(TAG, "iad_play_webm_file failed for %s\n", webm_path);
             }
