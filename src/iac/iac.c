@@ -8,7 +8,7 @@
 #include "client/client_network.h"
 #include "client/playback.h"
 #include "client/record.h"
-#include "client/webm_opus.h"
+// #include "client/webm_opus.h" // Removed
 #include "version.h"
 
 int main(int argc, char *argv[]) {
@@ -16,12 +16,13 @@ int main(int argc, char *argv[]) {
     char *audio_file_path = NULL;
     int record_audio = 0;
     int output_to_stdout = 0;
-    int use_webm = 0;
+    // int use_webm = 0; // Removed
     int request_type;
 
     printf("INGENIC AUDIO CLIENT Version: %s\n", VERSION);
 
-    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio, &output_to_stdout, &use_webm) != 0) {
+    // Pass 0 or NULL for use_webm argument in parse_arguments call
+    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio, &output_to_stdout, NULL) != 0) { 
         exit(1);
     }
 
@@ -73,22 +74,14 @@ int main(int argc, char *argv[]) {
         int request_type = AUDIO_OUTPUT_REQUEST;
         write(sockfd, &request_type, sizeof(int));
 
-        if (use_webm) {
-            // Handle WebM/Opus file
-            printf("[INFO] Processing WebM/Opus file: %s\n", audio_file_path);
-            OpusContext opus_ctx = {0};
-            if (open_webm_file(&opus_ctx, audio_file_path) == 0) {
-                decode_webm_to_pcm(&opus_ctx, sockfd);
-                cleanup_opus_context(&opus_ctx);
-            } else {
-                fprintf(stderr, "Failed to open or process WebM file: %s\n", audio_file_path);
-                close(sockfd);
-                exit(1);
-            }
-        } else {
-            // Handle regular PCM audio
-            FILE *audio_file = use_stdin ? stdin : fopen(audio_file_path, "rb");
-            if (!audio_file) {
+        // Removed if (use_webm) block. 
+        // The following block now handles both PCM and WebM file streaming.
+        // The daemon (iad) will detect the type based on the stream content.
+        
+        FILE *audio_file = use_stdin ? stdin : fopen(audio_file_path, "rb");
+        if (!audio_file) {
+            if (audio_file_path) { // Only print error if a file path was actually given
+                fprintf(stderr, "Failed to open file: %s\n", audio_file_path);
                 perror("fopen");
                 close(sockfd);
                 exit(1);

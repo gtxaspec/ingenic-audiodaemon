@@ -11,6 +11,7 @@
 #include "output.h"
 #include "logging.h"
 #include "utils.h"
+#include "webm_opus_parser.h" // Include parser header
 
 #define TRUE 1
 #define TAG "AO"
@@ -176,9 +177,9 @@ void *ao_play_thread(void *arg) {
     while (TRUE) {
         pthread_mutex_lock(&audio_buffer_lock);
 
-        // Wait until there's audio data in the buffer
-        while (audio_buffer_size == 0) {
-            // Add thread termination check here
+        // Wait until there's audio data OR a WebM request
+        while (audio_buffer_size == 0 && !g_webm_playback_requested) { 
+            // Check for thread termination signal
             pthread_mutex_lock(&g_stop_thread_mutex);
             if (g_stop_thread) {
                 pthread_mutex_unlock(&audio_buffer_lock);
@@ -188,22 +189,65 @@ void *ao_play_thread(void *arg) {
             pthread_mutex_unlock(&g_stop_thread_mutex);
 
             pthread_cond_wait(&audio_data_cond, &audio_buffer_lock);
+
+            // Re-check stop condition after waking up
+            pthread_mutex_lock(&g_stop_thread_mutex);
+            if (g_stop_thread) {
+                 pthread_mutex_unlock(&audio_buffer_lock);
+                 pthread_mutex_unlock(&g_stop_thread_mutex);
+                 return NULL;
+            }
+             pthread_mutex_unlock(&g_stop_thread_mutex);
         }
 
-        IMPAudioFrame frm = {.virAddr = (uint32_t *)audio_buffer, .len = audio_buffer_size};
+        // Check if a WebM playback was requested
+        if (g_webm_playback_requested) {
+            char webm_path[PATH_MAX];
+            strncpy(webm_path, g_pending_webm_path, PATH_MAX);
+            g_webm_playback_requested = 0; // Reset the flag
+            g_pending_webm_path[0] = '\0'; 
+            
+            // Unlock mutex before calling potentially long-running function
+            pthread_mutex_unlock(&audio_buffer_lock); 
 
-        // Send the audio frame for playback
-        if (IMP_AO_SendFrame(aoDevID, aoChnID, &frm, BLOCK)) {
-            pthread_mutex_unlock(&audio_buffer_lock);
-            handle_and_reinitialize_output(aoDevID, aoChnID, "IMP_AO_SendFrame data error");
-            continue;
+            IMP_LOG_INFO(TAG, "Starting WebM playback from path: %s\n", webm_path);
+            int play_ret = iad_play_webm_file(webm_path, aoDevID, aoChnID);
+            if (play_ret != 0) {
+                 IMP_LOG_ERR(TAG, "iad_play_webm_file failed for %s\n", webm_path);
+            }
+            
+            // Clean up the temporary file
+            if (unlink(webm_path) != 0) {
+                 IMP_LOG_ERR(TAG, "Failed to delete temporary WebM file: %s\n", webm_path);
+                 perror("unlink");
+            } else {
+                 IMP_LOG_INFO(TAG, "Deleted temporary WebM file: %s\n", webm_path);
+            }
+            // Loop back to wait for next signal/data
+
+        } else if (audio_buffer_size > 0) {
+            // Handle PCM data from buffer (existing logic)
+            IMPAudioFrame frm = {.virAddr = (uint32_t *)audio_buffer, .len = audio_buffer_size};
+
+            // Send the audio frame for playback
+            if (IMP_AO_SendFrame(aoDevID, aoChnID, &frm, BLOCK)) {
+                // Unlock before handling error/reinitialization
+                pthread_mutex_unlock(&audio_buffer_lock); 
+                handle_and_reinitialize_output(aoDevID, aoChnID, "IMP_AO_SendFrame data error");
+                // Continue to next loop iteration after reinitialization attempt
+            } else {
+                 // Reset buffer size only on successful send
+                 audio_buffer_size = 0;
+                 pthread_mutex_unlock(&audio_buffer_lock);
+            }
+        } else {
+             // Should not happen if wait condition is correct, but unlock just in case
+             pthread_mutex_unlock(&audio_buffer_lock);
         }
+    } // End while(TRUE)
 
-        audio_buffer_size = 0;
-        pthread_mutex_unlock(&audio_buffer_lock);
-    }
-
-    return NULL;
+    IMP_LOG_INFO(TAG, "Exiting ao_play_thread\n");
+    return NULL; // Should be unreachable if g_stop_thread is handled correctly
 }
 
 /**
