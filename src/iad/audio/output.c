@@ -74,6 +74,25 @@ void initialize_audio_output_device(int aoDevID, int aoChnID) {
         exit(EXIT_FAILURE);
     }
 
+    // --- Add check: Get attributes back to verify ---
+    IMPAudioIOAttr check_attr;
+    if (IMP_AO_GetPubAttr(aoDevID, &check_attr) != 0) {
+        handle_audio_error("AO: Failed to get audio attributes after setting");
+        // Continue, but log a warning
+    } else {
+        if (check_attr.samplerate != attr.samplerate) {
+             IMP_LOG_ERR(TAG, "Samplerate mismatch after setting! Requested %d, Got %d\n", 
+                         attr.samplerate, check_attr.samplerate);
+        } else {
+             IMP_LOG_INFO(TAG, "Confirmed samplerate set to %d\n", check_attr.samplerate);
+        }
+        // Log other retrieved attributes if needed for debugging
+        // IMP_LOG_INFO(TAG, "Confirmed bitwidth: %d, soundmode: %d, frmNum: %d, numPerFrm: %d, chnCnt: %d\n",
+        //              check_attr.bitwidth, check_attr.soundmode, check_attr.frmNum, check_attr.numPerFrm, check_attr.chnCnt);
+    }
+    // --- End check ---
+
+
     // Set volume and gain for the audio device
     int vol = attrs.SetVolItem ? attrs.SetVolItem->valueint : DEFAULT_AO_CHN_VOL;
     if (vol < -30 || vol > 120) {
