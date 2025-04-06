@@ -6,6 +6,9 @@
 #include <sys/socket.h>
 #include <ctype.h>
 #include <arpa/inet.h> // For htonl
+#ifdef __linux__ // Include endian.h only if available (typically Linux)
+#include <endian.h>
+#endif
 #include "webm_opus.h"
 #include "playback.h"
 
@@ -213,9 +216,9 @@ static uint32_t read_ebml_id(FILE *f, int *size_out) {
 // to the host's byte order for comparison with constants.
 static inline uint32_t swap_uint32(uint32_t val) {
     #ifdef __linux__ // Check if compiling on Linux, likely has endian.h
-    #include <endian.h>
     return be32toh(val); // Use standard conversion if available
     #else // Fallback for other systems (like potentially simpler embedded toolchains)
+    // Manual byte swap for big-endian to host (assuming little-endian host here)
     return ((val << 24) & 0xff000000) |
            ((val <<  8) & 0x00ff0000) |
            ((val >>  8) & 0x0000ff00) |
