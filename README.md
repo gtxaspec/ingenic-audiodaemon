@@ -100,20 +100,43 @@ The audio client provides various functionalities, from playing audio to recordi
 
 #### Options:
 
-- `-f`: AO - Play an audio file specified by `<audio_file_path>`.
-- `-s`: AO - Read audio from the standard input (`stdin`).
+- `-f`: AO - Play an audio file specified by `<audio_file_path>`. The daemon (`iad`) will automatically detect the format. Supported formats: raw PCM (16-bit signed little-endian, matching daemon's configured sample rate and channels) and WebM container with 16kHz Opus audio.
+- `-s`: AO - Read raw PCM audio from the standard input (`stdin`). Must match the daemon's configured sample rate and channels.
 - `-r`: AI - Record audio and save it to a file specified by `<audio_output_file_path>`.
 - `-o`: AI - Output audio to the standard output (`stdout`).
 
-For example, if you want to play a specific audio file, you can use:
+For example, if you want to play a specific audio file (PCM or WebM/Opus), you can use:
 
 ```
 ./iac -f path_to_your_audio_file.wav
+./iac -f path_to_your_audio_file.webm
 ```
 
 ---
 
-### stdin examples:
+### Creating Compatible WebM/Opus Files
+
+The daemon expects WebM files containing Opus audio encoded for **16kHz** sample rate output. You can create compatible files using `ffmpeg`.
+
+**Example:** Convert an MP3 file to a 16kHz mono Opus WebM file:
+
+```bash
+ffmpeg -i input_audio.mp3 -vn -acodec libopus -ar 16000 -ac 1 -b:a 32k output_16k.webm
+```
+
+- `-i input_audio.mp3`: Your input audio file (can be various formats).
+- `-vn`: Disable video recording (important if input has video).
+- `-acodec libopus`: Specify Opus audio codec.
+- `-ar 16000`: Set the audio sample rate to 16kHz. **(Required)**
+- `-ac 1`: Set the audio channels to mono. **(Required)**
+- `-b:a 32k`: Set the audio bitrate (e.g., 32kbps). Adjust as needed for quality/size trade-off.
+- `output_16k.webm`: The output file name.
+
+**Note:** Ensure the `iad` daemon is configured for 16kHz output in `iad.json` when playing these files.
+
+---
+
+### stdin examples (Raw PCM):
 
 ```
 ffmpeg -re -i https://wpr-ice.streamguys1.com/wpr-ideas-mp3-64 -af volume=-15dB -f s16le -ac 1 -ar 48000 - | ./iac -s
