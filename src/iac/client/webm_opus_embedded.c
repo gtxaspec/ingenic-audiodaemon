@@ -281,6 +281,11 @@ static int parse_webm_file(OpusContext *ctx) {
     FILE *f = ctx->webm_file;
     OpusPacketBuffer *buffer = (OpusPacketBuffer *)ctx->user_data;
 
+    // Variables for parsing
+    int size_bytes;
+    int id_size;
+    uint32_t id;
+
     // Seek to beginning of file
     fseek(f, 0, SEEK_SET);
 
@@ -297,7 +302,6 @@ static int parse_webm_file(OpusContext *ctx) {
            signature[0], signature[1], signature[2], signature[3]);
 
     // Skip the rest of the EBML header
-    int size_bytes;
     uint64_t header_size = read_vint(f, &size_bytes);
     printf("EBML header size: %lu bytes (%d size bytes)\n", header_size, size_bytes);
     skip_element(f, header_size);
