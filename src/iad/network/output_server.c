@@ -81,16 +81,14 @@ void *audio_output_server_thread(void *arg) {
 
         // --- Check stream type ---
         unsigned char header_buf[4];
-        ssize_t peek_size = recv(client_sock, header_buf, 4, MSG_PEEK | MSG_DONTWAIT);
+        // Use blocking peek to wait for the first 4 bytes
+        ssize_t peek_size = recv(client_sock, header_buf, 4, MSG_PEEK); 
         int is_webm = 0;
 
         if (peek_size == 4 && memcmp(header_buf, "\x1A\x45\xDF\xA3", 4) == 0) {
             is_webm = 1;
             IMP_LOG_INFO(TAG, "Detected WebM stream from client %d\n", client_sock);
-        } else if (peek_size < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-             IMP_LOG_WARN(TAG, "No data immediately available from client %d to determine type, assuming PCM.\n", client_sock);
-             is_webm = 0; // Assume PCM if no data to peek
-        } else if (peek_size <= 0) {
+        } else if (peek_size <= 0) { // Handle error or closed connection
              IMP_LOG_ERR(TAG, "Error or connection closed while peeking header from client %d (ret=%zd, errno=%d)\n", client_sock, peek_size, errno);
              close(client_sock);
              continue; // Skip this client
