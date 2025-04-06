@@ -238,28 +238,41 @@ static int extract_opus_packets_from_block(OpusPacketBuffer *buffer, const unsig
     if (size < 4) {
         return 0; // Too small to be a valid block
     }
-    
+
     // First byte of SimpleBlock contains track number (with high bit set)
     int block_track = data[0] & 0x7F;
-    
+
     // Check if this block belongs to our Opus track
     if (block_track != track_number) {
+        if (DEBUG_WEBM) {
+            printf("SimpleBlock track %d doesn't match our Opus track %d\n",
+                   block_track, track_number);
+        }
         return 0;
     }
-    
-    // Skip track number and timestamp (3 bytes)
+
+    // Skip track number (1 byte) and timestamp (2 bytes)
+    // The 4th byte contains flags
     int offset = 4;
-    
+
     // The rest is Opus data
     if (offset < size) {
         if (DEBUG_WEBM) {
-            printf("Found Opus data in SimpleBlock: %d bytes\n", size - offset);
+            printf("Found Opus data in SimpleBlock: %d bytes (track %d)\n",
+                   size - offset, block_track);
+
+            // Print first few bytes for debugging
+            printf("Data starts with: ");
+            for (int i = 0; i < 8 && offset + i < size; i++) {
+                printf("%02X ", data[offset + i]);
+            }
+            printf("\n");
         }
-        
+
         // Add the packet to our buffer
         return add_opus_packet(buffer, data + offset, size - offset);
     }
-    
+
     return 0;
 }
 
@@ -267,30 +280,75 @@ static int extract_opus_packets_from_block(OpusPacketBuffer *buffer, const unsig
 static int parse_webm_file(OpusContext *ctx) {
     FILE *f = ctx->webm_file;
     OpusPacketBuffer *buffer = (OpusPacketBuffer *)ctx->user_data;
-    
+
     // Seek to beginning of file
     fseek(f, 0, SEEK_SET);
-    
-    // Check for EBML header
+
+    // Check for EBML header using direct byte comparison
     unsigned char signature[4];
     if (fread(signature, 1, 4, f) != 4 ||
-        signature[0] != 0x1A || signature[1] != 0x45 || 
+        signature[0] != 0x1A || signature[1] != 0x45 ||
         signature[2] != 0xDF || signature[3] != 0xA3) {
         fprintf(stderr, "Not a valid WebM file (EBML header not found)\n");
         return -1;
     }
-    
+
+    printf("Found EBML header signature: 0x%02X%02X%02X%02X\n",
+           signature[0], signature[1], signature[2], signature[3]);
+
     // Skip the rest of the EBML header
     int size_bytes;
     uint64_t header_size = read_vint(f, &size_bytes);
+    printf("EBML header size: %lu bytes (%d size bytes)\n", header_size, size_bytes);
     skip_element(f, header_size);
-    
-    // Look for the Segment element
-    int id_size;
-    uint32_t id = read_ebml_id(f, &id_size);
-    if (id != WEBM_ID_SEGMENT) {
-        fprintf(stderr, "No Segment element found\n");
+
+    // Look for the Segment element using direct byte comparison
+    // The Segment ID is 0x18 0x53 0x80 0x67
+    if (fread(signature, 1, 4, f) != 4) {
+        fprintf(stderr, "Failed to read Segment ID\n");
         return -1;
+    }
+
+    printf("Potential Segment ID: 0x%02X%02X%02X%02X\n",
+           signature[0], signature[1], signature[2], signature[3]);
+
+    if (signature[0] != 0x18 || signature[1] != 0x53 ||
+        signature[2] != 0x80 || signature[3] != 0x67) {
+
+        // Try a more flexible approach - scan for Segment ID
+        fprintf(stderr, "Segment element not found at expected position, scanning...\n");
+
+        // Go back to just after the EBML header
+        fseek(f, 4 + size_bytes + header_size, SEEK_SET);
+
+        // Scan for Segment ID
+        unsigned char scan_buffer[READ_BUFFER_SIZE];
+        size_t bytes_read;
+        int found_segment = 0;
+
+        while ((bytes_read = fread(scan_buffer, 1, sizeof(scan_buffer), f)) > 0) {
+            for (size_t i = 0; i < bytes_read - 4; i++) {
+                if (scan_buffer[i] == 0x18 && scan_buffer[i+1] == 0x53 &&
+                    scan_buffer[i+2] == 0x80 && scan_buffer[i+3] == 0x67) {
+
+                    printf("Found Segment ID at offset %ld\n", ftell(f) - bytes_read + i);
+
+                    // Position file just after the Segment ID
+                    fseek(f, ftell(f) - bytes_read + i + 4, SEEK_SET);
+                    found_segment = 1;
+                    break;
+                }
+            }
+
+            if (found_segment) break;
+        }
+
+        if (!found_segment) {
+            fprintf(stderr, "No Segment element found in file\n");
+            return -1;
+        }
+    } else {
+        printf("Found Segment element\n");
     }
     
     // Read Segment size (we don't need to use it)
@@ -424,93 +482,182 @@ static int parse_webm_file(OpusContext *ctx) {
         } else if (id == WEBM_ID_CLUSTER && found_opus_track) {
             // Parse Cluster to find SimpleBlocks with Opus data
             long cluster_end = element_start + element_size;
-            
+
+            printf("Parsing Cluster at offset %ld (size: %lu)\n", element_start, element_size);
+
             while (ftell(f) < cluster_end) {
                 uint32_t cluster_id = read_ebml_id(f, &id_size);
                 uint64_t cluster_size = read_vint(f, &size_bytes);
-                
+
                 if (cluster_id == WEBM_ID_SIMPLEBLOCK) {
                     // This is a SimpleBlock, check if it contains Opus data
-                    unsigned char block_data[4096];
+                    printf("Found SimpleBlock (size: %lu) at offset %ld\n",
+                           cluster_size, ftell(f));
+
+                    unsigned char block_data[8192];  // Larger buffer for SimpleBlocks
                     int block_size = cluster_size < sizeof(block_data) ? cluster_size : sizeof(block_data);
-                    
+
                     if (fread(block_data, 1, block_size, f) == block_size) {
-                        extract_opus_packets_from_block(buffer, block_data, block_size, opus_track_number);
+                        // Try to extract Opus data
+                        if (extract_opus_packets_from_block(buffer, block_data, block_size, opus_track_number)) {
+                            printf("Successfully extracted Opus packet from SimpleBlock\n");
+                        }
+
+                        // If we couldn't read the entire block, skip the rest
+                        if (block_size < cluster_size) {
+                            skip_element(f, cluster_size - block_size);
+                        }
                     } else {
+                        // Failed to read block data
+                        printf("Failed to read SimpleBlock data\n");
                         skip_element(f, cluster_size);
                     }
+                } else if (cluster_id == WEBM_ID_TIMECODE) {
+                    // Timecode element - just skip it
+                    printf("Found Timecode element (size: %lu)\n", cluster_size);
+                    skip_element(f, cluster_size);
                 } else {
+                    // Unknown element - skip it
+                    printf("Unknown Cluster element ID: 0x%X (size: %lu)\n",
+                           cluster_id, cluster_size);
                     skip_element(f, cluster_size);
                 }
+
+                // Check if we've found enough packets
+                if (buffer->count >= 100) {
+                    printf("Found sufficient number of Opus packets (%d), stopping Cluster parsing\n",
+                           buffer->count);
+                    break;
+                }
             }
+
+            // Skip to the end of the Cluster
+            fseek(f, cluster_end, SEEK_SET);
         } else {
+            // Skip unknown element
+            printf("Skipping unknown element ID: 0x%X (size: %lu)\n", id, element_size);
             skip_element(f, element_size);
         }
     }
     
-    if (!found_opus_track) {
+    if (!found_opus_track || buffer->count == 0) {
         // If we didn't find an Opus track through normal parsing,
         // try a more aggressive approach by scanning for Opus data patterns
-        printf("No Opus track found through normal parsing, trying pattern matching...\n");
-        
+        printf("No Opus track found through normal parsing or no packets extracted, trying pattern matching...\n");
+
         // Seek to beginning of file
         fseek(f, 0, SEEK_SET);
-        
+
+        // Reset packet count if we had any
+        buffer->count = 0;
+
         // Buffer for scanning
         unsigned char scan_buffer[READ_BUFFER_SIZE];
         size_t bytes_read;
-        
-        // Scan for "OpusHead" marker or Opus TOC patterns
+        int found_opus_head = 0;
+
+        // First, try to find "OpusHead" marker
         while ((bytes_read = fread(scan_buffer, 1, sizeof(scan_buffer), f)) > 0) {
             for (size_t i = 0; i < bytes_read - 8; i++) {
                 // Look for "OpusHead" marker
                 if (memcmp(scan_buffer + i, "OpusHead", 8) == 0) {
                     printf("Found OpusHead marker at offset %ld\n", ftell(f) - bytes_read + i);
-                    
-                    // Skip OpusHead and look for actual Opus data
-                    i += 8;
-                    
-                    // Set a default track number since we don't know the real one
+
+                    // Try to read channel count from OpusHead
+                    if (i + 10 < bytes_read) {
+                        // Channel count is typically at offset 9 in OpusHead
+                        ctx->channels = scan_buffer[i + 9];
+                        printf("Detected %d channels from OpusHead\n", ctx->channels);
+                    } else {
+                        // Default to mono
+                        ctx->channels = 1;
+                    }
+
+                    // Set a default track number
                     opus_track_number = 1;
                     found_opus_track = 1;
-                    
-                    // Initialize with default mono
-                    ctx->channels = 1;
+                    found_opus_head = 1;
                     break;
                 }
-                
+            }
+
+            if (found_opus_head) break;
+        }
+
+        // Now look for "OpusTags" which often comes after OpusHead
+        if (found_opus_head) {
+            while ((bytes_read = fread(scan_buffer, 1, sizeof(scan_buffer), f)) > 0) {
+                for (size_t i = 0; i < bytes_read - 8; i++) {
+                    if (memcmp(scan_buffer + i, "OpusTags", 8) == 0) {
+                        printf("Found OpusTags marker at offset %ld\n", ftell(f) - bytes_read + i);
+                        break;
+                    }
+                }
+
+                // After OpusTags, we should find actual Opus data
+                break;
+            }
+        }
+
+        // Now scan for actual Opus packets
+        // Seek to beginning of file if we didn't find OpusHead
+        if (!found_opus_head) {
+            fseek(f, 0, SEEK_SET);
+        }
+
+        // Scan for Opus packets
+        int packet_count = 0;
+        while ((bytes_read = fread(scan_buffer, 1, sizeof(scan_buffer), f)) > 0) {
+            for (size_t i = 0; i < bytes_read - 4; i++) {
                 // Look for potential Opus packet patterns
                 // Opus packets typically start with a TOC byte
-                if (i + 4 < bytes_read) {
-                    uint8_t toc = scan_buffer[i];
-                    uint8_t config = (toc >> 3) & 0x1F;
-                    
-                    // Check if this looks like a valid TOC byte
-                    // and the next byte is a reasonable packet size
+                uint8_t toc = scan_buffer[i];
+
+                // Check if this looks like a valid TOC byte
+                // TOC byte format: [config (3 bits)][stereo (1 bit)][frame count (2 bits)]
+                uint8_t config = (toc >> 3) & 0x1F;
+                uint8_t stereo = (toc >> 2) & 0x01;
+                uint8_t frame_count = toc & 0x03;
+
+                // Simple heuristic: if the next byte is a reasonable packet size
+                if (i + 1 < bytes_read) {
                     uint8_t packet_size = scan_buffer[i+1];
-                    
+
                     if (packet_size > 0 && packet_size < 250 && i + 2 + packet_size <= bytes_read) {
                         // This might be an Opus packet, add it to our buffer
                         add_opus_packet(buffer, scan_buffer + i, packet_size + 2);
-                        
+                        packet_count++;
+
+                        if (packet_count % 10 == 0) {
+                            printf("Extracted %d potential Opus packets\n", packet_count);
+                        }
+
                         // Skip to the end of this packet
                         i += packet_size + 1;
-                        
-                        // Set a default track number
+
+                        // Set a default track number if we haven't found one yet
                         if (!found_opus_track) {
                             opus_track_number = 1;
                             found_opus_track = 1;
-                            
-                            // Initialize with default mono
-                            ctx->channels = 1;
+
+                            // Use stereo bit from TOC to determine channels
+                            ctx->channels = stereo ? 2 : 1;
+                            printf("Detected %d channels from Opus TOC\n", ctx->channels);
                         }
                     }
                 }
             }
-            
-            if (found_opus_track && buffer->count > 0) {
+
+            // If we've found a good number of packets, we can stop
+            if (buffer->count >= 100) {
+                printf("Found sufficient number of Opus packets (%d)\n", buffer->count);
                 break;
             }
+        }
+
+        if (buffer->count > 0) {
+            printf("Extracted %d potential Opus packets using pattern matching\n", buffer->count);
+            found_opus_track = 1;
         }
     }
     
