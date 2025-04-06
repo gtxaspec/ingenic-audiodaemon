@@ -4,21 +4,26 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <opus/opus.h>
+// #include <speex/speex_resampler.h> // Removed SpeexDSP include
 
 // WebM/Opus related constants
 #define OPUS_MAX_PACKET_SIZE 1500
-#define OPUS_SAMPLE_RATE 48000
-#define OPUS_MAX_FRAME_SIZE 5760 // 120ms * 48kHz
+#define OPUS_SAMPLE_RATE 16000 // Expect 16kHz Opus output now
+#define OPUS_FRAME_SIZE 320   // 20ms at 16kHz
+#define OPUS_MAX_FRAME_SIZE 1920 // 120ms * 16kHz
 #define OPUS_MAX_CHANNELS 2      // Assume max 2 channels for buffer allocation
+// #define TARGET_SAMPLE_RATE 16000 // Removed target rate
 
 // Structure to hold Opus decoder state
 typedef struct {
     OpusDecoder *decoder;
+    // SpeexResamplerState *resampler; // Removed resampler state
     FILE *webm_file;
     int channels;
-    int sample_rate;
+    int sample_rate; // Will be set to OPUS_SAMPLE_RATE (16000)
+    // int target_sample_rate; // Removed target sample rate
     int track_number;  // Track number for the Opus audio track
-    void *user_data;   // Pointer to implementation-specific data
+    void *user_data;   // Pointer to implementation-specific data (packet buffer)
 } OpusContext;
 
 // Function prototypes

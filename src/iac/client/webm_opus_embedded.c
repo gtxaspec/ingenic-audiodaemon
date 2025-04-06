@@ -10,7 +10,7 @@
 #include <endian.h>
 #endif
 #include "webm_opus.h"
-#include "playback.h"
+#include "playback.h" // For PCM_BUFFER_SIZE if still needed elsewhere
 
 // EBML and WebM element IDs (Big-Endian)
 #define EBML_ID_HEADER         0x1A45DFA3
@@ -85,14 +85,14 @@ static void dump_file_header(FILE *f) {
 int init_opus_decoder(OpusContext *ctx, int channels) {
     int error;
     ctx->channels = channels;
-    ctx->sample_rate = OPUS_SAMPLE_RATE;
+    ctx->sample_rate = OPUS_SAMPLE_RATE; // Now 16000
 
+    // Initialize Opus Decoder for the target sample rate
     ctx->decoder = opus_decoder_create(ctx->sample_rate, ctx->channels, &error);
     if (error != OPUS_OK) {
         fprintf(stderr, "Failed to create Opus decoder: %s\n", opus_strerror(error));
         return -1;
     }
-
     if (DEBUG_WEBM) {
         printf("Initialized Opus decoder: channels=%d, sample_rate=%d\n",
                ctx->channels, ctx->sample_rate);
@@ -103,6 +103,8 @@ int init_opus_decoder(OpusContext *ctx, int channels) {
 
 // Clean up Opus context
 void cleanup_opus_context(OpusContext *ctx) {
+    // No resampler to destroy
+    
     if (ctx->decoder) {
         opus_decoder_destroy(ctx->decoder);
         ctx->decoder = NULL;
@@ -896,6 +898,7 @@ int decode_webm_to_pcm(OpusContext *ctx, int sockfd) {
     
     // Variables for decoding
     // Allocate buffer large enough for max frame size and max channels
+    // Use OPUS_MAX_FRAME_SIZE (now 1920 for 16kHz)
     int16_t pcm_buffer[OPUS_MAX_FRAME_SIZE * OPUS_MAX_CHANNELS]; 
     int samples;
     int total_samples = 0;
@@ -904,16 +907,16 @@ int decode_webm_to_pcm(OpusContext *ctx, int sockfd) {
     while (buffer->current < buffer->count) {
         OpusPacket *packet = &buffer->packets[buffer->current];
         
-        // Decode the packet, passing the max possible frame size
+        // Decode the packet, passing the max possible frame size for 16kHz
         samples = opus_decode(ctx->decoder, packet->data, packet->size, 
                              pcm_buffer, OPUS_MAX_FRAME_SIZE, 0);
         
         if (samples > 0) {
             total_samples += samples;
             
-            if (DEBUG_WEBM && buffer->current % 10 == 0) {
-                printf("Decoded %d samples from packet %d/%d (size %d)\n", 
-                       samples, buffer->current + 1, buffer->count, packet->size);
+            if (DEBUG_WEBM && buffer->current % 50 == 0) { // Print less often
+                printf("Decoded %d samples (%dHz) from packet %d/%d (size %d)\n", 
+                       samples, ctx->sample_rate, buffer->current + 1, buffer->count, packet->size);
             }
             
             // Send PCM data to socket
@@ -923,15 +926,18 @@ int decode_webm_to_pcm(OpusContext *ctx, int sockfd) {
                 return -1;
             }
         } else {
+            // Opus decoding error
             fprintf(stderr, "Failed to decode packet %d: %s\n", 
                     buffer->current + 1, opus_strerror(samples));
+            // Decide if we should continue or stop on decoding error
+            // For now, let's continue but log the error
         }
         
         // Move to next packet
         buffer->current++;
     }
     
-    printf("Decoded %d samples from %d packets\n", total_samples, buffer->count);
+    printf("Decoded %d total samples (%dHz) from %d packets.\n", total_samples, ctx->sample_rate, buffer->count);
     
     return 0;
 }
