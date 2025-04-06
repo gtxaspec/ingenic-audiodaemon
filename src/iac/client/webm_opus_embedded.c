@@ -132,11 +132,14 @@ void cleanup_opus_context(OpusContext *ctx) {
 
 // Read a variable-length integer (EBML format)
 static uint64_t read_vint(FILE *f, int *size_out) {
+    long start_pos = ftell(f); // Debug: Position before read
     uint8_t first_byte;
     if (fread(&first_byte, 1, 1, f) != 1) {
+        if (DEBUG_WEBM) fprintf(stderr, "read_vint: fread failed at pos %ld, eof=%d, err=%d\n", start_pos, feof(f), ferror(f));
         if (size_out) *size_out = 0;
         return 0;
     }
+    if (DEBUG_WEBM) printf("read_vint: Read first byte 0x%02X at pos %ld\n", first_byte, start_pos);
     
     // Determine length by counting leading zeros
     int length = 1;
@@ -165,17 +168,21 @@ static uint64_t read_vint(FILE *f, int *size_out) {
         value = (value << 8) | next_byte;
     }
     
+    if (DEBUG_WEBM) printf("read_vint: Returning size %lu (length %d bytes)\n", value, length);
     if (size_out) *size_out = length;
     return value;
 }
 
 // Read an EBML element ID
 static uint32_t read_ebml_id(FILE *f, int *size_out) {
+    long start_pos = ftell(f); // Debug: Position before read
     uint8_t first_byte;
     if (fread(&first_byte, 1, 1, f) != 1) {
+        if (DEBUG_WEBM) fprintf(stderr, "read_ebml_id: fread failed at pos %ld, eof=%d, err=%d\n", start_pos, feof(f), ferror(f));
         if (size_out) *size_out = 0;
         return 0;
     }
+    if (DEBUG_WEBM) printf("read_ebml_id: Read first byte 0x%02X at pos %ld\n", first_byte, start_pos);
     
     // Determine ID length by counting leading zeros
     int length = 1;
@@ -208,6 +215,7 @@ static uint32_t read_ebml_id(FILE *f, int *size_out) {
 
     // The ID is read in big-endian order, return it as is.
     // We will swap bytes before comparison if needed.
+    if (DEBUG_WEBM) printf("read_ebml_id: Returning raw ID 0x%X (length %d bytes)\n", id, length);
     return id;
 }
 
@@ -387,42 +395,87 @@ static int parse_webm_file(OpusContext *ctx) {
     
     // Parse elements inside Segment
     long segment_start = ftell(f);
-    long segment_end = segment_size == 0x01FFFFFFFFFFFFFF ? 
+    long segment_end = segment_size == 0x01FFFFFFFFFFFFFF ?
                        0x7FFFFFFFFFFFFFFF : segment_start + segment_size;
-    
+
     while (ftell(f) < segment_end) {
+        long loop_start_pos = ftell(f); // Track position at start of loop iteration
+
+        // --- Read Element ID ---
+        long id_read_start_pos = ftell(f);
         uint32_t raw_id = read_ebml_id(f, &id_size);
-        if (id_size == 0 && feof(f)) break; // End of file check
+        if (id_size == 0) {
+            if (feof(f)) {
+                 if (DEBUG_WEBM) printf("Reached EOF while reading ID at pos %ld\n", id_read_start_pos);
+            } else {
+                 if (DEBUG_WEBM) fprintf(stderr, "Error reading ID at pos %ld\n", id_read_start_pos);
+            }
+            break; // Stop parsing on EOF or read error
+        }
+
+        // --- Read Element Size ---
+        long size_read_start_pos = ftell(f);
+        uint64_t element_size = read_vint(f, &size_bytes);
+         if (size_bytes == 0) {
+            if (feof(f)) {
+                 if (DEBUG_WEBM) printf("Reached EOF while reading size at pos %ld for ID 0x%X\n", size_read_start_pos, raw_id);
+            } else {
+                 // This is where the error likely happens based on the log (size: 0)
+                 if (DEBUG_WEBM) fprintf(stderr, "Error reading VINT size at pos %ld for ID 0x%X\n", size_read_start_pos, raw_id);
+            }
+            break; // Stop parsing on EOF or read error
+        }
+
+        long element_content_start_pos = ftell(f); // Position after reading ID and size
 
         // Swap the ID to host byte order for comparison
         id = swap_uint32(raw_id);
 
-        uint64_t element_size = read_vint(f, &size_bytes);
-        long element_start = ftell(f);
-        
+        if (DEBUG_WEBM) {
+             printf("Processing Element: ID=0x%X (raw=0x%X), Size=%lu, Content Start Pos=%ld\n",
+                    id, raw_id, element_size, element_content_start_pos);
+        }
+
+        // --- Process Element ---
         if (id == WEBM_ID_TRACKS) {
             if (DEBUG_WEBM) printf("Found Tracks element (size: %lu)\n", element_size);
+            long tracks_content_end = element_content_start_pos + element_size;
             // Parse Tracks element to find Opus track
-            while (ftell(f) < element_start + element_size) {
+            while (ftell(f) < tracks_content_end) {
+                // Read TrackEntry ID
+                long track_id_read_start_pos = ftell(f);
                 uint32_t raw_track_id = read_ebml_id(f, &id_size);
-                if (id_size == 0 && feof(f)) break; // End of file check
-                uint32_t track_id = swap_uint32(raw_track_id);
+                 if (id_size == 0) { if (DEBUG_WEBM) fprintf(stderr, "Error reading TrackEntry ID at pos %ld\n", track_id_read_start_pos); break; }
+
+                // Read TrackEntry Size
+                long track_size_read_start_pos = ftell(f);
                 uint64_t track_size = read_vint(f, &size_bytes);
-                long track_start = ftell(f);
-                
+                 if (size_bytes == 0) { if (DEBUG_WEBM) fprintf(stderr, "Error reading TrackEntry size at pos %ld for ID 0x%X\n", track_size_read_start_pos, raw_track_id); break; }
+
+                long track_content_start_pos = ftell(f);
+                uint32_t track_id = swap_uint32(raw_track_id);
                 if (track_id == WEBM_ID_TRACKENTRY) {
                     if (DEBUG_WEBM) printf("Found TrackEntry (size: %lu)\n", track_size);
+                    long trackentry_content_end = track_content_start_pos + track_size;
                     // Parse TrackEntry to find Opus codec
                     int track_number = -1;
                     int is_audio = 0;
                     int is_opus = 0;
-                    
-                    while (ftell(f) < track_start + track_size) {
+
+                    while (ftell(f) < trackentry_content_end) {
+                        // Read TrackEntry sub-element ID
+                        long entry_id_read_start_pos = ftell(f);
                         uint32_t raw_entry_id = read_ebml_id(f, &id_size);
-                        if (id_size == 0 && feof(f)) break; // End of file check
-                        uint32_t entry_id = swap_uint32(raw_entry_id);
+                         if (id_size == 0) { if (DEBUG_WEBM) fprintf(stderr, "Error reading TrackEntry sub-ID at pos %ld\n", entry_id_read_start_pos); break; }
+
+                        // Read TrackEntry sub-element Size
+                        long entry_size_read_start_pos = ftell(f);
                         uint64_t entry_size = read_vint(f, &size_bytes);
-                        
+                         if (size_bytes == 0) { if (DEBUG_WEBM) fprintf(stderr, "Error reading TrackEntry sub-size at pos %ld for ID 0x%X\n", entry_size_read_start_pos, raw_entry_id); break; }
+
+                        long entry_content_start_pos = ftell(f);
+                        uint32_t entry_id = swap_uint32(raw_entry_id);
+
                         if (entry_id == WEBM_ID_TRACKNUMBER) {
                             if (DEBUG_WEBM) printf("Found TrackNumber (size: %lu)\n", entry_size);
                             // Read track number
@@ -465,15 +518,23 @@ static int parse_webm_file(OpusContext *ctx) {
                         } else if (entry_id == WEBM_ID_AUDIO) {
                             if (DEBUG_WEBM) printf("Found Audio element (size: %lu)\n", entry_size);
                             // Parse Audio element to get channels
-                            long audio_start = ftell(f);
+                            long audio_content_end = entry_content_start_pos + entry_size;
                             int channels = 1; // Default to mono
-                            
-                            while (ftell(f) < audio_start + entry_size) {
+
+                            while (ftell(f) < audio_content_end) {
+                                // Read Audio sub-element ID
+                                long audio_id_read_start_pos = ftell(f);
                                 uint32_t raw_audio_id = read_ebml_id(f, &id_size);
-                                if (id_size == 0 && feof(f)) break; // End of file check
-                                uint32_t audio_id = swap_uint32(raw_audio_id);
+                                 if (id_size == 0) { if (DEBUG_WEBM) fprintf(stderr, "Error reading Audio sub-ID at pos %ld\n", audio_id_read_start_pos); break; }
+
+                                // Read Audio sub-element Size
+                                long audio_size_read_start_pos = ftell(f);
                                 uint64_t audio_size = read_vint(f, &size_bytes);
-                                
+                                 if (size_bytes == 0) { if (DEBUG_WEBM) fprintf(stderr, "Error reading Audio sub-size at pos %ld for ID 0x%X\n", audio_size_read_start_pos, raw_audio_id); break; }
+
+                                long audio_sub_content_start_pos = ftell(f);
+                                uint32_t audio_id = swap_uint32(raw_audio_id);
+
                                 if (audio_id == WEBM_ID_CHANNELS) {
                                     if (DEBUG_WEBM) printf("Found Channels element (size: %lu)\n", audio_size);
                                     // Read channels
@@ -487,13 +548,15 @@ static int parse_webm_file(OpusContext *ctx) {
                                         // Skip if channel read failed
                                         skip_element(f, audio_size);
                                     }
-                                } else { // This 'else' corresponds to 'if (audio_id == WEBM_ID_CHANNELS)'
+                                } else {
                                     // Skip unknown audio sub-element
                                     if (DEBUG_WEBM) printf("Skipping unknown Audio sub-element: 0x%X (size: %lu)\n", audio_id, audio_size);
                                     skip_element(f, audio_size);
                                 }
-                            } // End while Audio elements
-                            
+                                // Ensure position after Audio sub-element
+                                fseek(f, audio_sub_content_start_pos + audio_size, SEEK_SET);
+                            } // End while Audio sub-elements
+
                             // Update context with channels
                             if (is_opus && channels > 0) { // Ensure channels were read correctly
                                 ctx->channels = channels;
@@ -505,8 +568,10 @@ static int parse_webm_file(OpusContext *ctx) {
                                 if (DEBUG_WEBM) printf("Skipping unknown TrackEntry element: 0x%X (size: %lu)\n", entry_id, entry_size);
                                 skip_element(f, entry_size);
                         }
-                    } // End while TrackEntry elements
-                    
+                        // Ensure position after TrackEntry sub-element
+                        fseek(f, entry_content_start_pos + entry_size, SEEK_SET);
+                    } // End while TrackEntry sub-elements
+
                     // If this is an Opus audio track, save the track number
                     if (is_audio && is_opus && track_number > 0) {
                         opus_track_number = track_number;
@@ -528,64 +593,78 @@ static int parse_webm_file(OpusContext *ctx) {
             
             // Skip to the end of the Tracks element
             // Make sure we are at the end of the Tracks element
-            fseek(f, element_start + element_size, SEEK_SET);
+            fseek(f, element_content_start_pos + element_size, SEEK_SET);
 
         } else if (id == WEBM_ID_CLUSTER && found_opus_track) {
             // Parse Cluster to find SimpleBlocks with Opus data
-            long cluster_end = element_start + element_size;
+            long cluster_content_end = element_content_start_pos + element_size;
 
-            if (DEBUG_WEBM) printf("Parsing Cluster at offset %ld (size: %lu)\n", element_start, element_size);
+            if (DEBUG_WEBM) printf("Parsing Cluster at offset %ld (size: %lu)\n", element_content_start_pos - size_bytes - id_size, element_size);
 
-            while (ftell(f) < cluster_end) {
+            while (ftell(f) < cluster_content_end) {
+                // Read Cluster sub-element ID
+                long cluster_id_read_start_pos = ftell(f);
                 uint32_t raw_cluster_id = read_ebml_id(f, &id_size);
-                if (id_size == 0 && feof(f)) break; // End of file check
-                uint32_t cluster_id = swap_uint32(raw_cluster_id);
+                 if (id_size == 0) { if (DEBUG_WEBM) fprintf(stderr, "Error reading Cluster sub-ID at pos %ld\n", cluster_id_read_start_pos); break; }
+
+                // Read Cluster sub-element Size
+                long cluster_size_read_start_pos = ftell(f);
                 uint64_t cluster_size = read_vint(f, &size_bytes);
-                long cluster_element_start = ftell(f);
+                 if (size_bytes == 0) { if (DEBUG_WEBM) fprintf(stderr, "Error reading Cluster sub-size at pos %ld for ID 0x%X\n", cluster_size_read_start_pos, raw_cluster_id); break; }
+
+                long cluster_content_start_pos = ftell(f);
+                uint32_t cluster_id = swap_uint32(raw_cluster_id);
 
                 if (cluster_id == WEBM_ID_SIMPLEBLOCK) {
                     // This is a SimpleBlock, check if it contains Opus data
                     if (DEBUG_WEBM) printf("Found SimpleBlock (size: %lu) at offset %ld\n",
-                           cluster_size, cluster_element_start);
+                           cluster_size, cluster_content_start_pos - size_bytes - id_size);
 
-                    // Avoid reading huge blocks entirely into memory if possible
-                    // Read just enough to check the track number
+                    // Read SimpleBlock header (track number + timecode + flags)
                     unsigned char block_header[4];
                     if (cluster_size >= 4 && fread(block_header, 1, 4, f) == 4) {
                         int block_track = block_header[0] & 0x7F;
 
                         if (block_track == opus_track_number) {
-                            // This block belongs to our track, read the rest
-                            unsigned char *block_data = malloc(cluster_size);
-                            if (block_data) {
-                                memcpy(block_data, block_header, 4); // Copy header
-                                if (fread(block_data + 4, 1, cluster_size - 4, f) == cluster_size - 4) {
-                                    // Try to extract Opus data
-                                    if (extract_opus_packets_from_block(buffer, block_data, cluster_size, opus_track_number) == 0) {
-                                        if (DEBUG_WEBM) printf("Extracted Opus packet from SimpleBlock\n");
+                            // This block belongs to our track, read the rest of the data
+                            int opus_data_size = cluster_size - 4;
+                            unsigned char *opus_data = malloc(opus_data_size);
+                            if (opus_data) {
+                                if (fread(opus_data, 1, opus_data_size, f) == opus_data_size) {
+                                    // Combine header and data for packet extraction function
+                                    unsigned char *full_block_data = malloc(cluster_size);
+                                    if (full_block_data) {
+                                        memcpy(full_block_data, block_header, 4);
+                                        memcpy(full_block_data + 4, opus_data, opus_data_size);
+
+                                        if (extract_opus_packets_from_block(buffer, full_block_data, cluster_size, opus_track_number) == 0) {
+                                            if (DEBUG_WEBM) printf("Extracted Opus packet from SimpleBlock\n");
+                                        } else {
+                                            fprintf(stderr, "Failed to add Opus packet from SimpleBlock\n");
+                                        }
+                                        free(full_block_data);
                                     } else {
-                                        fprintf(stderr, "Failed to add Opus packet from SimpleBlock\n");
+                                         fprintf(stderr, "Failed to allocate memory for full SimpleBlock data\n");
                                     }
                                 } else {
-                                    fprintf(stderr, "Failed to read SimpleBlock data (payload)\n");
+                                    fprintf(stderr, "Failed to read SimpleBlock Opus data (payload size %d)\n", opus_data_size);
                                 }
-                                free(block_data);
+                                free(opus_data);
                             } else {
-                                fprintf(stderr, "Failed to allocate memory for SimpleBlock data\n");
-                                skip_element(f, cluster_size - 4); // Skip rest of block
+                                fprintf(stderr, "Failed to allocate memory for SimpleBlock Opus data\n");
+                                skip_element(f, opus_data_size); // Skip rest of block payload
                             }
                         } else {
-                            // Block belongs to a different track, skip it
-                            if (DEBUG_WEBM) printf("Skipping SimpleBlock for track %d\n", block_track);
+                            // Block belongs to a different track, skip its payload
+                            if (DEBUG_WEBM) printf("Skipping SimpleBlock payload for track %d\n", block_track);
                             skip_element(f, cluster_size - 4);
                         }
                     } else {
                         // Failed to read block header or block too small
                         fprintf(stderr, "Failed to read SimpleBlock header or block too small (size %lu)\n", cluster_size);
-                        // Ensure we skip the correct amount if header read failed partially
-                        fseek(f, cluster_element_start + cluster_size, SEEK_SET);
+                        // Seek to end of element based on size read earlier
+                        fseek(f, cluster_content_start_pos + cluster_size, SEEK_SET);
                     }
-
                 } else if (cluster_id == WEBM_ID_TIMECODE) {
                     // Timecode element - just skip it
                     if (DEBUG_WEBM) printf("Found Timecode element (size: %lu)\n", cluster_size);
@@ -597,40 +676,42 @@ static int parse_webm_file(OpusContext *ctx) {
                     skip_element(f, cluster_size);
                 }
 
-                // Ensure we are positioned correctly for the next element
-                // This helps recover from potential errors in size reading or skipping
-                if (ftell(f) != cluster_element_start + cluster_size) {
-                    if (DEBUG_WEBM) printf("Correcting file position after cluster element 0x%X\n", cluster_id);
-                    fseek(f, cluster_element_start + cluster_size, SEEK_SET);
-                }
+                // Ensure position after Cluster sub-element
+                fseek(f, cluster_content_start_pos + cluster_size, SEEK_SET);
 
-                // Check if we've found enough packets (optional optimization)
-                // if (buffer->count >= MAX_OPUS_PACKETS) {
-                //     if (DEBUG_WEBM) printf("Reached max Opus packets (%d), stopping Cluster parsing\n", buffer->count);
-                //     break;
-                // }
-            } // End while Cluster elements
+            } // End while Cluster sub-elements
 
-            // Ensure we are at the end of the Cluster
-            if (ftell(f) != cluster_end) {
-                 if (DEBUG_WEBM) printf("Correcting file position after Cluster\n");
-                 fseek(f, cluster_end, SEEK_SET);
-            }
+            // Ensure we are at the end of the Cluster element
+             if (ftell(f) != cluster_content_end) {
+                 if (DEBUG_WEBM) printf("Correcting file position after Cluster element\n");
+                 fseek(f, cluster_content_end, SEEK_SET);
+             }
         } else {
             // Skip unknown top-level element within Segment
             if (DEBUG_WEBM) printf("Skipping unknown Segment element ID: 0x%X (raw 0x%X, size: %lu)\n", id, raw_id, element_size);
             skip_element(f, element_size);
         }
 
-        // Ensure we are positioned correctly for the next element
-        // This helps recover from potential errors in size reading or skipping
-        if (ftell(f) != element_start + element_size) {
-             if (DEBUG_WEBM) printf("Correcting file position after segment element 0x%X\n", id);
-             fseek(f, element_start + element_size, SEEK_SET);
+        // --- End Element Processing ---
+
+        // Ensure we are positioned correctly for the next top-level element
+        long expected_end_pos = element_content_start_pos + element_size;
+        if (ftell(f) != expected_end_pos) {
+             if (DEBUG_WEBM) printf("Correcting file position after segment element 0x%X. Current: %ld, Expected: %ld\n",
+                    id, ftell(f), expected_end_pos);
+             fseek(f, expected_end_pos, SEEK_SET);
+        } else {
+              if (DEBUG_WEBM) printf("File position correct after segment element 0x%X at %ld\n", id, ftell(f));
+        }
+
+        // Check for infinite loop / no progress
+        if (ftell(f) <= loop_start_pos) {
+            if (DEBUG_WEBM) fprintf(stderr, "Parser stuck at position %ld. Aborting.\n", loop_start_pos);
+            break;
         }
 
     } // End while Segment elements
-    
+
     // --- Fallback pattern matching section remains unchanged ---
     if (!found_opus_track || buffer->count == 0) {
         // If we didn't find an Opus track through normal parsing,
