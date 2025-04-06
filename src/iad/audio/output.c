@@ -24,8 +24,9 @@
 int g_ao_max_frame_size = DEFAULT_AO_MAX_FRAME_SIZE;
 
 // Global state for WebM playback request (defined here, protected by audio_buffer_lock)
-static char g_pending_webm_path[PATH_MAX] = {0}; 
-static volatile int g_webm_playback_requested = 0;
+// Removed 'static' to give external linkage
+char g_pending_webm_path[PATH_MAX] = {0}; 
+volatile int g_webm_playback_requested = 0;
 
 /**
  * Set the global maximum frame size for audio output.
