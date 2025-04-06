@@ -8,8 +8,8 @@
 // WebM/Opus related constants
 #define OPUS_MAX_PACKET_SIZE 1500
 #define OPUS_SAMPLE_RATE 48000
-#define OPUS_FRAME_SIZE 960  // 20ms at 48kHz
-#define PCM_BUFFER_SIZE (OPUS_FRAME_SIZE * 2)  // 16-bit samples (2 bytes per sample)
+#define OPUS_MAX_FRAME_SIZE 5760 // 120ms * 48kHz
+#define OPUS_MAX_CHANNELS 2      // Assume max 2 channels for buffer allocation
 
 // Structure to hold Opus decoder state
 typedef struct {

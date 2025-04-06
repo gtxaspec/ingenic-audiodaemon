@@ -895,7 +895,8 @@ int decode_webm_to_pcm(OpusContext *ctx, int sockfd) {
     buffer->current = 0;
     
     // Variables for decoding
-    int16_t pcm_buffer[PCM_BUFFER_SIZE * 2]; // Extra space for stereo
+    // Allocate buffer large enough for max frame size and max channels
+    int16_t pcm_buffer[OPUS_MAX_FRAME_SIZE * OPUS_MAX_CHANNELS]; 
     int samples;
     int total_samples = 0;
     
@@ -903,9 +904,9 @@ int decode_webm_to_pcm(OpusContext *ctx, int sockfd) {
     while (buffer->current < buffer->count) {
         OpusPacket *packet = &buffer->packets[buffer->current];
         
-        // Decode the packet
+        // Decode the packet, passing the max possible frame size
         samples = opus_decode(ctx->decoder, packet->data, packet->size, 
-                             pcm_buffer, OPUS_FRAME_SIZE, 0);
+                             pcm_buffer, OPUS_MAX_FRAME_SIZE, 0);
         
         if (samples > 0) {
             total_samples += samples;
