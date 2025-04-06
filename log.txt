@@ -1,0 +1,402 @@
+INGENIC AUDIO CLIENT Version: Sep 22 2024_06:19:38_
+[INFO] Connected to daemon
+[INFO] Processing WebM/Opus file: /tmp/output.webm
+Parsing WebM file: /tmp/output.webm
+File header (first 32 bytes):
+Hex: 1A 45 DF A3 9F 42 86 81 01 42 F7 81 01 42 F2 81 04 42 F3 81 08 42 82 84 77 65 62 6D 42 87 81 04 
+ASCII: .E...B...B...B...B...B..webmB...
+Found EBML header signature: 0x1A45DFA3
+read_vint: Read first byte 0x9F at pos 4
+read_vint: Returning size 31 (length 1 bytes)
+EBML header size: 31 bytes (1 size bytes)
+Potential Segment ID: 0x18538067
+Found Segment element
+read_vint: Read first byte 0x01 at pos 40
+read_vint: Returning size 1896832 (length 8 bytes)
+read_ebml_id: Read first byte 0x11 at pos 48
+read_ebml_id: Returning raw ID 0x114D9B74 (length 4 bytes)
+read_vint: Read first byte 0xBB at pos 52
+read_vint: Returning size 59 (length 1 bytes)
+Processing Element: ID=0x749B4D11 (raw=0x114D9B74), Size=59, Content Start Pos=53
+Skipping unknown Segment element ID: 0x749B4D11 (raw 0x114D9B74, size: 59)
+read_ebml_id: Read first byte 0xEC at pos 112
+read_ebml_id: Returning raw ID 0xEC (length 1 bytes)
+read_vint: Read first byte 0x01 at pos 113
+read_vint: Returning size 88 (length 8 bytes)
+Processing Element: ID=0xEC000000 (raw=0xEC), Size=88, Content Start Pos=121
+Skipping unknown Segment element ID: 0xEC000000 (raw 0xEC, size: 88)
+read_ebml_id: Read first byte 0x15 at pos 209
+read_ebml_id: Returning raw ID 0x1549A966 (length 4 bytes)
+read_vint: Read first byte 0xB2 at pos 213
+read_vint: Returning size 50 (length 1 bytes)
+Processing Element: ID=0x66A94915 (raw=0x1549A966), Size=50, Content Start Pos=214
+Skipping unknown Segment element ID: 0x66A94915 (raw 0x1549A966, size: 50)
+read_ebml_id: Read first byte 0x16 at pos 264
+read_ebml_id: Returning raw ID 0x1654AE6B (length 4 bytes)
+read_vint: Read first byte 0xE5 at pos 268
+read_vint: Returning size 101 (length 1 bytes)
+Processing Element: ID=0x6BAE5416 (raw=0x1654AE6B), Size=101, Content Start Pos=269
+Skipping unknown Segment element ID: 0x6BAE5416 (raw 0x1654AE6B, size: 101)
+read_ebml_id: Read first byte 0x12 at pos 370
+read_ebml_id: Returning raw ID 0x1254C367 (length 4 bytes)
+read_vint: Read first byte 0xD9 at pos 374
+read_vint: Returning size 89 (length 1 bytes)
+Processing Element: ID=0x67C35412 (raw=0x1254C367), Size=89, Content Start Pos=375
+Skipping unknown Segment element ID: 0x67C35412 (raw 0x1254C367, size: 89)
+read_ebml_id: Read first byte 0x1F at pos 464
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 468
+read_vint: Returning size 45523 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=45523, Content Start Pos=471
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 45523)
+read_ebml_id: Read first byte 0x1F at pos 45994
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 45998
+read_vint: Returning size 45626 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=45626, Content Start Pos=46001
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 45626)
+read_ebml_id: Read first byte 0x1F at pos 91627
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 91631
+read_vint: Returning size 44379 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=44379, Content Start Pos=91634
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 44379)
+read_ebml_id: Read first byte 0x1F at pos 136013
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 136017
+read_vint: Returning size 41855 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=41855, Content Start Pos=136020
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 41855)
+read_ebml_id: Read first byte 0x1F at pos 177875
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 177879
+read_vint: Returning size 42773 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=42773, Content Start Pos=177882
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 42773)
+read_ebml_id: Read first byte 0x1F at pos 220655
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 220659
+read_vint: Returning size 38894 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=38894, Content Start Pos=220662
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 38894)
+read_ebml_id: Read first byte 0x1F at pos 259556
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 259560
+read_vint: Returning size 44639 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=44639, Content Start Pos=259563
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 44639)
+read_ebml_id: Read first byte 0x1F at pos 304202
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 304206
+read_vint: Returning size 42776 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=42776, Content Start Pos=304209
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 42776)
+read_ebml_id: Read first byte 0x1F at pos 346985
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 346989
+read_vint: Returning size 40716 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=40716, Content Start Pos=346992
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 40716)
+read_ebml_id: Read first byte 0x1F at pos 387708
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 387712
+read_vint: Returning size 44186 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=44186, Content Start Pos=387715
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 44186)
+read_ebml_id: Read first byte 0x1F at pos 431901
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 431905
+read_vint: Returning size 40589 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=40589, Content Start Pos=431908
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 40589)
+read_ebml_id: Read first byte 0x1F at pos 472497
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 472501
+read_vint: Returning size 45611 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=45611, Content Start Pos=472504
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 45611)
+read_ebml_id: Read first byte 0x1F at pos 518115
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 518119
+read_vint: Returning size 42453 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=42453, Content Start Pos=518122
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 42453)
+read_ebml_id: Read first byte 0x1F at pos 560575
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 560579
+read_vint: Returning size 44043 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=44043, Content Start Pos=560582
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 44043)
+read_ebml_id: Read first byte 0x1F at pos 604625
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 604629
+read_vint: Returning size 41377 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=41377, Content Start Pos=604632
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 41377)
+read_ebml_id: Read first byte 0x1F at pos 646009
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 646013
+read_vint: Returning size 43163 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=43163, Content Start Pos=646016
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 43163)
+read_ebml_id: Read first byte 0x1F at pos 689179
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 689183
+read_vint: Returning size 45733 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=45733, Content Start Pos=689186
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 45733)
+read_ebml_id: Read first byte 0x1F at pos 734919
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 734923
+read_vint: Returning size 45700 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=45700, Content Start Pos=734926
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 45700)
+read_ebml_id: Read first byte 0x1F at pos 780626
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 780630
+read_vint: Returning size 43920 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=43920, Content Start Pos=780633
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 43920)
+read_ebml_id: Read first byte 0x1F at pos 824553
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 824557
+read_vint: Returning size 38301 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=38301, Content Start Pos=824560
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 38301)
+read_ebml_id: Read first byte 0x1F at pos 862861
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 862865
+read_vint: Returning size 49889 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=49889, Content Start Pos=862868
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 49889)
+read_ebml_id: Read first byte 0x1F at pos 912757
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 912761
+read_vint: Returning size 39949 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=39949, Content Start Pos=912764
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 39949)
+read_ebml_id: Read first byte 0x1F at pos 952713
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 952717
+read_vint: Returning size 46312 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=46312, Content Start Pos=952720
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 46312)
+read_ebml_id: Read first byte 0x1F at pos 999032
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 999036
+read_vint: Returning size 45981 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=45981, Content Start Pos=999039
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 45981)
+read_ebml_id: Read first byte 0x1F at pos 1045020
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1045024
+read_vint: Returning size 46314 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=46314, Content Start Pos=1045027
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 46314)
+read_ebml_id: Read first byte 0x1F at pos 1091341
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1091345
+read_vint: Returning size 45119 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=45119, Content Start Pos=1091348
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 45119)
+read_ebml_id: Read first byte 0x1F at pos 1136467
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1136471
+read_vint: Returning size 44994 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=44994, Content Start Pos=1136474
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 44994)
+read_ebml_id: Read first byte 0x1F at pos 1181468
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1181472
+read_vint: Returning size 45698 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=45698, Content Start Pos=1181475
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 45698)
+read_ebml_id: Read first byte 0x1F at pos 1227173
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1227177
+read_vint: Returning size 42965 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=42965, Content Start Pos=1227180
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 42965)
+read_ebml_id: Read first byte 0x1F at pos 1270145
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1270149
+read_vint: Returning size 46590 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=46590, Content Start Pos=1270152
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 46590)
+read_ebml_id: Read first byte 0x1F at pos 1316742
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1316746
+read_vint: Returning size 39943 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=39943, Content Start Pos=1316749
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 39943)
+read_ebml_id: Read first byte 0x1F at pos 1356692
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1356696
+read_vint: Returning size 39885 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=39885, Content Start Pos=1356699
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 39885)
+read_ebml_id: Read first byte 0x1F at pos 1396584
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1396588
+read_vint: Returning size 40739 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=40739, Content Start Pos=1396591
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 40739)
+read_ebml_id: Read first byte 0x1F at pos 1437330
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1437334
+read_vint: Returning size 40475 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=40475, Content Start Pos=1437337
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 40475)
+read_ebml_id: Read first byte 0x1F at pos 1477812
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1477816
+read_vint: Returning size 42913 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=42913, Content Start Pos=1477819
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 42913)
+read_ebml_id: Read first byte 0x1F at pos 1520732
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1520736
+read_vint: Returning size 42064 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=42064, Content Start Pos=1520739
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 42064)
+read_ebml_id: Read first byte 0x1F at pos 1562803
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1562807
+read_vint: Returning size 43719 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=43719, Content Start Pos=1562810
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 43719)
+read_ebml_id: Read first byte 0x1F at pos 1606529
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1606533
+read_vint: Returning size 43034 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=43034, Content Start Pos=1606536
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 43034)
+read_ebml_id: Read first byte 0x1F at pos 1649570
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1649574
+read_vint: Returning size 44089 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=44089, Content Start Pos=1649577
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 44089)
+read_ebml_id: Read first byte 0x1F at pos 1693666
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1693670
+read_vint: Returning size 45479 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=45479, Content Start Pos=1693673
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 45479)
+read_ebml_id: Read first byte 0x1F at pos 1739152
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1739156
+read_vint: Returning size 41193 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=41193, Content Start Pos=1739159
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 41193)
+read_ebml_id: Read first byte 0x1F at pos 1780352
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1780356
+read_vint: Returning size 40402 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=40402, Content Start Pos=1780359
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 40402)
+read_ebml_id: Read first byte 0x1F at pos 1820761
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1820765
+read_vint: Returning size 41546 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=41546, Content Start Pos=1820768
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 41546)
+read_ebml_id: Read first byte 0x1F at pos 1862314
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 1862318
+read_vint: Returning size 33690 (length 3 bytes)
+Processing Element: ID=0x75B6431F (raw=0x1F43B675), Size=33690, Content Start Pos=1862321
+Skipping unknown Segment element ID: 0x75B6431F (raw 0x1F43B675, size: 33690)
+read_ebml_id: Read first byte 0x1C at pos 1896011
+read_ebml_id: Returning raw ID 0x1C53BB6B (length 4 bytes)
+read_vint: Read first byte 0x43 at pos 1896015
+read_vint: Returning size 863 (length 2 bytes)
+Processing Element: ID=0x6BBB531C (raw=0x1C53BB6B), Size=863, Content Start Pos=1896017
+Skipping unknown Segment element ID: 0x6BBB531C (raw 0x1C53BB6B, size: 863)
+Reached end of Segment at pos 1896880
+No Opus track found through normal parsing or no packets extracted, trying pattern matching...
+Found OpusHead marker at offset 351
+Detected 1 channels from OpusHead
+Extracted 10 potential Opus packets
+Extracted 20 potential Opus packets
+Extracted 30 potential Opus packets
+Extracted 40 potential Opus packets
+Extracted 50 potential Opus packets
+Extracted 60 potential Opus packets
+Extracted 70 potential Opus packets
+Extracted 80 potential Opus packets
+Extracted 90 potential Opus packets
+Extracted 100 potential Opus packets
+Found sufficient number of Opus packets (101)
+Extracted Failed to decode packet 2: corrupted stream
+Failed to decode packet 3: buffer too small
+Failed to decode packet 4: corrupted stream
+Failed to decode packet 6: corrupted stream
+Failed to decode packet 8: corrupted stream
+Failed to decode packet 9: buffer too small
+Failed to decode packet 10: corrupted stream
+Failed to decode packet 11: corrupted stream
+Failed to decode packet 14: corrupted stream
+Failed to decode packet 15: buffer too small
+Failed to decode packet 17: buffer too small
+Failed to decode packet 20: corrupted stream
+Failed to decode packet 21: corrupted stream
+Failed to decode packet 22: buffer too small
+Failed to decode packet 23: buffer too small
+Failed to decode packet 24: buffer too small
+Failed to decode packet 25: buffer too small
+Failed to decode packet 26: corrupted stream
+Failed to decode packet 28: corrupted stream
+Failed to decode packet 29: buffer too small
+Failed to decode packet 30: buffer too small
+Failed to decode packet 31: corrupted stream
+Failed to decode packet 36: buffer too small
+Failed to decode packet 37: corrupted stream
+Failed to decode packet 39: corrupted stream
+Failed to decode packet 40: buffer too small
+Failed to decode packet 41: corrupted stream
+Failed to decode packet 42: corrupted stream
+Failed to decode packet 43: corrupted stream
+Failed to decode packet 44: buffer too small
+Failed to decode packet 45: corrupted stream
+Failed to decode packet 46: buffer too small
+Failed to decode packet 54: buffer too small
+Failed to decode packet 55: corrupted stream
+Failed to decode packet 57: buffer too small
+Failed to decode packet 58: corrupted stream
+Failed to decode packet 59: buffer too small
+Failed to decode packet 61: buffer too small
+Failed to decode packet 63: corrupted stream
+Failed to decode packet 64: buffer too small
+Failed to decode packet 66: corrupted stream
+Failed to decode packet 67: corrupted stream
+Failed to decode packet 69: corrupted stream
+Failed to decode packet 71: corrupted stream
+Failed to decode packet 73: corrupted stream
+Failed to decode packet 76: corrupted stream
+Failed to decode packet 77: buffer too small
+Failed to decode packet 78: corrupted stream
+Failed to decode packet 79: buffer too small
+Failed to decode packet 81: corrupted stream
+Failed to decode packet 83: corrupted stream
+Failed to decode packet 84: corrupted stream
+Failed to decode packet 85: corrupted stream
+Failed to decode packet 86: corrupted stream
+Failed to decode packet 87: buffer too small
+Failed to decode packet 89: corrupted stream
+Failed to decode packet 90: buffer too small
+Failed to decode packet 93: corrupted stream
+Failed to decode packet 94: corrupted stream
+Failed to decode packet 95: corrupted stream
+Failed to decode packet 96: corrupted stream
+Failed to decode packet 98: corrupted stream
+Failed to decode packet 100: buffer too small
+101 potential Opus packets using pattern matching
+Extracted 101 Opus packets
+Initialized Opus decoder: channels=1, sample_rate=48000
+Successfully initialized WebM/Opus file with 101 packets
+Decoded 240 samples from packet 1/101 (size 199)
+Decoded 960 samples from packet 51/101 (size 202)
+Decoded 480 samples from packet 91/101 (size 158)
+Decoded 960 samples from packet 101/101 (size 7)
+Decoded 19200 samples from 101 packets
