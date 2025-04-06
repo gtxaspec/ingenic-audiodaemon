@@ -18,6 +18,7 @@ typedef struct {
     int channels;
     int sample_rate;
     int track_number;  // Track number for the Opus audio track
+    void *user_data;   // Pointer to implementation-specific data
 } OpusContext;
 
 // Function prototypes

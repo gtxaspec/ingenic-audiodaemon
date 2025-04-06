@@ -194,76 +194,156 @@ int decode_webm_to_pcm(OpusContext *ctx, int sockfd) {
         fprintf(stderr, "Invalid Opus context\n");
         return -1;
     }
-    
+
+    // Extract raw Opus data to a temporary file
+    char temp_filename[64];
+    snprintf(temp_filename, sizeof(temp_filename), "/tmp/opus_data_%d.opus", getpid());
+    FILE *temp_file = fopen(temp_filename, "wb");
+    if (!temp_file) {
+        perror("Failed to create temporary file");
+        return -1;
+    }
+
     // Seek to beginning of file
     fseek(ctx->webm_file, 0, SEEK_SET);
-    
-    // Buffer for scanning
-    unsigned char buffer[4096];
+
+    printf("Extracting Opus data to temporary file...\n");
+
+    // First, try to find the Opus data section
+    unsigned char buffer[8192];
     size_t bytes_read;
-    int found_opus_packet = 0;
-    long opus_packet_offset = -1;
-    
-    // Scan for Opus packets
+    int found_opus_data = 0;
+    long opus_data_offset = -1;
+
+    // Look for OpusHead or OpusTags markers
     while ((bytes_read = fread(buffer, 1, sizeof(buffer), ctx->webm_file)) > 0) {
         for (size_t i = 0; i < bytes_read - 8; i++) {
-            // Look for SimpleBlock markers or Opus packet patterns
-            if ((i + 3 < bytes_read && buffer[i] == 0xA3) || // SimpleBlock ID
-                (i + 8 < bytes_read && memcmp(buffer + i, "OpusHead", 8) == 0)) {
-                
-                opus_packet_offset = ftell(ctx->webm_file) - bytes_read + i;
-                found_opus_packet = 1;
+            if (memcmp(buffer + i, "OpusHead", 8) == 0 ||
+                memcmp(buffer + i, "OpusTags", 8) == 0) {
+                opus_data_offset = ftell(ctx->webm_file) - bytes_read + i;
+                found_opus_data = 1;
+                printf("Found Opus data marker at offset %ld\n", opus_data_offset);
                 break;
             }
         }
-        
-        if (found_opus_packet) break;
+        if (found_opus_data) break;
     }
-    
-    if (!found_opus_packet) {
-        fprintf(stderr, "No Opus packets found in WebM file\n");
+
+    // If we didn't find Opus markers, try looking for codec ID
+    if (!found_opus_data) {
+        fseek(ctx->webm_file, 0, SEEK_SET);
+        while ((bytes_read = fread(buffer, 1, sizeof(buffer), ctx->webm_file)) > 0) {
+            for (size_t i = 0; i < bytes_read - 6; i++) {
+                if ((buffer[i] == 'A' || buffer[i] == 'V') &&
+                    buffer[i+1] == '_' &&
+                    buffer[i+2] == 'O' &&
+                    buffer[i+3] == 'P' &&
+                    buffer[i+4] == 'U' &&
+                    buffer[i+5] == 'S') {
+
+                    // Found codec ID, now look for actual data
+                    opus_data_offset = ftell(ctx->webm_file) - bytes_read + i;
+                    found_opus_data = 1;
+                    printf("Found Opus codec ID at offset %ld\n", opus_data_offset);
+                    break;
+                }
+            }
+            if (found_opus_data) break;
+        }
+    }
+
+    // If we still haven't found Opus data, try a different approach
+    if (!found_opus_data) {
+        printf("No Opus markers found, trying to extract data directly...\n");
+        // Just copy the whole file and let the decoder figure it out
+        fseek(ctx->webm_file, 0, SEEK_SET);
+        while ((bytes_read = fread(buffer, 1, sizeof(buffer), ctx->webm_file)) > 0) {
+            fwrite(buffer, 1, bytes_read, temp_file);
+        }
+    } else {
+        // We found Opus data, copy from that point
+        fseek(ctx->webm_file, opus_data_offset, SEEK_SET);
+        while ((bytes_read = fread(buffer, 1, sizeof(buffer), ctx->webm_file)) > 0) {
+            fwrite(buffer, 1, bytes_read, temp_file);
+        }
+    }
+
+    fclose(temp_file);
+    printf("Extracted data to %s\n", temp_filename);
+
+    // Now open the temporary file and decode it
+    FILE *opus_file = fopen(temp_filename, "rb");
+    if (!opus_file) {
+        perror("Failed to open temporary Opus file");
+        unlink(temp_filename);
         return -1;
     }
-    
-    // Go back to where we found the first packet
-    fseek(ctx->webm_file, opus_packet_offset, SEEK_SET);
-    
+
     // Variables for decoding
     int16_t pcm_buffer[PCM_BUFFER_SIZE * 2]; // Extra space for stereo
     uint8_t opus_packet[2048];
     int samples;
-    
-    // Simple approach: try to decode chunks of data as Opus packets
-    while ((bytes_read = fread(buffer, 1, sizeof(buffer), ctx->webm_file)) > 0) {
+    int total_samples = 0;
+    int packet_count = 0;
+
+    // Try to find and decode Opus packets
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), opus_file)) > 0) {
         for (size_t i = 0; i < bytes_read - 4; i++) {
             // Look for potential Opus packet
-            uint8_t packet_size = buffer[i];
-            if (packet_size > 0 && packet_size < 250 && i + packet_size < bytes_read) {
-                // Try to decode this as an Opus packet
-                memcpy(opus_packet, buffer + i + 1, packet_size);
-                
-                samples = opus_decode(ctx->decoder, opus_packet, packet_size, 
+            // Opus packets typically start with a TOC byte followed by frame data
+            // The TOC byte contains configuration info
+            uint8_t toc = buffer[i];
+
+            // Check if this looks like a valid TOC byte
+            // TOC byte format: [config (2 bits)][stereo (1 bit)][frame count (5 bits)]
+            uint8_t config = (toc >> 3) & 0x1F;
+            uint8_t stereo = (toc >> 2) & 0x01;
+            uint8_t frame_count = toc & 0x03;
+
+            // Simple heuristic: if the next byte is a reasonable packet size
+            uint8_t packet_size = buffer[i+1];
+
+            if (packet_size > 0 && packet_size < 250 && i + 2 + packet_size <= bytes_read) {
+                // This might be an Opus packet, try to decode it
+                memcpy(opus_packet, buffer + i, packet_size + 2);
+
+                samples = opus_decode(ctx->decoder, opus_packet, packet_size + 2,
                                      pcm_buffer, OPUS_FRAME_SIZE, 0);
-                
+
                 if (samples > 0) {
-                    if (DEBUG_WEBM) {
-                        printf("Decoded %d samples from packet of size %d\n", 
-                               samples, packet_size);
+                    packet_count++;
+                    total_samples += samples;
+
+                    if (DEBUG_WEBM && packet_count % 10 == 0) {
+                        printf("Decoded %d samples from packet %d (size %d)\n",
+                               samples, packet_count, packet_size + 2);
                     }
-                    
+
                     // Send PCM data to socket
                     int bytes_to_send = samples * ctx->channels * sizeof(int16_t);
                     if (send(sockfd, pcm_buffer, bytes_to_send, 0) != bytes_to_send) {
                         perror("Failed to send PCM data");
+                        fclose(opus_file);
+                        unlink(temp_filename);
                         return -1;
                     }
-                    
+
                     // Skip to the end of this packet
-                    i += packet_size;
+                    i += packet_size + 1;
                 }
             }
         }
     }
-    
+
+    fclose(opus_file);
+    unlink(temp_filename);
+
+    printf("Decoded %d samples from %d packets\n", total_samples, packet_count);
+
+    if (packet_count == 0) {
+        fprintf(stderr, "No valid Opus packets found\n");
+        return -1;
+    }
+
     return 0;
 }
