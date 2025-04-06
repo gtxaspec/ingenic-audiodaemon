@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <sys/socket.h>
 #include <ctype.h>
 #include "webm_opus.h"
 #include "playback.h"
