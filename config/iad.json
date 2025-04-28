@@ -10,7 +10,7 @@
         "bitwidth": "AUDIO_BIT_WIDTH_16",
         "soundmode": "AUDIO_SOUND_MODE_MONO",
         "chnCnt": 1,
-        "SetVol": 60,
+        "SetVol": 90,
         "SetGain": 20,
         "Enable_Agc": false,
         "AGC_attributes": {

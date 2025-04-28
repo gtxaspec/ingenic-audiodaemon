@@ -8,6 +8,7 @@
 #include "client/client_network.h"
 #include "client/playback.h"
 #include "client/record.h"
+// #include "client/webm_opus.h" // Removed
 #include "version.h"
 
 int main(int argc, char *argv[]) {
@@ -15,11 +16,13 @@ int main(int argc, char *argv[]) {
     char *audio_file_path = NULL;
     int record_audio = 0;
     int output_to_stdout = 0;
+    int dummy_use_webm = 0; // Dummy variable for removed option
     int request_type;
 
     printf("INGENIC AUDIO CLIENT Version: %s\n", VERSION);
 
-    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio, &output_to_stdout) != 0) {
+    // Pass address of dummy variable for the removed use_webm argument
+    if (parse_arguments(argc, argv, &use_stdin, &audio_file_path, &record_audio, &output_to_stdout, &dummy_use_webm) != 0) { 
         exit(1);
     }
 
@@ -67,23 +70,34 @@ int main(int argc, char *argv[]) {
             record_from_server(sockfd, audio_file_path);
         }
     } else {
-        FILE *audio_file = use_stdin ? stdin : fopen(audio_file_path, "rb");
-        if (!audio_file) {
-            perror("fopen");
-            close(sockfd);
-            exit(1);
-        }
-
         // Send audio output request to the server
         int request_type = AUDIO_OUTPUT_REQUEST;
         write(sockfd, &request_type, sizeof(int));
 
+        // Removed if (use_webm) block. 
+        // The following block now handles both PCM and WebM file streaming.
+        // The daemon (iad) will detect the type based on the stream content.
+        
+        FILE *audio_file = use_stdin ? stdin : fopen(audio_file_path, "rb");
+        if (!audio_file) {
+            if (audio_file_path) { // Only print error if a file path was actually given
+                fprintf(stderr, "Failed to open file: %s\n", audio_file_path);
+                perror("fopen");
+                close(sockfd);
+                exit(1);
+            }
+            // If audio_file_path was NULL and use_stdin is false, fopen returns NULL, 
+            // but we should have already exited via parse_arguments check.
+            // If we reach here with audio_file == NULL, it implies use_stdin is true.
+        }
+
+        // This should be outside the if block to execute when fopen succeeds or stdin is used
         playback_audio(sockfd, audio_file);
 
-        if (!use_stdin) {
+        if (!use_stdin && audio_file) { // Also check if audio_file is not NULL before closing
             fclose(audio_file);
         }
-    }
+    } // End else block for playback/streaming
 
     close(sockfd);
     return 0;

@@ -1,0 +1,293 @@
+INGENIC AUDIO CLIENT Version: Sep 22 2024_06:19:38_
+[INFO] Connected to daemon
+[INFO] Processing WebM/Opus file: /tmp/output.webm
+Parsing WebM file: /tmp/output.webm
+File header (first 32 bytes):
+Hex: 1A 45 DF A3 9F 42 86 81 01 42 F7 81 01 42 F2 81 04 42 F3 81 08 42 82 84 77 65 62 6D 42 87 81 04 
+ASCII: .E...B...B...B...B...B..webmB...
+Found EBML header signature: 0x1A45DFA3
+read_vint: Read first byte 0x9F at pos 4
+read_vint: Returning size 31 (length 1 bytes)
+EBML header size: 31 bytes (1 size bytes)
+Potential Segment ID: 0x18538067
+Found Segment element
+read_vint: Read first byte 0x01 at pos 40
+read_vint: Returning size 1896832 (length 8 bytes)
+read_ebml_id: Read first byte 0x11 at pos 48
+read_ebml_id: Returning raw ID 0x114D9B74 (length 4 bytes)
+read_vint: Read first byte 0xBB at pos 52
+read_vint: Returning size 59 (length 1 bytes)
+Processing Element: ID=0x114D9B74, Size=59, Content Start Pos=53
+Skipping unknown Segment element ID: 0x114D9B74 (size: 59)
+read_ebml_id: Read first byte 0xEC at pos 112
+read_ebml_id: Returning raw ID 0xEC (length 1 bytes)
+read_vint: Read first byte 0x01 at pos 113
+read_vint: Returning size 88 (length 8 bytes)
+Processing Element: ID=0xEC, Size=88, Content Start Pos=121
+Skipping unknown Segment element ID: 0xEC (size: 88)
+read_ebml_id: Read first byte 0x15 at pos 209
+read_ebml_id: Returning raw ID 0x1549A966 (length 4 bytes)
+read_vint: Read first byte 0xB2 at pos 213
+read_vint: Returning size 50 (length 1 bytes)
+Processing Element: ID=0x1549A966, Size=50, Content Start Pos=214
+Skipping unknown Segment element ID: 0x1549A966 (size: 50)
+read_ebml_id: Read first byte 0x16 at pos 264
+read_ebml_id: Returning raw ID 0x1654AE6B (length 4 bytes)
+read_vint: Read first byte 0xE5 at pos 268
+read_vint: Returning size 101 (length 1 bytes)
+Processing Element: ID=0x1654AE6B, Size=101, Content Start Pos=269
+Found Tracks element (size: 101)
+read_ebml_id: Read first byte 0xAE at pos 269
+read_ebml_id: Returning raw ID 0xAE (length 1 bytes)
+read_vint: Read first byte 0x01 at pos 270
+read_vint: Returning size 92 (length 8 bytes)
+Found TrackEntry (size: 92)
+read_ebml_id: Read first byte 0xD7 at pos 278
+read_ebml_id: Returning raw ID 0xD7 (length 1 bytes)
+read_vint: Read first byte 0x81 at pos 279
+read_vint: Returning size 1 (length 1 bytes)
+Found TrackNumber (size: 1)
+read_ebml_id: Read first byte 0x73 at pos 281
+read_ebml_id: Returning raw ID 0x73C5 (length 2 bytes)
+read_vint: Read first byte 0x88 at pos 283
+read_vint: Returning size 8 (length 1 bytes)
+Skipping unknown TrackEntry element: 0x73C5 (size: 8)
+read_ebml_id: Read first byte 0x9C at pos 292
+read_ebml_id: Returning raw ID 0x9C (length 1 bytes)
+read_vint: Read first byte 0x81 at pos 293
+read_vint: Returning size 1 (length 1 bytes)
+Skipping unknown TrackEntry element: 0x9C (size: 1)
+read_ebml_id: Read first byte 0x22 at pos 295
+read_ebml_id: Returning raw ID 0x22B59C (length 3 bytes)
+read_vint: Read first byte 0x83 at pos 298
+read_vint: Returning size 3 (length 1 bytes)
+Skipping unknown TrackEntry element: 0x22B59C (size: 3)
+read_ebml_id: Read first byte 0x88 at pos 302
+read_ebml_id: Returning raw ID 0x88 (length 1 bytes)
+read_vint: Read first byte 0x81 at pos 303
+read_vint: Returning size 1 (length 1 bytes)
+Skipping unknown TrackEntry element: 0x88 (size: 1)
+read_ebml_id: Read first byte 0x86 at pos 305
+read_ebml_id: Returning raw ID 0x86 (length 1 bytes)
+read_vint: Read first byte 0x86 at pos 306
+read_vint: Returning size 6 (length 1 bytes)
+Found CodecID (size: 6)
+Found Opus codec ID: A_OPUS
+read_ebml_id: Read first byte 0x56 at pos 313
+read_ebml_id: Returning raw ID 0x56AA (length 2 bytes)
+read_vint: Read first byte 0x83 at pos 315
+read_vint: Returning size 3 (length 1 bytes)
+Skipping unknown TrackEntry element: 0x56AA (size: 3)
+read_ebml_id: Read first byte 0x56 at pos 319
+read_ebml_id: Returning raw ID 0x56BB (length 2 bytes)
+read_vint: Read first byte 0x84 at pos 321
+read_vint: Returning size 4 (length 1 bytes)
+Skipping unknown TrackEntry element: 0x56BB (size: 4)
+read_ebml_id: Read first byte 0x83 at pos 326
+read_ebml_id: Returning raw ID 0x83 (length 1 bytes)
+read_vint: Read first byte 0x81 at pos 327
+read_vint: Returning size 1 (length 1 bytes)
+Found TrackType (size: 1)
+read_ebml_id: Read first byte 0xE1 at pos 329
+read_ebml_id: Returning raw ID 0xE1 (length 1 bytes)
+read_vint: Read first byte 0x91 at pos 330
+read_vint: Returning size 17 (length 1 bytes)
+Found Audio element (size: 17)
+read_ebml_id: Read first byte 0x9F at pos 331
+read_ebml_id: Returning raw ID 0x9F (length 1 bytes)
+read_vint: Read first byte 0x81 at pos 332
+read_vint: Returning size 1 (length 1 bytes)
+Found Channels element (size: 1)
+read_ebml_id: Read first byte 0xB5 at pos 334
+read_ebml_id: Returning raw ID 0xB5 (length 1 bytes)
+read_vint: Read first byte 0x88 at pos 335
+read_vint: Returning size 8 (length 1 bytes)
+Skipping unknown Audio sub-element: 0xB5 (size: 8)
+read_ebml_id: Read first byte 0x62 at pos 344
+read_ebml_id: Returning raw ID 0x6264 (length 2 bytes)
+read_vint: Read first byte 0x81 at pos 346
+read_vint: Returning size 1 (length 1 bytes)
+Skipping unknown Audio sub-element: 0x6264 (size: 1)
+Opus track has 1 channels
+read_ebml_id: Read first byte 0x63 at pos 348
+read_ebml_id: Returning raw ID 0x63A2 (length 2 bytes)
+read_vint: Read first byte 0x93 at pos 350
+read_vint: Returning size 19 (length 1 bytes)
+Skipping unknown TrackEntry element: 0x63A2 (size: 19)
+Found Opus audio track: 1
+read_ebml_id: Read first byte 0x12 at pos 370
+read_ebml_id: Returning raw ID 0x1254C367 (length 4 bytes)
+read_vint: Read first byte 0xD9 at pos 374
+read_vint: Returning size 89 (length 1 bytes)
+Processing Element: ID=0x1254C367, Size=89, Content Start Pos=375
+Skipping unknown Segment element ID: 0x1254C367 (size: 89)
+read_ebml_id: Read first byte 0x1F at pos 464
+read_ebml_id: Returning raw ID 0x1F43B675 (length 4 bytes)
+read_vint: Read first byte 0x20 at pos 468
+read_vint: Returning size 45523 (length 3 bytes)
+Processing Element: ID=0x1F43B675, Size=45523, Content Start Pos=471
+Parsing Cluster at offset 464 (size: 45523)
+read_ebml_id: Read first byte 0xE7 at pos 471
+read_ebml_id: Returning raw ID 0xE7 (length 1 bytes)
+read_vint: Read first byte 0x81 at pos 472
+read_vint: Returning size 1 (length 1 bytes)
+Found Timecode element (size: 1)
+read_ebml_id: Read first byte 0xA0 at pos 474
+read_ebml_id: Returning raw ID 0xA0 (length 1 bytes)
+read_vint: Read first byte 0x41 at pos 475
+read_vint: Returning size 280 (length 2 bytes)
+Skipping unknown Cluster element ID: 0xA0 (size: 280)
+read_ebml_id: Read first byte 0xA3 at pos 757
+read_ebml_id: Returning raw ID 0xA3 (length 1 bytes)
+read_vint: Read first byte 0xF9 at pos 758
+read_vint: Returning size 121 (length 1 bytes)
+Found SimpleBlock (size: 121) at offset 757
+read_ebml_id: Read first byte 0xA3 at pos 880
+read_ebml_id: Returning raw ID 0xA3 (length 1 bytes)
+read_vint: Read first byte 0xFD at pos 881
+read_vint: Returning size 125 (length 1 bytes)
+Found SimpleBlock (size: 125) at offset 880
+read_ebml_id: Read first byte 0xA3 at pos 1007
+read_ebml_id: Returning raw ID 0xA3 (length 1 bytes)
+read_vint: Read first byte 0xFD at pos 1008
+read_vint: Returning size 125 (length 1 bytes)
+Found SimpleBlock (size: 125) at offset 1007
+read_ebml_id: Read first byte 0xA3 at pos 1134
+read_ebml_id: Returning raw ID 0xA3 (length 1 bytes)
+read_vint: Read first byte 0xFD at pos 1135
+read_vint: Returning size 125 (length 1 bytes)
+Found SimpleBlock (size: 125) at offset 1134
+read_ebml_id: Read first byte 0xA3 at pos 1261
+read_ebml_id: Returning raw ID 0xA3 (length 1 bytes)
+read_vint: Read first byte 0xFC at pos 1262
+read_vint: Returning size 124 (length 1 bytes)
+Found SimpleBlock (size: 117) at offset 1895379
+read_ebml_id: Read first byte 0xA3 at pos 1895498
+read_ebml_id: Returning raw ID 0xA3 (length 1 bytes)
+read_vint: Read first byte 0xFC at pos 1895499
+read_vint: Returning size 124 (length 1 bytes)
+Found SimpleBlock (size: 124) at offset 1895498
+read_ebml_id: Read first byte 0xA3 at pos 1895624
+read_ebml_id: Returning raw ID 0xA3 (length 1 bytes)
+read_vint: Read first byte 0x40 at pos 1895625
+read_vint: Returning size 139 (length 2 bytes)
+Found SimpleBlock (size: 139) at offset 1895624
+read_ebml_id: Read first byte 0xA0 at pos 1895766
+read_ebml_id: Returning raw ID 0xA0 (length 1 bytes)
+read_vint: Read first byte 0x40 at pos 1895767
+read_vint: Returning size 242 (length 2 bytes)
+Skipping unknown Cluster element ID: 0xA0 (size: 242)
+read_ebml_id: Read first byte 0x1C at pos 1896011
+read_ebml_id: Returning raw ID 0x1C53BB6B (length 4 bytes)
+read_vint: Read first byte 0x43 at pos 1896015
+read_vint: Returning size 863 (length 2 bytes)
+Processing Element: ID=0x1C53BB6B, Size=863, Content Start Pos=1896017
+Skipping unknown Segment element ID: 0x1C53BB6B (size: 863)
+Reached end of Segment at pos 1896880
+Extracted 1024 Opus packets
+Initialized Opus decoder: channels=1, sample_rate=48000
+Successfully initialized WebM/Opus file with 1024 packets
+Decoded 960 samples from packet 1/1024 (size 117)
+Decoded 960 samples from packet 11/1024 (size 120)
+Decoded 960 samples from packet 21/1024 (size 121)
+Decoded 960 samples from packet 31/1024 (size 121)
+Decoded 960 samples from packet 41/1024 (size 120)
+Decoded 960 samples from packet 51/1024 (size 143)
+Decoded 960 samples from packet 61/1024 (size 173)
+Decoded 960 samples from packet 71/1024 (size 194)
+Decoded 960 samples from packet 81/1024 (size 199)
+Decoded 960 samples from packet 91/1024 (size 220)
+Decoded 960 samples from packet 101/1024 (size 198)
+Decoded 960 samples from packet 111/1024 (size 283)
+Decoded 960 samples from packet 121/1024 (size 205)
+Decoded 960 samples from packet 131/1024 (size 290)
+Decoded 960 samples from packet 141/1024 (size 204)
+Decoded 960 samples from packet 151/1024 (size 195)
+Decoded 960 samples from packet 161/1024 (size 190)
+Decoded 960 samples from packet 171/1024 (size 183)
+Decoded 960 samples from packet 181/1024 (size 163)
+Decoded 960 samples from packet 191/1024 (size 159)
+Decoded 960 samples from packet 201/1024 (size 170)
+Decoded 960 samples from packet 211/1024 (size 180)
+Decoded 960 samples from packet 221/1024 (size 177)
+Decoded 960 samples from packet 231/1024 (size 149)
+Decoded 960 samples from packet 241/1024 (size 163)
+Decoded 960 samples from packet 251/1024 (size 172)
+Decoded 960 samples from packet 261/1024 (size 173)
+Decoded 960 samples from packet 271/1024 (size 176)
+Decoded 960 samples from packet 281/1024 (size 172)
+Decoded 960 samples from packet 291/1024 (size 176)
+Decoded 960 samples from packet 301/1024 (size 174)
+Decoded 960 samples from packet 311/1024 (size 174)
+Decoded 960 samples from packet 321/1024 (size 176)
+Decoded 960 samples from packet 331/1024 (size 178)
+Decoded 960 samples from packet 341/1024 (size 183)
+Decoded 960 samples from packet 351/1024 (size 174)
+Decoded 960 samples from packet 361/1024 (size 179)
+Decoded 960 samples from packet 371/1024 (size 171)
+Decoded 960 samples from packet 381/1024 (size 173)
+Decoded 960 samples from packet 391/1024 (size 173)
+Decoded 960 samples from packet 401/1024 (size 181)
+Decoded 960 samples from packet 411/1024 (size 155)
+Decoded 960 samples from packet 421/1024 (size 153)
+Decoded 960 samples from packet 431/1024 (size 161)
+Decoded 960 samples from packet 441/1024 (size 175)
+Decoded 960 samples from packet 451/1024 (size 167)
+Decoded 960 samples from packet 461/1024 (size 168)
+Decoded 960 samples from packet 471/1024 (size 176)
+Decoded 960 samples from packet 481/1024 (size 177)
+Decoded 960 samples from packet 491/1024 (size 177)
+Decoded 960 samples from packet 501/1024 (size 178)
+Decoded 960 samples from packet 511/1024 (size 185)
+Decoded 960 samples from packet 521/1024 (size 177)
+Decoded 960 samples from packet 531/1024 (size 178)
+Decoded 960 samples from packet 541/1024 (size 170)
+Decoded 960 samples from packet 551/1024 (size 169)
+Decoded 960 samples from packet 561/1024 (size 169)
+Decoded 960 samples from packet 571/1024 (size 194)
+Decoded 960 samples from packet 581/1024 (size 196)
+Decoded 960 samples from packet 591/1024 (size 140)
+Decoded 960 samples from packet 601/1024 (size 152)
+Decoded 960 samples from packet 611/1024 (size 162)
+Decoded 960 samples from packet 621/1024 (size 161)
+Decoded 960 samples from packet 631/1024 (size 160)
+Decoded 960 samples from packet 641/1024 (size 165)
+Decoded 960 samples from packet 651/1024 (size 167)
+Decoded 960 samples from packet 661/1024 (size 168)
+Decoded 960 samples from packet 671/1024 (size 166)
+Decoded 960 samples from packet 681/1024 (size 166)
+Decoded 960 samples from packet 691/1024 (size 173)
+Decoded 960 samples from packet 701/1024 (size 177)
+Decoded 960 samples from packet 711/1024 (size 172)
+Decoded 960 samples from packet 721/1024 (size 170)
+Decoded 960 samples from packet 731/1024 (size 169)
+Decoded 960 samples from packet 741/1024 (size 164)
+Decoded 960 samples from packet 751/1024 (size 164)
+Decoded 960 samples from packet 761/1024 (size 165)
+Decoded 960 samples from packet 771/1024 (size 180)
+Decoded 960 samples from packet 781/1024 (size 177)
+Decoded 960 samples from packet 791/1024 (size 178)
+Decoded 960 samples from packet 801/1024 (size 146)
+Decoded 960 samples from packet 811/1024 (size 132)
+Decoded 960 samples from packet 821/1024 (size 134)
+Decoded 960 samples from packet 831/1024 (size 133)
+Decoded 960 samples from packet 841/1024 (size 144)
+Decoded 960 samples from packet 851/1024 (size 134)
+Decoded 960 samples from packet 861/1024 (size 130)
+Decoded 960 samples from packet 871/1024 (size 149)
+Decoded 960 samples from packet 881/1024 (size 121)
+Decoded 960 samples from packet 891/1024 (size 127)
+Decoded 960 samples from packet 901/1024 (size 111)
+Decoded 960 samples from packet 911/1024 (size 108)
+Decoded 960 samples from packet 921/1024 (size 134)
+Decoded 960 samples from packet 931/1024 (size 130)
+Decoded 960 samples from packet 941/1024 (size 206)
+Decoded 960 samples from packet 951/1024 (size 216)
+Decoded 960 samples from packet 961/1024 (size 268)
+Decoded 960 samples from packet 971/1024 (size 311)
+Decoded 960 samples from packet 981/1024 (size 223)
+Decoded 960 samples from packet 991/1024 (size 188)
+Decoded 960 samples from packet 1001/1024 (size 152)
+Decoded 960 samples from packet 1011/1024 (size 134)
+Decoded 960 samples from packet 1021/1024 (size 222)
+Decoded 983040 samples from 1024 packets

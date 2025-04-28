@@ -1,22 +1,32 @@
 #include <pthread.h>
 #include <sched.h>
 #include <stdint.h>
+#include "webm_opus_parser.h" // Ensure parser header is included
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h> // For strncpy
+#include <unistd.h> // For unlink
+#include <limits.h> // For PATH_MAX
 #include "imp/imp_audio.h"
 #include "imp/imp_log.h"
 #include "audio_common.h"
 #include "config.h"
-#include "cJSON.h"
+#include "cJSON.h" // Assuming this is needed by included headers
 #include "output.h"
 #include "logging.h"
 #include "utils.h"
+#include "webm_opus_parser.h" // Ensure this include is present
 
 #define TRUE 1
 #define TAG "AO"
 
 // Global variable to hold the maximum frame size for audio output.
 int g_ao_max_frame_size = DEFAULT_AO_MAX_FRAME_SIZE;
+
+// Global state for WebM playback request (defined here, protected by audio_buffer_lock)
+// Removed 'static' to give external linkage
+char g_pending_webm_path[PATH_MAX] = {0}; 
+volatile int g_webm_playback_requested = 0;
 
 /**
  * Set the global maximum frame size for audio output.
@@ -73,6 +83,25 @@ void initialize_audio_output_device(int aoDevID, int aoChnID) {
         handle_audio_error("AO: Failed to initialize audio attributes");
         exit(EXIT_FAILURE);
     }
+
+    // --- Add check: Get attributes back to verify ---
+    IMPAudioIOAttr check_attr;
+    if (IMP_AO_GetPubAttr(aoDevID, &check_attr) != 0) {
+        handle_audio_error("AO: Failed to get audio attributes after setting");
+        // Continue, but log a warning
+    } else {
+        if (check_attr.samplerate != attr.samplerate) {
+             IMP_LOG_ERR(TAG, "Samplerate mismatch after setting! Requested %d, Got %d\n", 
+                         attr.samplerate, check_attr.samplerate);
+        } else {
+             IMP_LOG_INFO(TAG, "Confirmed samplerate set to %d\n", check_attr.samplerate);
+        }
+        // Log other retrieved attributes if needed for debugging
+        // IMP_LOG_INFO(TAG, "Confirmed bitwidth: %d, soundmode: %d, frmNum: %d, numPerFrm: %d, chnCnt: %d\n",
+        //              check_attr.bitwidth, check_attr.soundmode, check_attr.frmNum, check_attr.numPerFrm, check_attr.chnCnt);
+    }
+    // --- End check ---
+
 
     // Set volume and gain for the audio device
     int vol = attrs.SetVolItem ? attrs.SetVolItem->valueint : DEFAULT_AO_CHN_VOL;
@@ -157,9 +186,9 @@ void *ao_play_thread(void *arg) {
     while (TRUE) {
         pthread_mutex_lock(&audio_buffer_lock);
 
-        // Wait until there's audio data in the buffer
-        while (audio_buffer_size == 0) {
-            // Add thread termination check here
+        // Wait until there's audio data OR a WebM request
+        while (audio_buffer_size == 0 && !g_webm_playback_requested) { 
+            // Check for thread termination signal
             pthread_mutex_lock(&g_stop_thread_mutex);
             if (g_stop_thread) {
                 pthread_mutex_unlock(&audio_buffer_lock);
@@ -169,22 +198,66 @@ void *ao_play_thread(void *arg) {
             pthread_mutex_unlock(&g_stop_thread_mutex);
 
             pthread_cond_wait(&audio_data_cond, &audio_buffer_lock);
+
+            // Re-check stop condition after waking up
+            pthread_mutex_lock(&g_stop_thread_mutex);
+            if (g_stop_thread) {
+                 pthread_mutex_unlock(&audio_buffer_lock);
+                 pthread_mutex_unlock(&g_stop_thread_mutex);
+                 return NULL;
+            }
+             pthread_mutex_unlock(&g_stop_thread_mutex);
         }
 
-        IMPAudioFrame frm = {.virAddr = (uint32_t *)audio_buffer, .len = audio_buffer_size};
+        // Check if a WebM playback was requested
+        if (g_webm_playback_requested) {
+            char webm_path[PATH_MAX];
+            strncpy(webm_path, g_pending_webm_path, PATH_MAX - 1); // Ensure space for null terminator
+            webm_path[PATH_MAX - 1] = '\0'; // Explicitly null-terminate
+            g_webm_playback_requested = 0; // Reset the flag
+            g_pending_webm_path[0] = '\0'; 
+            
+            // Unlock mutex before calling potentially long-running function
+            pthread_mutex_unlock(&audio_buffer_lock); 
 
-        // Send the audio frame for playback
-        if (IMP_AO_SendFrame(aoDevID, aoChnID, &frm, BLOCK)) {
-            pthread_mutex_unlock(&audio_buffer_lock);
-            handle_and_reinitialize_output(aoDevID, aoChnID, "IMP_AO_SendFrame data error");
-            continue;
+            IMP_LOG_INFO(TAG, "Starting WebM playback from path: %s\n", webm_path);
+            int play_ret = iad_play_webm_file(webm_path, aoDevID, aoChnID); // Now declared via header
+            if (play_ret != 0) {
+                 IMP_LOG_ERR(TAG, "iad_play_webm_file failed for %s\n", webm_path);
+            }
+            
+            // Clean up the temporary file
+            if (unlink(webm_path) != 0) {
+                 IMP_LOG_ERR(TAG, "Failed to delete temporary WebM file: %s\n", webm_path);
+                 perror("unlink");
+            } else {
+                 IMP_LOG_INFO(TAG, "Deleted temporary WebM file: %s\n", webm_path);
+            }
+            // Loop back to wait for next signal/data
+
+        } else if (audio_buffer_size > 0) {
+            // Handle PCM data from buffer (existing logic)
+            IMPAudioFrame frm = {.virAddr = (uint32_t *)audio_buffer, .len = audio_buffer_size};
+
+            // Send the audio frame for playback
+            if (IMP_AO_SendFrame(aoDevID, aoChnID, &frm, BLOCK)) {
+                // Unlock before handling error/reinitialization
+                pthread_mutex_unlock(&audio_buffer_lock); 
+                handle_and_reinitialize_output(aoDevID, aoChnID, "IMP_AO_SendFrame data error");
+                // Continue to next loop iteration after reinitialization attempt
+            } else {
+                 // Reset buffer size only on successful send
+                 audio_buffer_size = 0;
+                 pthread_mutex_unlock(&audio_buffer_lock);
+            }
+        } else {
+             // Should not happen if wait condition is correct, but unlock just in case
+             pthread_mutex_unlock(&audio_buffer_lock);
         }
+    } // End while(TRUE)
 
-        audio_buffer_size = 0;
-        pthread_mutex_unlock(&audio_buffer_lock);
-    }
-
-    return NULL;
+    IMP_LOG_INFO(TAG, "Exiting ao_play_thread\n");
+    return NULL; // Should be unreachable if g_stop_thread is handled correctly
 }
 
 /**

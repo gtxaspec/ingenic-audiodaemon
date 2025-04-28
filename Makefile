@@ -52,6 +52,7 @@ ifeq ($(CONFIG_MUSL_BUILD), y)
 CROSS_COMPILE?= mipsel-linux-
 IMPLDLIBS = -lcjson -limp -lalog -lmuslshim
 LDLIBS = -lwebsockets
+IAC_LDLIBS = -lopus
 endif
 
 ifeq ($(CONFIG_STATIC_BUILD), y)
@@ -62,7 +63,7 @@ endif
 # Targets and Object Files
 AUDIO_PROGS = build/bin/audioplay build/bin/iad build/bin/iac build/bin/wc-console build/bin/web_client
 iad_OBJS = build/obj/iad.o build/obj/audio/output.o build/obj/audio/input.o build/obj/audio/audio_common.o \
-build/obj/audio/audio_imp.o \
+build/obj/audio/audio_imp.o build/obj/audio/webm_opus_parser.o \
 build/obj/network/network.o build/obj/network/control_server.o build/obj/network/input_server.o build/obj/network/output_server.o \
 build/obj/utils/utils.o build/obj/utils/logging.o build/obj/utils/config.o build/obj/utils/cmdline.o
 iac_OBJS = build/obj/iac.o build/obj/client/cmdline.o build/obj/client/client_network.o build/obj/client/playback.o build/obj/client/record.o
@@ -103,6 +104,10 @@ build/obj/%.o: src/iad/%.c
 	@mkdir -p $(@D)
 	$(CC) -c $(CFLAGS) $< -o $@
 
+build/obj/audio/%.o: src/iad/audio/%.c
+	@mkdir -p $(@D)
+	$(CC) -c $(CFLAGS) $< -o $@
+
 build/obj/%.o: src/iac/%.c
 	@mkdir -p $(@D)
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -123,14 +128,14 @@ iad: build/bin/iad
 
 build/bin/iad: version $(iad_OBJS)
 	@mkdir -p $(@D)
-	$(CC) $(LDFLAGS) -o $@ $(iad_OBJS) $(IMPLDLIBS) $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(iad_OBJS) $(IMPLDLIBS) $(LDLIBS) -lopus
 	$(STRIPCMD) $@
 
 iac: build/bin/iac
 
 build/bin/iac: version $(iac_OBJS)
 	@mkdir -p $(@D)
-	$(CC) $(LDFLAGS) -o $@ $(iac_OBJS) $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(iac_OBJS) $(LDLIBS) # Removed IAC_LDLIBS (-lopus)
 	$(STRIPCMD) $@
 
 audioplay: build/bin/audioplay
