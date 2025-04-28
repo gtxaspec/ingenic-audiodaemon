@@ -6,11 +6,11 @@ STRIP = $(CROSS_COMPILE)strip
 
 # Configuration
 # uClibc & GCC + Static is broken... compiler 'TLS_DTPREL_VALUE' error.
-CONFIG_UCLIBC_BUILD=n
-CONFIG_GCC_BUILD=n
-CONFIG_MUSL_BUILD=y
-CONFIG_STATIC_BUILD=n
-DEBUG=n
+CONFIG_UCLIBC_BUILD ?= n
+CONFIG_GCC_BUILD ?= n
+CONFIG_MUSL_BUILD ?= y
+CONFIG_STATIC_BUILD ?= n
+DEBUG ?= n
 PLATFORM ?= T31
 
 SDK_INC_DIR = include
@@ -34,27 +34,29 @@ else
 STRIPCMD = $(STRIP)
 endif
 
-ifeq ($(CONFIG_GCC_BUILD), y)
+ifeq ($(CONFIG_GCC_BUILD),y)
 CROSS_COMPILE?= mips-linux-gnu-
+IMPLDLIBS = -limp -lalog
 LDFLAGS += -Wl,--no-as-needed -Wl,--allow-shlib-undefined
-LDLIBS = -lpthread -lm -lrt -ldl
+LDLIBS = -lpthread -lm -lrt -ldl -lcjson -lwebsockets
 endif
 
-ifeq ($(CONFIG_UCLIBC_BUILD), y)
+ifeq ($(CONFIG_UCLIBC_BUILD),y)
 CROSS_COMPILE?= mips-linux-uclibc-gnu-
 CFLAGS += -muclibc
+IMPLDLIBS = -limp -lalog
 # Set interpreter directory to ./libs
 LDFLAGS += -muclibc -Wl,-dynamic-linker,libs/ld-uClibc.so.0
-LDLIBS = -lpthread -lm -lrt -ldl
+LDLIBS = -lpthread -lm -lrt -ldl -lwebsockets -lcjson
 endif
 
-ifeq ($(CONFIG_MUSL_BUILD), y)
+ifeq ($(CONFIG_MUSL_BUILD),y)
 CROSS_COMPILE?= mipsel-linux-
-IMPLDLIBS = -lcjson -limp -lalog -lmuslshim
-LDLIBS = -lwebsockets
+IMPLDLIBS = -limp -lalog -lmuslshim
+LDLIBS = -lwebsockets -lcjson
 endif
 
-ifeq ($(CONFIG_STATIC_BUILD), y)
+ifeq ($(CONFIG_STATIC_BUILD),y)
 CFLAGS += -DINGENIC_MMAP_STATIC
 LDFLAGS += -static
 endif
