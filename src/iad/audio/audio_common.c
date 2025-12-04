@@ -157,6 +157,63 @@ void flush_audio_output_buffer() {
     }
 }
 
+int audioOutputVolume = -1;
+
+int get_audio_output_volume()
+{
+    if (audioOutputVolume != -1) return audioOutputVolume;
+
+    int aoDevID, aoChnID;
+    get_audio_output_device_attributes(&aoDevID, &aoChnID);
+    AudioOutputAttributes attrs = get_audio_attributes();
+
+    int vol = attrs.SetVolItem ? attrs.SetVolItem->valueint : DEFAULT_AO_CHN_VOL;
+    return vol;
+}
+
+void set_audio_output_volume(int vol)
+{
+    if (vol > 120) vol = 120;
+    if (vol < -30) vol = -30;
+    audioOutputVolume = vol;
+
+    // Apply immediately to the audio device
+    int aoDevID, aoChnID;
+    get_audio_output_device_attributes(&aoDevID, &aoChnID);
+    if (IMP_AO_SetVol(aoDevID, aoChnID, vol)) {
+        handle_audio_error("Failed to set volume attribute");
+    }
+}
+
+
+int audioOutputGain = -1;
+
+int get_audio_output_gain()
+{
+    if (audioOutputGain != -1) return audioOutputGain;
+
+    int aoDevID, aoChnID;
+    get_audio_output_device_attributes(&aoDevID, &aoChnID);
+    AudioOutputAttributes attrs = get_audio_attributes();
+
+    int gain = attrs.SetGainItem ? attrs.SetGainItem->valueint : DEFAULT_AO_GAIN;
+    return gain;
+}
+
+void set_audio_output_gain(int gain)
+{
+    if (gain > 31) gain = 31;
+    if (gain < 0) gain = 0;
+    audioOutputGain = gain;
+
+    // Apply immediately to the audio device
+    int aoDevID, aoChnID;
+    get_audio_output_device_attributes(&aoDevID, &aoChnID);
+    if (IMP_AO_SetGain(aoDevID, aoChnID, gain)) {
+        handle_audio_error("Failed to set gain attribute");
+    }
+}
+
 /**
  * Mutes or unmutes the audio output device based on the given parameter.
  * @param mute_enable If set to non-zero, mutes the device. If zero, unmutes it.
@@ -169,7 +226,6 @@ void mute_audio_output_device(int mute_enable) {
     }
 }
 
-//todo
 void enable_output_channel() {
     int aoDevID, aoChnID;
     get_audio_output_device_attributes(&aoDevID, &aoChnID);
@@ -179,13 +235,13 @@ void enable_output_channel() {
         handle_audio_error("AO: Failed to enable output channel");
     }
 
-    // Set volume and gain for the audio device
-    int vol = attrs.SetVolItem ? attrs.SetVolItem->valueint : DEFAULT_AO_CHN_VOL;
-    if (vol < -30 || vol > 120) {
-        IMP_LOG_ERR(TAG, "SetVol value out of range: %d. Using default value: %d.\n", vol, DEFAULT_AO_CHN_VOL);
-        vol = DEFAULT_AO_CHN_VOL;
-    }
+    int vol = get_audio_output_volume();
     if (IMP_AO_SetVol(aoDevID, aoChnID, vol)) {
         handle_audio_error("Failed to set volume attribute");
+    }
+
+    int gain = get_audio_output_gain();
+    if (IMP_AO_SetGain(aoDevID, aoChnID, gain)) {
+        handle_audio_error("Failed to set gain attribute");
     }
 }

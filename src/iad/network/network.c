@@ -1,8 +1,9 @@
 #include <stdlib.h>            // for free, malloc
 #include <string.h>            // for NULL, strncpy, memset, strcmp, strncmp
 #include <stdio.h>             // for printf, snprintf, sscanf
-#include "config.h"   // for config_get_ai_socket, config_get_ao_so...
-#include "network.h"
+#include "config.h"            // for config_get_ai_socket, config_get_ao_so...
+#include "network.h
+#include "audio_common.h"      // for get_audio_output_gain/get_audio_output_volume...
 
 #define TAG "NET"
 
@@ -10,34 +11,37 @@ char AUDIO_INPUT_SOCKET_PATH[32] = "ingenic_audio_input";
 char AUDIO_OUTPUT_SOCKET_PATH[32] = "ingenic_audio_output";
 char AUDIO_CONTROL_SOCKET_PATH[32] = "ingenic_audio_control";
 
-// Sample variables for testing
-int sampleVariableA = 0;
-int sampleVariableB = 1;
-
 char* get_variable_value(const char* variable_name) {
-    if (strcmp(variable_name, "sampleVariableA") == 0) {
-        char* value = (char*) malloc(10 * sizeof(char));
-        snprintf(value, 10, "%d", sampleVariableA);
+    char* value = (char*) malloc(16 * sizeof(char));
+    if (!value) return NULL;
+
+    int int_val = 0;
+    int aoDevID, aoChnID;
+    if (strcmp(variable_name, "ao_gain") == 0) {
+        snprintf(value, 16, "%d", get_audio_output_gain());
         return value;
-    } else if (strcmp(variable_name, "sampleVariableB") == 0) {
-        char* value = (char*) malloc(10 * sizeof(char));
-        snprintf(value, 10, "%d", sampleVariableB);
+    } else if (strcmp(variable_name, "ao_vol") == 0) {
+        snprintf(value, 16, "%d", get_audio_output_volume());
         return value;
-    } else {
-        return NULL;
     }
+
+    free(value);
+    return NULL;
 }
 
 int set_variable_value(const char* variable_name, const char* value) {
-    if (strcmp(variable_name, "sampleVariableA") == 0) {
-        sampleVariableA = atoi(value);
+    int int_val = atoi(value);
+    int aiDevID, aiChnID, aoDevID, aoChnID;
+    int result;
+
+    if (strcmp(variable_name, "ao_gain") == 0) {
+        set_audio_output_gain(int_val);
         return 0;
-    } else if (strcmp(variable_name, "sampleVariableB") == 0) {
-        sampleVariableB = atoi(value);
+    } else if (strcmp(variable_name, "ao_vol") == 0) {
+        set_audio_output_volume(int_val);
         return 0;
-    } else {
-        return -1;
     }
+    return -1;
 }
 
 void update_socket_paths_from_config() {
