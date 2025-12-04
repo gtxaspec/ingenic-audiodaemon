@@ -105,10 +105,20 @@ The audio client provides various functionalities, from playing audio to recordi
 - `-r`: AI - Record audio and save it to a file specified by `<audio_output_file_path>`.
 - `-o`: AI - Output audio to the standard output (`stdout`).
 
+#### Audio Output Options (temporary by default):
+- `-g` <gain>: Set the gain of the output audio (0 to 31).
+- `-v` <volume>: Set the volume of the output audio (-30 to 120)
+- `-p` : Persist the volume and gain settings to the next execution of iac.
+
 For example, if you want to play a specific audio file, you can use:
 
 ```
 ./iac -f path_to_your_audio_file.wav
+```
+
+To play at max volume and gain:
+```
+./iac -g 31 -v 120 -f path_to_your_audio_file.wav
 ```
 
 ---
