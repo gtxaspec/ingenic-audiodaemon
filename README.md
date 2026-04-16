@@ -1,3 +1,8 @@
+> **ARCHIVED — This project is no longer actively maintained and is not recommended for current use.**
+> Its functionality has been superseded by **RAD (Raptor Audio Daemon)**, part of the **[Raptor Streaming System (RSS)](https://github.com/gtxaspec/raptor)** — which provides audio capture, encoding (G.711/AAC/Opus/L16), RTSP/WebRTC streaming, and two-way audio with runtime codec switching across all Ingenic T-series SoCs.
+
+---
+
 # Ingenic Audio Daemon
 
 The **Ingenic Audio Daemon** (iad) serves as an intermediary between the audio kernel modules and client applications, facilitating audio input and output operations on Ingenic hardware.
