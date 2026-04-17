@@ -54,5 +54,9 @@ void resume_audio_output(void);
 void flush_audio_output_buffer(void);
 void enable_output_channel(void);
 void mute_audio_output_device(int mute_enable);
+int get_audio_output_volume();
+void set_audio_output_volume(int volume);
+int get_audio_output_gain();
+void set_audio_output_gain(int gain);
 
 #endif // AUDIO_COMMON_H

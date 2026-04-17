@@ -54,9 +54,11 @@ void handle_control_client(int client_sock) {
         char* value = get_variable_value(variable_name);
 
         if (value) {
+            printf("[INFO] [CTRL] GET %s = %s\n", variable_name, value);
             write(client_sock, value, strlen(value));
             free(value);
         } else {
+            printf("[INFO] [CTRL] GET %s = UNKNOWN_VARIABLE\n", variable_name);
             write(client_sock, "RESPONSE_UNKNOWN_VARIABLE", strlen("RESPONSE_UNKNOWN_VARIABLE"));
         }
     }
@@ -68,8 +70,10 @@ void handle_control_client(int client_sock) {
         int result = set_variable_value(variable_name, value);
 
         if (result == 0) {
+            printf("[INFO] [CTRL] SET %s = %s OK\n", variable_name, value);
             write(client_sock, "RESPONSE_OK", strlen("RESPONSE_OK"));
         } else {
+            printf("[INFO] [CTRL] SET %s = %s ERROR\n", variable_name, value);
             write(client_sock, "RESPONSE_ERROR", strlen("RESPONSE_ERROR"));
         }
     }
